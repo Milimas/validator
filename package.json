@@ -30,7 +30,9 @@
   },
   "scripts": {
     "test": "vitest",
-    "build": "tsc"
+    "build": "tsc --project tsconfig.json",
+    "watch": "tsc --watch --project tsconfig.json",
+    "dev": "npm run watch"
   },
   "dependencies": {
     "vitest": "^4.0.15"
