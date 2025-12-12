@@ -1,6 +1,6 @@
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
-import { HTMLAttributes, HtmlObjectType, TypeOf } from "../types.js";
+import { HTMLAttributes, HtmlObjectType, ObjectInfer } from "../types.js";
 
 /**
  * Composite schema for validating object structures with typed properties.
@@ -51,7 +51,7 @@ import { HTMLAttributes, HtmlObjectType, TypeOf } from "../types.js";
  */
 export class ObjectSchema<
   Shape extends { [key: string]: SchemaType<any, any, any> }
-> extends SchemaType<{ [K in keyof Shape]: TypeOf<Shape[K]> }> {
+> extends SchemaType<ObjectInfer<Shape>> {
   public htmlAttributes: HtmlObjectType<{
     [K in keyof Shape]: HTMLAttributes;
   }> = {
@@ -99,7 +99,7 @@ export class ObjectSchema<
    * exactly which property failed validation and why.
    *
    * @param {unknown} data - The data to validate (should be an object)
-   * @returns {e.ValidationResult<{ [K in keyof Shape]: TypeOf<Shape[K]> }>} A validation result containing
+   * @returns {e.ValidationResult<ObjectInfer<Shape>>} A validation result containing
    *          either the validated object with typed properties or detailed error information with property paths
    *
    * @example
@@ -121,9 +121,7 @@ export class ObjectSchema<
    *   });
    * }
    */
-  validate(
-    data: unknown
-  ): e.ValidationResult<{ [K in keyof Shape]: TypeOf<Shape[K]> }> {
+  validate(data: unknown): e.ValidationResult<ObjectInfer<Shape>> {
     const errors: ValidationError[] = [];
     if (data === undefined) data = this.htmlAttributes?.defaultValue;
     if (
@@ -143,12 +141,10 @@ export class ObjectSchema<
         )
       );
 
-      return e.ValidationResult.fail<{
-        [K in keyof Shape]: TypeOf<Shape[K]>;
-      }>(errors);
+      return e.ValidationResult.fail<ObjectInfer<Shape>>(errors);
     }
 
-    const result: Partial<{ [K in keyof Shape]: TypeOf<Shape[K]> }> = {};
+    const result: ObjectInfer<Shape> = {} as ObjectInfer<Shape>;
 
     for (const key in this.shape) {
       const schema = this.shape[key];
@@ -158,17 +154,15 @@ export class ObjectSchema<
         const fieldErrors = fieldResult.mapErrors([key]).errors;
         errors.push(...fieldErrors);
       } else {
-        result[key] = fieldResult.data;
+        result[key as unknown as keyof ObjectInfer<Shape>] = fieldResult.data;
       }
     }
 
     if (errors.length > 0) {
-      return e.ValidationResult.fail<{
-        [K in keyof Shape]: TypeOf<Shape[K]>;
-      }>(errors);
+      return e.ValidationResult.fail<ObjectInfer<Shape>>(errors);
     }
-    return e.ValidationResult.ok<{ [K in keyof Shape]: TypeOf<Shape[K]> }>(
-      result as { [K in keyof Shape]: TypeOf<Shape[K]> }
+    return e.ValidationResult.ok<ObjectInfer<Shape>>(
+      result as ObjectInfer<Shape>
     );
   }
 

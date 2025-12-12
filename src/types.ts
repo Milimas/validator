@@ -49,6 +49,33 @@ export type TypeOf<T extends SchemaTypeAny> = T["_output"];
 export type Infer<T extends SchemaTypeAny> = TypeOf<T>;
 
 /**
+ * Extracts the inferred output type from an object schema with proper optional property handling.
+ *
+ * When used with object schemas, this type properly marks properties as optional (using ?)
+ * when their value type includes undefined. This ensures that properties with .optional()
+ * are correctly typed as optional properties in the resulting object type.
+ *
+ * @template Shape - The shape of the object schema
+ *
+ * @example
+ * const schema = object({
+ *   name: string(),
+ *   nickname: string().optional()
+ * });
+ * type Result = ObjectInfer<typeof schema.shape>;
+ * // Result is { name: string; nickname?: string | undefined }
+ */
+export type ObjectInfer<Shape extends { [key: string]: SchemaTypeAny }> = {
+  [K in keyof Shape as undefined extends TypeOf<Shape[K]> ? K : never]?: TypeOf<
+    Shape[K]
+  >;
+} & {
+  [K in keyof Shape as undefined extends TypeOf<Shape[K]>
+    ? never
+    : K]-?: TypeOf<Shape[K]>;
+};
+
+/**
  * Defines the shape of an object schema as a mapping of property names to schemas.
  *
  * Used to construct object schemas where each property has its own validation schema.
