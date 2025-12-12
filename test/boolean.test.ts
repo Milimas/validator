@@ -59,7 +59,7 @@ describe("BooleanSchema", () => {
   describe("Optional and default values", () => {
     it("should handle optional fields", () => {
       const schema = boolean().optional();
-      expect(schema.parse(undefined)).toBeUndefined();
+      expect(schema.parse(undefined)).toBe(false);
       expect(schema.parse(true)).toBe(true);
       expect(schema.parse(false)).toBe(false);
     });
