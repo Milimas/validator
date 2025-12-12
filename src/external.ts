@@ -273,7 +273,7 @@ export function array<T extends SchemaTypeAny>(itemSchema: T): ArraySchema<T> {
  * @param values - The allowed enum values.
  * @returns A new instance of EnumSchema.
  */
-export function _enum<T extends [string, ...string[]]>(
+export function _enum<const T extends readonly string[]>(
   values: T
 ): EnumSchema<T> {
   return new EnumSchema(values);

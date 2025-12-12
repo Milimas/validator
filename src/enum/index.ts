@@ -2,9 +2,9 @@ import { e, ValidationError } from "../error";
 import { SchemaType } from "../schema";
 import { HtmlSelectAttributes } from "../types";
 
-export class EnumSchema<
-  T extends readonly [string, ...string[]]
-> extends SchemaType<T[number]> {
+export class EnumSchema<const T extends readonly string[]> extends SchemaType<
+  T[number]
+> {
   private valuesSet: Set<string>;
   public htmlAttributes: HtmlSelectAttributes<T[number]> = {
     type: "select",
@@ -12,7 +12,7 @@ export class EnumSchema<
     required: true,
   };
 
-  constructor(private values: T) {
+  constructor(private readonly values: T) {
     super({});
     this.valuesSet = new Set(values);
     this.htmlAttributes.options = values;
