@@ -203,7 +203,7 @@ Full type inference from schemas:
 
 ```typescript
 type User = typeof userSchema;
-type UserData = typeof userSchema._output;
+type UserData = s.Infer<userSchema>;
 
 // UserData is inferred as:
 // {
