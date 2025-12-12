@@ -29,6 +29,7 @@ export class StringSchema<D extends SchemaDef = SchemaDef> extends SchemaType<
 > {
   public htmlAttributes: HtmlStringAttributes = {
     type: "text",
+    defaultValue: undefined,
     required: true,
   };
 

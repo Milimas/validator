@@ -247,9 +247,15 @@ export abstract class SchemaType<
    *
    * @example
    * const taxIdSchema = string().dependsOn([
-   *   { field: 'accountType', condition: (type) => type === 'business' }
+   *   { field: 'accountType', condition: /^business$/ }
    * ]);
-   * // Tax ID is only required when accountType is 'business'
+   * // Tax ID is only required when accountType is buisness
+   *
+   * @example
+   * const emailSchema = string().dependsOn([
+   *  { field: 'subscribe', condition: /true/ }
+   * ]);
+   * // Email is only required when subscribe is true
    */
   dependsOn(conditions: [Condition, ...Condition[]]): DependsOnSchema<this> {
     return new DependsOnSchema(this, conditions);
@@ -327,8 +333,8 @@ export class OptionalSchema<
    * @returns ValidationResult with undefined or the validated inner type
    */
   validate(data: unknown): e.ValidationResult<T["_output"] | undefined> {
-    if (data === undefined) {
-      return e.ValidationResult.ok<undefined>(undefined);
+    if (data === undefined || data === null) {
+      return e.ValidationResult.ok<undefined>(data as undefined);
     }
     return this.inner.validate(data);
   }
@@ -341,7 +347,9 @@ export class OptionalSchema<
    * @throws {ValidationAggregateError} If inner schema validation fails
    */
   parse(data: unknown) {
-    if (data === undefined) {
+    if (data === undefined || data === null) {
+      if (this.htmlAttributes?.defaultValue !== undefined)
+        return this.htmlAttributes.defaultValue as T["_output"];
       return undefined as T["_output"] | undefined;
     }
     return this.inner.parse(data);
@@ -354,8 +362,8 @@ export class OptionalSchema<
    * @returns ValidationResult with undefined for empty values or inner schema result
    */
   safeParse(data: unknown) {
-    if (data === undefined) {
-      return e.ValidationResult.ok<undefined>(undefined);
+    if (data === undefined || data === null) {
+      return e.ValidationResult.ok<undefined>(data as undefined);
     }
     return this.inner.safeParse(data);
   }
@@ -593,6 +601,7 @@ export class DependsOnSchema<
       "data-depends-on": this._dependsOn,
     };
     this.inner.htmlAttributes.required = false;
+    this.inner.htmlAttributes["data-depends-on"] = this._dependsOn;
   }
 
   /**

@@ -38,7 +38,7 @@ import { HtmlNumberInputAttributes } from "../types.js";
 export class NumberSchema extends SchemaType<number> {
   public htmlAttributes: HtmlNumberInputAttributes = {
     type: "number",
-    defaultValue: 0,
+    defaultValue: undefined,
     required: true,
   };
 
