@@ -18,8 +18,16 @@
   },
   "license": "ISC",
   "author": "Millimas",
-  "type": "commonjs",
-  "main": "index.js",
+  "type": "module",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.js",
+      "default": "./lib/index.js"
+    }
+  },
   "scripts": {
     "test": "vitest",
     "build": "tsc"

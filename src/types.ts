@@ -1,4 +1,4 @@
-import { SchemaType } from "./schema";
+import { SchemaType } from "./schema.js";
 
 /**
  * Generic type alias for any SchemaType instance regardless of its type parameters.

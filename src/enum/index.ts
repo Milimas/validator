@@ -1,6 +1,6 @@
-import { e, ValidationError } from "../error";
-import { SchemaType } from "../schema";
-import { HtmlSelectAttributes } from "../types";
+import { e, ValidationError } from "../error.js";
+import { SchemaType } from "../schema.js";
+import { HtmlSelectAttributes } from "../types.js";
 
 /**
  * Enumeration schema for validating against a fixed set of allowed values.

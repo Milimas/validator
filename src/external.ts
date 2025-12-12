@@ -1,8 +1,8 @@
-import { ArraySchema } from "./array";
-import { BooleanSchema } from "./boolean";
-import { NumberSchema } from "./number";
-import { ObjectSchema } from "./object";
-import { EnumSchema } from "./enum";
+import { ArraySchema } from "./array/index.js";
+import { BooleanSchema } from "./boolean/index.js";
+import { NumberSchema } from "./number/index.js";
+import { ObjectSchema } from "./object/index.js";
+import { EnumSchema } from "./enum/index.js";
 import {
   DateSchema,
   DatetimeLocalSchema,
@@ -22,8 +22,8 @@ import {
   UUIDSchema,
   XMLSchema,
   ZipCodeSchema,
-} from "./string";
-import { ObjectShape, SchemaTypeAny } from "./types";
+} from "./string/index.js";
+import { ObjectShape, SchemaTypeAny } from "./types.js";
 
 // export * from "./types";
 

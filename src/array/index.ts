@@ -1,6 +1,11 @@
-import { e, ValidationError } from "../error";
-import { SchemaType } from "../schema";
-import { HtmlArrayType, HTMLAttributes, SchemaTypeAny, TypeOf } from "../types";
+import { e, ValidationError } from "../error.js";
+import { SchemaType } from "../schema.js";
+import {
+  HtmlArrayType,
+  HTMLAttributes,
+  SchemaTypeAny,
+  TypeOf,
+} from "../types.js";
 
 /**
  * Array schema for validating collections of homogeneous typed items.

@@ -1,6 +1,6 @@
-import { e, ValidationError } from "../error";
-import { SchemaType } from "../schema";
-import { HtmlNumberInputAttributes } from "../types";
+import { e, ValidationError } from "../error.js";
+import { SchemaType } from "../schema.js";
+import { HtmlNumberInputAttributes } from "../types.js";
 
 /**
  * Numeric validation schema for integer and floating-point number validation.

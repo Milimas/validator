@@ -1,6 +1,6 @@
-import { e, ValidationError } from "../error";
-import { SchemaType } from "../schema";
-import { HtmlCheckboxAttributes } from "../types";
+import { e, ValidationError } from "../error.js";
+import { SchemaType } from "../schema.js";
+import { HtmlCheckboxAttributes } from "../types.js";
 
 /**
  * Boolean schema for validating true/false values and checkbox inputs.

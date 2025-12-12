@@ -1,6 +1,6 @@
-import { e, ValidationError } from "../error";
-import { SchemaType } from "../schema";
-import { HTMLAttributes, HtmlObjectType, TypeOf } from "../types";
+import { e, ValidationError } from "../error.js";
+import { SchemaType } from "../schema.js";
+import { HTMLAttributes, HtmlObjectType, TypeOf } from "../types.js";
 
 /**
  * Composite schema for validating object structures with typed properties.

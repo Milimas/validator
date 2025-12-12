@@ -1,6 +1,6 @@
-import { e, ValidationError } from "../error";
-import { SchemaType } from "../schema";
-import { HtmlStringAttributes, SchemaDef } from "../types";
+import { e, ValidationError } from "../error.js";
+import { SchemaType } from "../schema.js";
+import { HtmlStringAttributes, SchemaDef } from "../types.js";
 
 /**
  * Generic string validation schema for flexible text input validation.
