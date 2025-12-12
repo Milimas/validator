@@ -1,5 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { object, string, number, email, boolean, array } from "../src/index.js";
+import {
+  object,
+  string,
+  number,
+  email,
+  boolean,
+  array,
+  enum as enumSchema,
+  html,
+} from "../src/index.js";
 
 describe("ObjectSchema", () => {
   describe("Basic validation", () => {
@@ -29,6 +38,119 @@ describe("ObjectSchema", () => {
       expect(() => schema.parse(123)).toThrow();
       expect(() => schema.parse(null)).toThrow();
       expect(() => schema.parse([])).toThrow();
+    });
+
+    it("should parse multiple nested objects", () => {
+      const fileAttachmentSchema = object({
+        "@odata.type": string()
+          .default("#microsoft.graph.fileAttachment")
+          .readOnly(),
+        name: string().default("Attached File"),
+        contentType: string().default("text/plain"),
+        contentBytes: string(),
+      });
+
+      const eventAttachmentSchema = object({
+        "@odata.type": string()
+          .default("#microsoft.graph.eventAttachment")
+          .readOnly(),
+        name: string().default("Attached Event"),
+        event: object({
+          subject: string(),
+          body: object({
+            contentType: enumSchema([
+              "None",
+              "Text",
+              "HTML",
+            ] as const).optional(),
+            text: string().dependsOn([
+              {
+                field: "eventAttachmentSchema.event.body.contentType",
+                condition: /Text/,
+              },
+            ]),
+            html: html().dependsOn([
+              {
+                field: "eventAttachmentSchema.event.body.contentType",
+                condition: /HTML/,
+              },
+            ]),
+          }).optional(),
+          start: string().optional(),
+          end: string().optional(),
+          location: object({
+            displayName: string().optional(),
+          }).optional(),
+          attendees: array(
+            object({
+              emailAddress: object({
+                address: string(),
+                name: string().optional(),
+              }),
+              type: enumSchema([
+                "required",
+                "optional",
+                "resource",
+              ] as const).default("required"),
+            })
+          ).optional(),
+          isAllDay: boolean().optional().default(false),
+          sensitivity: enumSchema([
+            "normal",
+            "personal",
+            "private",
+            "confidential",
+          ] as const)
+            .optional()
+            .default("normal"),
+        }).optional(),
+      });
+      const schema = object({
+        name: string().minLength(2).maxLength(50).required(),
+        age: number().min(0).max(120).required(),
+        email: string()
+          .pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)
+          .required(),
+        preferences: object({
+          newsletter: boolean().default(false),
+          notifications: enumSchema([
+            "all",
+            "mentions",
+            "none",
+          ] as const).default("all"),
+        }).required(),
+        tags: array(string().minLength(1).maxLength(20))
+          .minLength(0)
+          .maxLength(10),
+        fileAttachmentSchema: fileAttachmentSchema.required(true),
+        eventAttachmentSchema: eventAttachmentSchema.required(true),
+      });
+
+      const result = schema.parse({
+        name: "Alice",
+        age: 28,
+        email: "alice@example.com",
+        preferences: { newsletter: true },
+        tags: ["friend", "colleague"],
+        fileAttachmentSchema: {
+          contentBytes: "SGVsbG8gd29ybGQ=",
+        },
+        eventAttachmentSchema: {
+          event: {
+            subject: "Team Meeting",
+            body: {
+              contentType: "Text",
+              text: "Don't forget our meeting tomorrow at 10 AM.",
+            },
+            start: "2024-07-01T10:00:00Z",
+            end: "2024-07-01T11:00:00Z",
+          },
+        },
+      });
+
+      expect(result.name).toBe("Alice");
+      expect(result.age).toBe(28);
+      expect(result.email).toBe("alice@example.com");
     });
 
     it("should validate property types", () => {
@@ -138,6 +260,88 @@ describe("ObjectSchema", () => {
         active: true,
         email: "john@example.com",
       });
+    });
+
+    it("should report detailed errors for invalid nested properties", () => {
+      const schema = object({
+        user: object({
+          name: string(),
+          age: number(),
+        }),
+      });
+
+      const result = schema.safeParse({
+        user: {
+          name: "John",
+          age: "invalid",
+        },
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.errors.length).toBeGreaterThan(0);
+        expect(result.errors[0].path).toEqual(["user", "age"]);
+      }
+    });
+
+    it("should report detailed errors for invalid array items", () => {
+      const schema = object({
+        tags: array(string()),
+      });
+
+      const result = schema.safeParse({
+        tags: ["valid", 123, "string"],
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.errors.length).toBeGreaterThan(0);
+        expect(result.errors[0].path).toEqual(["tags", 1]);
+      }
+    });
+
+    it("should throw when required properties are missing", () => {
+      const schema = object({
+        name: string(),
+        age: number(),
+      });
+
+      expect(() =>
+        schema.parse({
+          name: "John",
+        })
+      ).toThrow();
+
+      expect(() =>
+        schema.parse({
+          age: 30,
+        })
+      ).toThrow();
+    });
+
+    it("should throw when nested object properties are required", () => {
+      const schema = object({
+        user: object({
+          name: string(),
+          age: number(),
+        }),
+      });
+
+      expect(() =>
+        schema.parse({
+          user: {
+            name: "John",
+          },
+        })
+      ).toThrow();
+
+      expect(() =>
+        schema.parse({
+          user: {
+            age: 30,
+          },
+        })
+      ).toThrow();
     });
   });
 
