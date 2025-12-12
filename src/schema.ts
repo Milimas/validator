@@ -85,6 +85,15 @@ export abstract class SchemaType<
   dependsOn(conditions: [Condition, ...Condition[]]): DependsOnSchema<this> {
     return new DependsOnSchema(this, conditions);
   }
+
+  required(
+    required: boolean = true,
+    message: string = "This field is required"
+  ): this {
+    this.errorMap.set("required", message);
+    this.htmlAttributes = { ...this.htmlAttributes, required };
+    return this;
+  }
 }
 
 export class OptionalSchema<
