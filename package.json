@@ -1,0 +1,26 @@
+{
+  "name": "validator",
+  "version": "1.0.0",
+  "description": "typescript validator library, using validator you can define schemas for building web forms and you can use to validate data ",
+  "keywords": [
+    "validator",
+    "typescript",
+    "schema",
+    "schemas"
+  ],
+  "homepage": "https://github.com/Milimas/validator#readme",
+  "bugs": {
+    "url": "https://github.com/Milimas/validator/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Milimas/validator.git"
+  },
+  "license": "ISC",
+  "author": "Millimas",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest"
+  }
+}
