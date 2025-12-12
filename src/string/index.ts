@@ -87,10 +87,7 @@ export class StringSchema<D extends SchemaDef = SchemaDef> extends SchemaType<
     }
 
     // required check
-    if (
-      this.htmlAttributes.required &&
-      (data === null || data === undefined || data === "")
-    )
+    if (this.htmlAttributes.required && (data === null || data === undefined))
       errors.push(
         new ValidationError(
           [],
@@ -549,7 +546,7 @@ export class StreetAddressSchema extends StringSchema {
  */
 export class PhoneNumberSchema extends StringSchema {
   public htmlAttributes: HtmlStringAttributes = {
-    type: "text",
+    type: "tel",
     pattern:
       /^\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/,
     title: "Phone number must be in a valid international format",
@@ -616,8 +613,8 @@ export class StringNumberSchema extends StringSchema {
  */
 export class HexColorSchema extends StringSchema {
   public htmlAttributes: HtmlStringAttributes = {
-    type: "text",
-    pattern: /^#?([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/,
+    type: "color",
+    pattern: /^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/,
     title: "Hex color must be in the format #RRGGBB or #RGB",
     placeholder: "#RRGGBB or #RGB",
     required: true,

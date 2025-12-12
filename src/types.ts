@@ -152,7 +152,8 @@ export type HtmlStringInputType =
   | "url"
   | "date"
   | "datetime-local"
-  | "color";
+  | "color"
+  | "tel";
 
 /**
  * HTML attributes for string-based input elements with validation constraints.

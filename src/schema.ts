@@ -104,15 +104,6 @@ export abstract class SchemaType<
    * emailSchema.parse('invalid'); // Throws ValidationAggregateError
    */
   parse(data: unknown): Output {
-    if (this.htmlAttributes?.defaultValue === null) {
-      data = this.htmlAttributes.defaultValue;
-    }
-    if (
-      this.htmlAttributes?.required === false &&
-      (data === undefined || data === null)
-    ) {
-      return data as Output;
-    }
     const result = this.validate(data);
     if (!result.success) {
       throw result.intoError();
@@ -336,10 +327,7 @@ export class OptionalSchema<
    * @returns ValidationResult with undefined or the validated inner type
    */
   validate(data: unknown): e.ValidationResult<T["_output"] | undefined> {
-    if (
-      (data === undefined || data === null || data === "") &&
-      this.htmlAttributes?.defaultValue === undefined
-    ) {
+    if (data === undefined) {
       return e.ValidationResult.ok<undefined>(undefined);
     }
     return this.inner.validate(data);
@@ -353,10 +341,7 @@ export class OptionalSchema<
    * @throws {ValidationAggregateError} If inner schema validation fails
    */
   parse(data: unknown) {
-    if (
-      (data === undefined || data === null || data === "") &&
-      this.htmlAttributes?.defaultValue === undefined
-    ) {
+    if (data === undefined) {
       return undefined as T["_output"] | undefined;
     }
     return this.inner.parse(data);
@@ -369,10 +354,7 @@ export class OptionalSchema<
    * @returns ValidationResult with undefined for empty values or inner schema result
    */
   safeParse(data: unknown) {
-    if (
-      (data === undefined || data === null || data === "") &&
-      this.htmlAttributes?.defaultValue === undefined
-    ) {
+    if (data === undefined) {
       return e.ValidationResult.ok<undefined>(undefined);
     }
     return this.inner.safeParse(data);
@@ -435,7 +417,7 @@ export class NullableSchema<
    * @returns ValidationResult with null or the validated inner type
    */
   validate(data: unknown): e.ValidationResult<T["_output"] | null> {
-    if (data === null && this.htmlAttributes?.defaultValue === undefined) {
+    if (data === null) {
       return e.ValidationResult.ok<null>(null);
     }
     return this.inner.validate(data);
@@ -449,7 +431,7 @@ export class NullableSchema<
    * @throws {ValidationAggregateError} If inner schema validation fails
    */
   parse(data: unknown) {
-    if (data === null && this.htmlAttributes?.defaultValue === undefined) {
+    if (data === null) {
       return null as T["_output"] | null;
     }
     return this.inner.parse(data);
@@ -462,7 +444,7 @@ export class NullableSchema<
    * @returns ValidationResult with null for null input or inner schema result
    */
   safeParse(data: unknown) {
-    if (data === null && this.htmlAttributes?.defaultValue === undefined) {
+    if (data === null) {
       return e.ValidationResult.ok<null>(null);
     }
     return this.inner.safeParse(data);
