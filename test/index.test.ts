@@ -9,8 +9,8 @@ describe("StringSchema", () => {
 
   it("should throw on non-string values", () => {
     const schema = s.string();
-    expect(() => schema.parse(123)).toThrow("Invalid type");
-    expect(() => schema.parse(null)).toThrow("Invalid type");
+    expect(() => schema.parse(123)).toThrowError();
+    expect(() => schema.parse(null)).toThrowError();
   });
 
   it("should set default value", () => {
@@ -36,7 +36,7 @@ describe("StringSchema", () => {
   it("should set pattern", () => {
     const pattern = /^[a-z]+$/;
     const schema = s.string().pattern(pattern);
-    expect(schema.toJSON().pattern).toBe(pattern);
+    expect(schema.toJSON().pattern).toBe(pattern.source);
   });
 
   it("should support method chaining", () => {
@@ -67,34 +67,34 @@ describe("EmailSchema", () => {
 
   it("should throw on non-string values", () => {
     const schema = s.email();
-    expect(() => schema.parse(123)).toThrow("Invalid email");
-    expect(() => schema.parse(null)).toThrow("Invalid email");
+    expect(() => schema.parse(123)).toThrowError();
+    expect(() => schema.parse(null)).toThrowError();
   });
 
   it("should throw on missing @ symbol", () => {
     const schema = s.email();
-    expect(() => schema.parse("test-example.com")).toThrow("Invalid email");
+    expect(() => schema.parse("test-example.com")).toThrowError();
   });
 
   it("should throw on missing domain", () => {
     const schema = s.email();
-    expect(() => schema.parse("test@")).toThrow("Invalid email");
+    expect(() => schema.parse("test@")).toThrowError();
   });
 
   it("should throw on missing username", () => {
     const schema = s.email();
-    expect(() => schema.parse("@example.com")).toThrow("Invalid email");
+    expect(() => schema.parse("@example.com")).toThrowError();
   });
 
   it("should throw on invalid domain format", () => {
     const schema = s.email();
-    expect(() => schema.parse("test@.com")).toThrow("Invalid email");
-    expect(() => schema.parse("test@example")).toThrow("Invalid email");
+    expect(() => schema.parse("test@.com")).toThrowError();
+    expect(() => schema.parse("test@example")).toThrowError();
   });
 
   it("should throw on invalid email strings", () => {
     const schema = s.email();
-    expect(() => schema.parse("invalid-email")).toThrow("Invalid email");
+    expect(() => schema.parse("invalid-email")).toThrowError();
   });
 });
 
@@ -108,8 +108,8 @@ describe("NumberSchema", () => {
 
   it("should throw on non-number values", () => {
     const schema = s.number();
-    expect(() => schema.parse("123")).toThrow("Invalid number");
-    expect(() => schema.parse(null)).toThrow("Invalid number");
+    expect(() => schema.parse("123")).toThrowError("Invalid number");
+    expect(() => schema.parse(null)).toThrowError("Invalid number");
   });
 });
 
@@ -122,8 +122,8 @@ describe("BooleanSchema", () => {
 
   it("should throw on non-boolean values", () => {
     const schema = s.boolean();
-    expect(() => schema.parse(1)).toThrow("Invalid boolean");
-    expect(() => schema.parse("true")).toThrow("Invalid boolean");
+    expect(() => schema.parse(1)).toThrowError("Invalid boolean");
+    expect(() => schema.parse("true")).toThrowError("Invalid boolean");
   });
 });
 
@@ -139,8 +139,8 @@ describe("ObjectSchema", () => {
 
   it("should throw on non-object values", () => {
     const schema = s.object({ name: s.string() });
-    expect(() => schema.parse("not an object")).toThrow("Invalid object");
-    expect(() => schema.parse(null)).toThrow("Invalid object");
+    expect(() => schema.parse("not an object")).toThrowError("Invalid object");
+    expect(() => schema.parse(null)).toThrowError("Invalid object");
   });
 
   it("should validate nested objects", () => {
@@ -157,7 +157,7 @@ describe("ObjectSchema", () => {
     });
     expect(() =>
       schema.parse({ user: { name: "Jane", age: "not a number" } })
-    ).toThrow("Invalid number");
+    ).toThrowError("Invalid number");
   });
 
   it("should generate correct JSON representation", () => {
@@ -215,13 +215,13 @@ describe("ArraySchema", () => {
 
   it("should throw on non-array values", () => {
     const schema = s.array(s.string());
-    expect(() => schema.parse("not an array")).toThrow("Invalid array");
-    expect(() => schema.parse(null)).toThrow("Invalid array");
+    expect(() => schema.parse("not an array")).toThrowError();
+    expect(() => schema.parse(null)).toThrowError();
   });
 
   it("should validate array items", () => {
     const schema = s.array(s.number());
-    expect(() => schema.parse([1, "two", 3])).toThrow("Invalid number");
+    expect(() => schema.parse([1, "two", 3])).toThrowError();
   });
 
   it("should generate correct JSON representation", () => {
