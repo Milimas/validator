@@ -21,6 +21,13 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "test": "vitest"
+    "test": "vitest",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "vitest": "^4.0.15"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
   }
 }
