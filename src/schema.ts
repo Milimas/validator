@@ -173,12 +173,14 @@ export abstract class SchemaType<
     if (attributes.pattern instanceof RegExp) {
       attributes.pattern = attributes.pattern.source;
     }
-    if (attributes["data-dependsOn"]) {
+    if (attributes["data-depends-on"]) {
       const out: any = { ...attributes };
-      out["data-dependsOn"] = out["data-dependsOn"].map((cond: Condition) => ({
-        field: cond.field,
-        condition: cond.condition.source,
-      }));
+      out["data-depends-on"] = out["data-depends-on"].map(
+        (cond: Condition) => ({
+          field: cond.field,
+          condition: cond.condition.source,
+        })
+      );
       return out;
     }
     return attributes;
@@ -247,7 +249,7 @@ export abstract class SchemaType<
    *
    * Creates a new DependsOnSchema wrapper that adds conditional validation logic.
    * The field becomes required only when the specified conditions are met. Adds
-   * data-dependsOn HTML attributes for client-side conditional field visibility.
+   * data-depends-on HTML attributes for client-side conditional field visibility.
    *
    * @param conditions - Non-empty array of conditions that determine when this field is required
    * @returns A new DependsOnSchema wrapping this schema with conditional logic
@@ -384,6 +386,7 @@ export class OptionalSchema<
   toJSON(): this["htmlAttributes"] {
     return {
       ...this.inner.toJSON(),
+      pattern: (this.inner.htmlAttributes as any)?.pattern?.source,
       required: false,
     };
   }
@@ -572,7 +575,7 @@ export class DefaultSchema<
  * Schema wrapper that makes a field conditionally required based on other field values.
  *
  * Adds conditional validation logic where the field is only required when specified
- * conditions are met. Sets the HTML required attribute to false and adds data-dependsOn
+ * conditions are met. Sets the HTML required attribute to false and adds data-depends-on
  * attributes for client-side conditional field visibility and validation.
  *
  * @template T - The wrapped schema type
@@ -605,13 +608,13 @@ export class DependsOnSchema<
     this.htmlAttributes = {
       ...inner.htmlAttributes,
       required: false,
-      "data-dependsOn": this._dependsOn,
+      "data-depends-on": this._dependsOn,
     };
     this.inner.htmlAttributes.required = false;
   }
 
   /**
-   * HTML attributes with required set to false and data-dependsOn conditions.
+   * HTML attributes with required set to false and data-depends-on conditions.
    */
   public htmlAttributes: T["htmlAttributes"];
 
@@ -659,10 +662,11 @@ export class DependsOnSchema<
    */
   toJSON(): this["htmlAttributes"] {
     const out: any = { ...this.inner.toJSON() };
-    out["data-dependsOn"] = this._dependsOn.map((cond: Condition) => ({
-      field: cond.field,
-      condition: cond.condition.toString(),
-    }));
+    pattern: (this.inner.htmlAttributes as any)?.pattern?.source,
+      (out["data-depends-on"] = this._dependsOn.map((cond: Condition) => ({
+        field: cond.field,
+        condition: cond.condition.source,
+      })));
     return out;
   }
 }

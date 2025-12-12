@@ -50,7 +50,7 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
     type: "array",
     items: [],
   };
-  
+
   /**
    * Initializes the ArraySchema with an item schema.
    *

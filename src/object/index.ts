@@ -61,7 +61,7 @@ export class ObjectSchema<
     ) as { [K in keyof Shape]: HTMLAttributes },
     defaultValue: undefined,
   };
-  
+
   /**
    * Initializes the ObjectSchema with a shape definition.
    *
