@@ -241,7 +241,7 @@ describe("ArraySchema", () => {
 describe("Type inference", () => {
   it("should infer string type", () => {
     const schema = s.string();
-    type Inferred = s.TypeOf<typeof schema>;
+    type Inferred = s.Infer<typeof schema>;
     const value: Inferred = "test";
     expect(value).toBe("test");
   });
@@ -255,7 +255,7 @@ describe("Type inference", () => {
 
   it("should infer array type", () => {
     const schema = s.array(s.string());
-    type Inferred = s.TypeOf<typeof schema>;
+    type Inferred = s.Infer<typeof schema>;
     const value: Inferred = ["a", "b"];
     expect(value).toEqual(["a", "b"]);
   });
