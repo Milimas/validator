@@ -177,7 +177,7 @@ export abstract class SchemaType<
       const out: any = { ...attributes };
       out["data-dependsOn"] = out["data-dependsOn"].map((cond: Condition) => ({
         field: cond.field,
-        condition: cond.condition.toString(),
+        condition: cond.condition.source,
       }));
       return out;
     }
