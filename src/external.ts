@@ -24,6 +24,7 @@ import {
   ZipCodeSchema,
 } from "./string/index.js";
 import { HTMLAttributes, ObjectShape, SchemaTypeAny } from "./types.js";
+import { SchemaType } from "./schema.js";
 
 // export * from "./types";
 
@@ -506,5 +507,6 @@ function toJSONSchema<R extends HTMLAttributes>(schema: SchemaTypeAny): R {
 }
 
 export type { SchemaTypeAny };
+export { SchemaType };
 export { toJSONSchema };
 export { _enum as enum };
