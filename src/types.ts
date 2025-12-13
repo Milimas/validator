@@ -423,27 +423,6 @@ export type HtmlContainerAttributes<R = Record<string, any>, I = any> =
   | HtmlArrayType<I>;
 
 /**
- * HTML attributes for union types.
- *
- * Represents a union of multiple possible input types. Used when a field can
- * accept different types of values, each with its own HTML representation.
- * Currently a placeholder as unions do not have specific HTML attributes.
- *
- * @example
- * const unionAttrs: UnionAttributes = {
- *   type: 'union',
- *   required: true
- * };
- */
-export type UnionAttributes<
-  T extends readonly SchemaTypeAny[] = SchemaTypeAny[]
-> = {
-  type: "union";
-  options?: T;
-  required: boolean;
-};
-
-/**
  * Union of all possible HTML form input attribute types with data attribute support.
  *
  * Comprehensive type that encompasses all HTML input types (string, number, checkbox,
@@ -477,5 +456,4 @@ export type HTMLAttributes = (
   | HtmlFileInputAttributes
   | HtmlContainerAttributes
   | HtmlSelectAttributes
-  | UnionAttributes
 ) & { [k in `data-${string}`]?: unknown };
