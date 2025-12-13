@@ -198,6 +198,10 @@ export class StringSchema<D extends SchemaDef = SchemaDef> extends SchemaType<
     return this;
   }
 
+  min(value: number, message: string = "String is too short"): this {
+    return this.minLength(value, message);
+  }
+
   /**
    * Sets the maximum allowed length for the string value.
    *
@@ -223,6 +227,10 @@ export class StringSchema<D extends SchemaDef = SchemaDef> extends SchemaType<
     this.errorMap.set("maxLength", message);
     this.htmlAttributes = { ...this.htmlAttributes, maxLength: value };
     return this;
+  }
+
+  max(value: number, message: string = "String is too long"): this {
+    return this.maxLength(value, message);
   }
 
   /**
