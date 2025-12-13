@@ -1,5 +1,12 @@
 import { e, ValidationError } from "./error.js";
-import { SchemaDef, HTMLAttributes, Condition } from "./types.js";
+import {
+  SchemaDef,
+  HTMLAttributes,
+  Condition,
+  HtmlAnyAttributes,
+  HtmlNeverAttributes,
+  HtmlUnknownAttributes,
+} from "./types.js";
 
 /**
  * Abstract base class for all schema types in the validation system.
@@ -659,5 +666,102 @@ export class DependsOnSchema<
         condition: cond.condition.source,
       })));
     return out;
+  }
+}
+
+export class AnySchema extends SchemaType<any> {
+  public htmlAttributes: HtmlAnyAttributes = {
+    type: "any",
+    defaultValue: undefined,
+    required: true,
+  };
+
+  /**
+   * Validates that the input is of any type (always succeeds).
+   *
+   * This schema accepts any input value without restrictions.
+   * It always returns a successful validation result containing the input data.
+   *
+   * @param {unknown} data - The data to validate (can be of any type)
+   * @returns {e.ValidationResult<any>} A validation result containing the input data
+   *
+   * @example
+   * const schema = new AnySchema();
+   *
+   * schema.validate(42);            // ✓ Success
+   * schema.validate('Hello');       // ✓ Success
+   * schema.validate({ key: 'value' }); // ✓ Success
+   * schema.validate(null);         // ✓ Success
+   */
+  validate(data: unknown): e.ValidationResult<any> {
+    return e.ValidationResult.ok<any>(data);
+  }
+}
+
+export class NeverSchema extends SchemaType<never> {
+  public htmlAttributes: HtmlNeverAttributes = {
+    type: "never",
+    required: true,
+  };
+
+  /**
+   * Validates that the input is never valid (always fails).
+   *
+   * This schema rejects all input values without exception.
+   * It always returns a failed validation result with an appropriate error message.
+   *
+   * @param {unknown} data - The data to validate (can be of any type)
+   * @returns {e.ValidationResult<never>} A validation result indicating failure
+   *
+   * @example
+   * const schema = new NeverSchema();
+   *
+   * schema.validate(42);            // ✗ Error: value is not allowed
+   * schema.validate('Hello');       // ✗ Error: value is not allowed
+   * schema.validate({ key: 'value' }); // ✗ Error: value is not allowed
+   * schema.validate(null);         // ✗ Error: value is not allowed
+   */
+  validate(data: unknown): e.ValidationResult<never> {
+    const errors: ValidationError[] = [];
+    errors.push(
+      new ValidationError(
+        [],
+        "Value is not allowed",
+        "never_valid",
+        "never",
+        typeof data,
+        data
+      )
+    );
+    return e.ValidationResult.fail<never>(errors);
+  }
+}
+
+export class UnknownSchema extends SchemaType<unknown> {
+  public htmlAttributes: HtmlUnknownAttributes = {
+    type: "unknown",
+    defaultValue: undefined,
+    required: true,
+  };
+
+  /**
+   * Validates that the input is of unknown type (always succeeds).
+   *
+   * This schema accepts any input value without restrictions.
+   * It always returns a successful validation result containing the input data.
+   *
+   * @param {unknown} data - The data to validate (can be of any type)
+   * @returns {e.ValidationResult<unknown>} A validation result containing the input data
+   *
+   * @example
+   * const schema = new UnknownSchema();
+   *
+   * schema.validate(42);            // ✓ Success
+   * schema.validate('Hello');       // ✓ Success
+   * schema.validate({ key: 'value' }); // ✓ Success
+   * schema.validate(null);         // ✓ Success
+   */
+  validate(data: unknown): e.ValidationResult<unknown> {
+    return e.ValidationResult.ok<unknown>(data);
   }
 }

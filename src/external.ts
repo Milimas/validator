@@ -25,7 +25,7 @@ import {
   ZipCodeSchema,
 } from "./string/index.js";
 import { HTMLAttributes, ObjectShape, SchemaTypeAny } from "./types.js";
-import { SchemaType } from "./schema.js";
+import { AnySchema, NeverSchema, SchemaType, UnknownSchema } from "./schema.js";
 
 // export * from "./types";
 
@@ -494,6 +494,79 @@ export function object<Shape extends ObjectShape>(
  */
 export function array<T extends SchemaTypeAny>(itemSchema: T): ArraySchema<T> {
   return new ArraySchema(itemSchema);
+}
+
+////////////////////////////
+////       Any          ////
+////////////////////////////
+
+/**
+ * Initializes a schema that accepts any data type without restrictions.
+ *
+ * Creates a schema that allows any input value, effectively bypassing validation.
+ * Useful for scenarios where flexibility is required, or when the data type is unknown.
+ * Provides type-safe handling of any data type with full TypeScript support.
+ *
+ * @returns {AnySchema} A new SchemaType instance that accepts any data type
+ *
+ * @example
+ * const anySchema = any();
+ * const result1 = anySchema.safeParse(123);          // Accepts number
+ * const result2 = anySchema.safeParse('hello');      // Accepts string
+ * const result3 = anySchema.safeParse({ key: 'value' }); // Accepts object
+ */
+export function any(): AnySchema {
+  return new AnySchema({
+    description: "An any type field",
+  });
+}
+
+////////////////////////////
+////      Never        ////
+////////////////////////////
+
+/**
+ * Initializes a schema that rejects all input values.
+ *
+ * Creates a schema that does not accept any input, effectively causing all validations
+ * to fail. Useful for scenarios where a field should never be provided or must always
+ * be absent. Provides type-safe handling of the 'never' type in TypeScript.
+ *
+ * @returns {NeverSchema} A new SchemaType instance that rejects all input values
+ *
+ * @example
+ * const neverSchema = never();
+ * const result = neverSchema.safeParse('any value'); // Always fails
+ */
+export function never(): NeverSchema {
+  return new NeverSchema({
+    description: "A never type field",
+  });
+}
+
+////////////////////////////
+////       Unknown      ////
+////////////////////////////
+
+/**
+ * Initializes a schema that accepts any data type but performs no validation.
+ *
+ * Creates a schema that allows any input value without applying any validation rules.
+ * Useful for scenarios where the data type is unknown or when validation is deferred.
+ * Provides type-safe handling of unknown data types with full TypeScript support.
+ *
+ * @returns {UnknownSchema} A new SchemaType instance that accepts unknown data types
+ *
+ * @example
+ * const unknownSchema = unknown();
+ * const result1 = unknownSchema.safeParse(123);          // Accepts number
+ * const result2 = unknownSchema.safeParse('hello');      // Accepts string
+ * const result3 = unknownSchema.safeParse({ key: 'value' }); // Accepts object
+ */
+export function unknown(): UnknownSchema {
+  return new UnknownSchema({
+    description: "An unknown type field",
+  });
 }
 
 ////////////////////////////

@@ -423,6 +423,49 @@ export type HtmlContainerAttributes<R = Record<string, any>, I = any> =
   | HtmlArrayType<I>;
 
 /**
+ * HTML attributes for inputs that can accept any value type.
+ *
+ * Used for fields where the value type is not constrained, allowing any input.
+ * Typically represents a free-form text input without specific validation rules.
+ *
+ * @property {"any"} type - The input type (always "any")
+ * @property {any} [defaultValue] - Default value for the input
+ */
+export type HtmlAnyAttributes = {
+  type: "any";
+  defaultValue?: any;
+} & HtmlGenericInputAttributes;
+
+/**
+ * HTML attributes for inputs that should never accept any value.
+ *
+ * Represents fields that are intentionally invalid or disabled, ensuring
+ * that no value can be provided. Used for schema definitions that are not
+ * meant to be instantiated.
+ *
+ * @property {"never"} type - The input type (always "never")
+ */
+export type HtmlNeverAttributes = {
+  type: "never";
+  defaultValue?: never;
+} & HtmlGenericInputAttributes;
+
+/**
+ * HTML attributes for inputs with unknown or dynamic value types.
+ *
+ * Used for fields where the value type cannot be determined at design time,
+ * allowing for maximum flexibility. Typically represents a generic input
+ * without specific type constraints.
+ *
+ * @property {"unknown"} type - The input type (always "unknown")
+ * @property {unknown} [defaultValue] - Default value for the input
+ */
+export type HtmlUnknownAttributes = {
+  type: "unknown";
+  defaultValue?: unknown;
+} & HtmlGenericInputAttributes;
+
+/**
  * Union of all possible HTML form input attribute types with data attribute support.
  *
  * Comprehensive type that encompasses all HTML input types (string, number, checkbox,
@@ -456,4 +499,7 @@ export type HTMLAttributes = (
   | HtmlFileInputAttributes
   | HtmlContainerAttributes
   | HtmlSelectAttributes
+  | HtmlAnyAttributes
+  | HtmlNeverAttributes
+  | HtmlUnknownAttributes
 ) & { [k in `data-${string}`]?: unknown };
