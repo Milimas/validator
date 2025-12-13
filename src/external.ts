@@ -502,6 +502,22 @@ function _enum<const T extends readonly string[]>(values: T): EnumSchema<T> {
   return new EnumSchema(values);
 }
 
+/**
+ * Converts a SchemaType instance to its corresponding JSON representation.
+ *
+ * This function invokes the `toJSON` method of the provided schema instance,
+ * returning the JSON-compatible representation of the schema's configuration
+ * and attributes. Useful for serializing schema definitions for storage,
+ * transmission, or integration with form builders.
+ *
+ * @template R - The expected HTMLAttributes type of the schema's JSON representation
+ * @param {SchemaTypeAny} schema - The schema instance to convert to JSON
+ * @returns {R} The JSON representation of the schema
+ *
+ * @example
+ * const schema = string().minLength(3).maxLength(50);
+ * const jsonSchema = toJSONSchema(schema);
+ */
 function toJSONSchema<R extends HTMLAttributes>(schema: SchemaTypeAny): R {
   return schema.toJSON() as R;
 }

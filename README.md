@@ -31,13 +31,13 @@ Validator supports multiple import patterns:
 // Named imports (recommended for tree-shaking)
 import { string, email, number, object, array } from 'validator';
 
-// Default import (namespace)
+// Default import (namespace-like)
 import validator from 'validator';
 const schema = validator.string();
 
-// Namespace import
-import { s } from 'validator';
-const schema = s.string();
+// Namespace import (ES modules)
+import * as v from 'validator';
+const another = v.string();
 ```
 
 ## Quick Start
@@ -78,8 +78,8 @@ if (result.success) {
 import { string } from 'validator';
 
 const schema = string()
-  .minLength(3)
-  .maxLength(50)
+  .minLength(3) // alias: .min(3)
+  .maxLength(50) // alias: .max(50)
   .pattern(/^[A-Z]/)
   .placeholder('Enter text')
   .required();
@@ -140,7 +140,7 @@ const schema = object({
 ### Enum Validation
 
 ```typescript
-import { enumSchema } from 'validator';
+import { enum as enumSchema } from 'validator';
 
 const schema = enumSchema(['active', 'inactive', 'pending'] as const);
 ```
@@ -162,7 +162,9 @@ const schema = enumSchema(['active', 'inactive', 'pending'] as const);
 ### String-Specific Methods
 
 - `minLength(n)` - Minimum string length
+- `min(n)` - Alias for minLength
 - `maxLength(n)` - Maximum string length
+- `max(n)` - Alias for maxLength
 - `pattern(regex)` - Match against regex pattern
 - `placeholder(text)` - Set placeholder text for HTML input
 - `datalist(options)` - Set autocomplete options
@@ -243,12 +245,12 @@ const htmlAttrs = schema.toJSON();
 Define validation rules that depend on other fields:
 
 ```typescript
-import { object, enumSchema, string } from 'validator';
+import { object, enum as enumSchema, string } from 'validator';
 
 const schema = object({
   userType: enumSchema(['customer', 'business'] as const),
   taxId: string().dependsOn([
-    { field: 'userType', condition: (type) => type === 'business' }
+    { field: 'userType', condition: /^business$/ }
   ]),
 });
 ```
@@ -270,7 +272,6 @@ Full type inference from schemas:
 ```typescript
 import { Infer } from 'validator';
 
-type User = typeof userSchema;
 type UserData = Infer<typeof userSchema>;
 
 // UserData is inferred as:
@@ -280,6 +281,15 @@ type UserData = Infer<typeof userSchema>;
 //   age: number;
 //   subscribe: boolean;
 // }
+
+// Optional and nullable inference examples
+const profileSchema = object({
+  name: string(),
+  nickname: string().optional(), // inferred as string | undefined
+  middleName: string().nullable(), // inferred as string | null
+});
+type Profile = Infer<typeof profileSchema>;
+// Profile: { name: string; nickname: string | undefined; middleName: string | null }
 ```
 
 ## License

@@ -198,6 +198,15 @@ export class StringSchema<D extends SchemaDef = SchemaDef> extends SchemaType<
     return this;
   }
 
+  /**
+   * Alias for minLength to set the minimum allowed length for the string value.
+   * @param {number} value - The minimum number of characters required
+   * @param {string} [message="String is too short"] - Custom error message when validation fails
+   * @returns {this} The schema instance for method chaining
+   * @example
+   * // Title must be at least 5 characters
+   * const titleSchema = new StringSchema().min(5, 'Title is too short');
+   */
   min(value: number, message: string = "String is too short"): this {
     return this.minLength(value, message);
   }
@@ -229,6 +238,15 @@ export class StringSchema<D extends SchemaDef = SchemaDef> extends SchemaType<
     return this;
   }
 
+  /**
+   * Alias for maxLength to set the maximum allowed length for the string value.
+   * @param {number} value - The maximum number of characters allowed
+   * @param {string} [message="String is too long"] - Custom error message when validation fails
+   * @returns {this} The schema instance for method chaining
+   * @example
+   * // Comment field with 200 character limit
+   * const commentSchema = new StringSchema().max(200, 'Comment is too long');
+   */
   max(value: number, message: string = "String is too long"): this {
     return this.maxLength(value, message);
   }
