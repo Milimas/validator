@@ -34,6 +34,18 @@ export type SchemaTypeAny = SchemaType<any, any, any>;
 export type TypeOf<T extends SchemaTypeAny> = T["_output"];
 
 /**
+ * Prettifies a type by recursively flattening intersections and simplifying the display.
+ * @internal
+ */
+type Prettify<T> = T extends infer U
+  ? U extends object
+    ? U extends any[]
+      ? U
+      : { [K in keyof U]: Prettify<U[K]> }
+    : U
+  : never;
+
+/**
  * Alias for TypeOf - extracts the inferred output type from a schema.
  *
  * Provides an alternative, more semantic name for TypeOf. Use this when you want
@@ -46,7 +58,7 @@ export type TypeOf<T extends SchemaTypeAny> = T["_output"];
  * const productSchema = object({ id: number(), name: string() });
  * type Product = Infer<typeof productSchema>;
  */
-export type Infer<T extends SchemaTypeAny> = TypeOf<T>;
+export type Infer<T extends SchemaTypeAny> = Prettify<TypeOf<T>>;
 
 /**
  * Extracts the inferred output type from an object schema with proper optional property handling.
@@ -423,6 +435,69 @@ export type HtmlContainerAttributes<R = Record<string, any>, I = any> =
   | HtmlArrayType<I>;
 
 /**
+ * HTML attributes for union types.
+ *
+ * Represents a union of multiple possible input types. Used when a field can
+ * accept different types of values, each with its own HTML representation.
+ *
+ * @example
+ * const unionAttrs: UnionAttributes = {
+ *   type: 'union',
+ *   required: true,
+ *   anyOf: [{ type: 'text', required: true }, { type: 'number', required: true }]
+ * };
+ */
+export type UnionAttributes<T extends readonly any[] = readonly any[]> = {
+  type: "union";
+  anyOf?: T;
+  defaultValue?: never;
+  required: boolean;
+};
+
+/**
+ * HTML attributes for inputs that can accept any value type.
+ *
+ * Used for fields where the value type is not constrained, allowing any input.
+ * Typically represents a free-form text input without specific validation rules.
+ *
+ * @property {"any"} type - The input type (always "any")
+ * @property {any} [defaultValue] - Default value for the input
+ */
+export type HtmlAnyAttributes = {
+  type: "any";
+  defaultValue?: any;
+} & HtmlGenericInputAttributes;
+
+/**
+ * HTML attributes for inputs that should never accept any value.
+ *
+ * Represents fields that are intentionally invalid or disabled, ensuring
+ * that no value can be provided. Used for schema definitions that are not
+ * meant to be instantiated.
+ *
+ * @property {"never"} type - The input type (always "never")
+ */
+export type HtmlNeverAttributes = {
+  type: "never";
+  defaultValue?: never;
+} & HtmlGenericInputAttributes;
+
+/**
+ * HTML attributes for inputs with unknown or dynamic value types.
+ *
+ * Used for fields where the value type cannot be determined at design time,
+ * allowing for maximum flexibility. Typically represents a generic input
+ * without specific type constraints.
+ *
+ * @property {"unknown"} type - The input type (always "unknown")
+ * @property {unknown} [defaultValue] - Default value for the input
+ */
+export type HtmlUnknownAttributes = {
+  type: "unknown";
+  defaultValue?: unknown;
+} & HtmlGenericInputAttributes;
+
+/**
  * Union of all possible HTML form input attribute types with data attribute support.
  *
  * Comprehensive type that encompasses all HTML input types (string, number, checkbox,
@@ -456,4 +531,8 @@ export type HTMLAttributes = (
   | HtmlFileInputAttributes
   | HtmlContainerAttributes
   | HtmlSelectAttributes
+  | UnionAttributes
+  | HtmlAnyAttributes
+  | HtmlNeverAttributes
+  | HtmlUnknownAttributes
 ) & { [k in `data-${string}`]?: unknown };

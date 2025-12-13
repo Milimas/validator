@@ -18,15 +18,15 @@ export class UnionSchema<
   Schemas extends readonly SchemaTypeAny[],
   D extends SchemaDef = SchemaDef
 > extends SchemaType<TypeOf<Schemas[number]>, D> {
-  public htmlAttributes: UnionAttributes<Schemas>;
+  public htmlAttributes: UnionAttributes;
 
   constructor(private readonly schemas: Schemas, def: D) {
     super(def);
     this.htmlAttributes = {
       type: "union",
       required: true,
-      options: schemas,
-    } as UnionAttributes<Schemas>;
+      anyOf: schemas.map((s) => s.htmlAttributes),
+    };
   }
 
   validate(data: unknown): e.ValidationResult<TypeOf<Schemas[number]>> {
@@ -54,5 +54,13 @@ export class UnionSchema<
     }
 
     return e.ValidationResult.fail(collected);
+  }
+
+  toJSON() {
+    return {
+      type: "union" as const,
+      required: this.htmlAttributes.required,
+      anyOf: this.schemas.map((s) => s.toJSON()),
+    };
   }
 }

@@ -14,10 +14,12 @@ describe("UnionSchema (array-based)", () => {
     expect(() => schema.parse({} as any)).toThrow();
   });
 
-  it("exposes json htmlAttributes", () => {
+  it("exposes union htmlAttributes with anyOf schemas", () => {
     const json = schema.toJSON();
-    expect(json.type).toBe("json");
+    expect(json.type).toBe("union");
     expect(json.required).toBe(true);
+    expect(json.anyOf).toBeDefined();
+    expect(json.anyOf?.length).toBe(3);
   });
 
   it("respects optional wrapper", () => {
