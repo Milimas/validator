@@ -241,21 +241,21 @@ describe("ArraySchema", () => {
 describe("Type inference", () => {
   it("should infer string type", () => {
     const schema = v.string();
-    type Inferred = v.Infer<typeof schema>;
+    type Inferred = v.infer<typeof schema>;
     const value: Inferred = "test";
     expect(value).toBe("test");
   });
 
   it("should infer object type", () => {
     const schema = v.object({ name: v.string(), age: v.number() });
-    type Inferred = v.Infer<typeof schema>;
+    type Inferred = v.infer<typeof schema>;
     const value: Inferred = { name: "John", age: 30 };
     expect(value).toEqual({ name: "John", age: 30 });
   });
 
   it("should infer array type", () => {
     const schema = v.array(v.string());
-    type Inferred = v.Infer<typeof schema>;
+    type Inferred = v.infer<typeof schema>;
     const value: Inferred = ["a", "b"];
     expect(value).toEqual(["a", "b"]);
   });

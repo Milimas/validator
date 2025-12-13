@@ -10,7 +10,7 @@ import {
   uuid,
   url,
   password,
-  Infer,
+  infer as Infer,
 } from "../src/index.js";
 
 describe("Type Inference with Infer", () => {
