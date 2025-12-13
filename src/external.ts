@@ -3,6 +3,7 @@ import { BooleanSchema } from "./boolean/index.js";
 import { NumberSchema } from "./number/index.js";
 import { ObjectSchema } from "./object/index.js";
 import { EnumSchema } from "./enum/index.js";
+import { UnionSchema } from "./union/index.js";
 import {
   DateSchema,
   DatetimeLocalSchema,
@@ -520,6 +521,20 @@ export function array<T extends SchemaTypeAny>(itemSchema: T): ArraySchema<T> {
  */
 function _enum<const T extends readonly string[]>(values: T): EnumSchema<T> {
   return new EnumSchema(values);
+}
+
+/**
+ * Initializes a union schema that succeeds when any of the provided schemas validate the input.
+ *
+ * @example
+ * const schema = union([string(), number(), boolean()]);
+ * schema.parse("hello"); // "hello"
+ * schema.parse(42); // 42
+ */
+export function union<S extends readonly SchemaTypeAny[]>(
+  schemas: S
+): UnionSchema<S> {
+  return new UnionSchema(schemas, { description: "A union field" });
 }
 
 /**
