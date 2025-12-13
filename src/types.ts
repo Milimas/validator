@@ -180,7 +180,8 @@ export type HtmlStringInputType =
   | "date"
   | "datetime-local"
   | "color"
-  | "tel";
+  | "tel"
+  | "json";
 
 /**
  * HTML attributes for string-based input elements with validation constraints.

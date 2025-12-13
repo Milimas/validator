@@ -12,6 +12,7 @@ import {
   HTMLSchema,
   IPAddressSchema,
   ISODateSchema,
+  JSONSchema,
   MacAddressSchema,
   PasswordSchema,
   PhoneNumberSchema,
@@ -221,6 +222,25 @@ export function zipCode(): ZipCodeSchema {
 export function xml(): XMLSchema {
   return new XMLSchema({
     description: "An XML field",
+  });
+}
+
+/**
+ * Initializes a JSON schema for JSON string validation.
+ *
+ * Creates a specialized string schema that validates well-formed JSON strings.
+ * Automatically parses the string to ensure it contains valid JSON. Useful for
+ * form fields that accept JSON data, configuration objects, or nested data structures.
+ *
+ * @returns {JSONSchema} A new JSONSchema instance with JSON format validation
+ *
+ * @example
+ * const jsonSchema = json();
+ * const result = jsonSchema.safeParse('{"name":"John","age":30}');
+ */
+export function json(): JSONSchema {
+  return new JSONSchema({
+    description: "A JSON field",
   });
 }
 

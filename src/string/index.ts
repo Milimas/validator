@@ -952,3 +952,65 @@ export class EmailSchema extends StringSchema {
     required: true,
   };
 }
+
+/**
+ * JSON string validation schema with strict JSON format validation.
+ *
+ * Validates that input is a valid JSON string. Automatically parses the string
+ * to ensure it contains well-formed JSON. Useful for form fields that accept
+ * JSON data, configuration objects, or nested data structures.
+ *
+ * @example
+ * // Basic JSON validation
+ * const jsonSchema = new JSONSchema();
+ * const result = jsonSchema.safeParse('{"name":"John","age":30}');
+ *
+ * @example
+ * // With additional constraints
+ * const configSchema = new JSONSchema()
+ *   .maxLength(5000)
+ *   .required(true, 'JSON configuration is required');
+ */
+export class JSONSchema extends StringSchema {
+  public htmlAttributes: HtmlStringAttributes = {
+    type: "json",
+    placeholder: '{"key":"value"}',
+    title: "JSON must be valid JSON format",
+    required: true,
+  };
+
+  /**
+   * Validates that the input is a string containing valid JSON.
+   *
+   * First validates using the parent StringSchema validation, then attempts
+   * to parse the string as JSON to ensure it's well-formed.
+   *
+   * @param {unknown} data - The data to validate
+   * @returns {e.ValidationResult<string>} Validation result with JSON parse validation
+   */
+  validate(data: unknown): e.ValidationResult<string> {
+    // First validate as string
+    const stringResult = super.validate(data);
+    if (!stringResult.success) {
+      return stringResult;
+    }
+
+    // Then validate as valid JSON
+    try {
+      JSON.parse(stringResult.data as string);
+      return stringResult;
+    } catch (error) {
+      const errors = [
+        new ValidationError(
+          [],
+          this.errorMap.get("pattern") || "Invalid JSON format",
+          "invalid_json",
+          "valid JSON",
+          stringResult.data,
+          stringResult.data
+        ),
+      ];
+      return e.ValidationResult.fail<string>(errors);
+    }
+  }
+}

@@ -145,6 +145,31 @@ import { enum as enumSchema } from 'validator';
 const schema = enumSchema(['active', 'inactive', 'pending'] as const);
 ```
 
+### JSON Validation
+
+```typescript
+import { json } from 'validator';
+
+const schema = json()
+  .minLength(5)
+  .maxLength(5000)
+  .pattern(/^\{.*\}$/) // Must be a JSON object
+  .placeholder('{"key":"value"}')
+  .required();
+
+// Parse valid JSON strings
+const result = schema.parse('{"status":"ok"}'); // Returns: '{"status":"ok"}'
+
+// Automatically validates JSON format
+schema.parse('{invalid}'); // Throws: Invalid JSON format
+
+// Use with safeParse for non-throwing validation
+const result = schema.safeParse('{"name":"John","age":30}');
+if (result.success) {
+  console.log(result.data); // '{"name":"John","age":30}'
+}
+```
+
 ## Schema Methods
 
 ### Common Methods
@@ -184,6 +209,7 @@ const schema = enumSchema(['active', 'inactive', 'pending'] as const);
 - `ipAddress()` - IP address validation
 - `macAddress()` - MAC address validation
 - `isoDate()` - ISO 8601 date validation
+- `json()` - JSON string validation
 
 ### Number-Specific Methods
 
@@ -220,6 +246,7 @@ Error codes include:
 - `max` - Number too large
 - `invalid_email` - Invalid email format
 - `invalid_url` - Invalid URL format
+- `invalid_json` - Invalid JSON format
 
 ## Form Integration
 
@@ -239,6 +266,46 @@ const htmlAttrs = schema.toJSON();
 ```
 
 ## Advanced Usage
+
+### JSON Validation
+
+Validate and parse JSON strings with full support for length constraints and pattern matching:
+
+```typescript
+import { json } from 'validator';
+
+// Basic JSON validation
+const configSchema = json();
+configSchema.parse('{"theme":"dark","fontSize":14}'); // Valid
+configSchema.parse('{invalid}'); // Throws: Invalid JSON format
+
+// JSON with constraints
+const apiResponseSchema = json()
+  .minLength(10)
+  .maxLength(100000)
+  .required(true, 'API response is required');
+
+// JSON structure validation using patterns
+const objectOnlySchema = json()
+  .pattern(/^\{.*\}$/, 'Must be a JSON object');
+
+const arrayOnlySchema = json()
+  .pattern(/^\[.*\]$/, 'Must be a JSON array');
+
+// Use in complex forms
+const formSchema = object({
+  name: string().minLength(2),
+  config: json()
+    .minLength(5)
+    .maxLength(5000)
+    .placeholder('{"setting":"value"}'),
+  data: json().optional().default('{}'),
+});
+
+// Type inference
+type FormData = Infer<typeof formSchema>;
+// FormData: { name: string; config: string; data: string }
+```
 
 ### Conditional Validation
 
