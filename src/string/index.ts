@@ -998,6 +998,7 @@ export class JSONSchema extends StringSchema {
     // Then validate as valid JSON
     try {
       JSON.parse(stringResult.data as string);
+      super.validate(stringResult.data);
       return stringResult;
     } catch (error) {
       const errors = [
