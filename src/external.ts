@@ -505,5 +505,6 @@ function toJSONSchema<R extends HTMLAttributes>(schema: SchemaTypeAny): R {
   return schema.toJSON() as R;
 }
 
+export type { SchemaTypeAny };
 export { toJSONSchema };
 export { _enum as enum };
