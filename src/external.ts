@@ -27,7 +27,7 @@ import { ObjectShape, SchemaTypeAny } from "./types.js";
 
 // export * from "./types";
 
-export { Infer } from "./types";
+export { Infer as infer } from "./types";
 
 ////////////////////////////
 ////        String      ////
