@@ -1,5 +1,11 @@
-import { e } from "./error.js";
-import { SchemaDef, HTMLAttributes, Condition } from "./types.js";
+import { e, ValidationError } from "./error.js";
+import v from "./index.js";
+import {
+  SchemaDef,
+  HTMLAttributes,
+  Condition,
+  SchemaTypeAny,
+} from "./types.js";
 
 /**
  * Abstract base class for all schema types in the validation system.

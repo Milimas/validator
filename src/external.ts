@@ -23,7 +23,7 @@ import {
   XMLSchema,
   ZipCodeSchema,
 } from "./string/index.js";
-import { ObjectShape, SchemaTypeAny } from "./types.js";
+import { HTMLAttributes, ObjectShape, SchemaTypeAny } from "./types.js";
 
 // export * from "./types";
 
@@ -501,4 +501,9 @@ function _enum<const T extends readonly string[]>(values: T): EnumSchema<T> {
   return new EnumSchema(values);
 }
 
+function toJSONSchema<R extends HTMLAttributes>(schema: SchemaTypeAny): R {
+  return schema.toJSON() as R;
+}
+
+export { toJSONSchema };
 export { _enum as enum };
