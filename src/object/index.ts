@@ -146,6 +146,20 @@ export class ObjectSchema<
 
     const result: ObjectInfer<Shape> = {} as ObjectInfer<Shape>;
 
+    for (const key in data) {
+      if (!(key in this.shape)) {
+        errors.push(
+          new ValidationError(
+            [key],
+            "Unexpected property",
+            "unexpected_property",
+            "object",
+            "object",
+            data
+          )
+        );
+      }
+    }
     for (const key in this.shape) {
       const schema = this.shape[key];
       const value = (data as any)[key];

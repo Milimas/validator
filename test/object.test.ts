@@ -40,6 +40,38 @@ describe("ObjectSchema", () => {
       expect(() => schema.parse([])).toThrow();
     });
 
+    it("should validate required properties", () => {
+      const schema = object({
+        name: string().required(),
+        age: number().required(),
+      });
+
+      expect(() =>
+        schema.parse({
+          name: "John",
+        })
+      ).toThrow();
+
+      expect(() =>
+        schema.parse({
+          age: 30,
+        })
+      ).toThrow();
+    });
+
+    it("should throw when extra properties are present", () => {
+      const schema = object({
+        name: string(),
+      });
+
+      expect(() =>
+        schema.parse({
+          name: "John",
+          extra: "not allowed",
+        })
+      ).toThrow();
+    });
+
     it("should parse multiple nested objects", () => {
       const fileAttachmentSchema = object({
         "@odata.type": string()
