@@ -29,7 +29,7 @@ Validator supports multiple import patterns:
 
 ```typescript
 // Named imports (recommended for tree-shaking)
-import { string, email, number, object, array } from 'validator';
+import { string, email, number, object, array, union, any, never, unknown } from 'validator';
 
 // Default import (namespace-like)
 import validator from 'validator';
@@ -200,16 +200,61 @@ if (result.success) {
 - `url()` - URL validation
 - `password()` - Password field schema
 - `date()` - Date input schema
-- `datetimeLocal()` - Datetime-local input schema
+- `datetime()` - Datetime-local input schema
 - `uuid()` - UUID validation
 - `guid()` - GUID validation
 - `phoneNumber()` - Phone number validation
 - `zipCode()` - ZIP code validation
 - `hexColor()` - Hex color code validation
-- `ipAddress()` - IP address validation
+- `ip(version)` - IP address validation (`"IPV4" | "IPV6"`)
+### Union Validation
+
+```typescript
+import { union, string, number, boolean } from 'validator';
+
+// Union schema succeeds if any branch validates the input
+const schema = union([string(), number(), boolean()] as const);
+
+schema.parse('hello'); // 'hello'
+schema.parse(42); // 42
+schema.parse(true); // true
+
+// HTML attributes for front-end form rendering
+const html = schema.toJSON();
+// { type: 'union', required: true, anyOf: [ { type: 'text', ... }, { type: 'number', ... }, { type: 'checkbox', ... } ] }
+
+// Type inference
+type Value = Infer<typeof schema>; // string | number | boolean
+```
+
 - `macAddress()` - MAC address validation
 - `isoDate()` - ISO 8601 date validation
 - `json()` - JSON string validation
+
+### Any / Never / Unknown
+
+```typescript
+import { any, never, unknown } from 'validator';
+
+// any(): accepts any value without validation
+const anySchema = any();
+anySchema.parse(123); // 123
+anySchema.parse('hello'); // 'hello'
+anySchema.parse({ x: 1 }); // { x: 1 }
+
+// never(): rejects all values
+const neverSchema = never();
+// neverSchema.parse('anything'); // throws ValidationAggregateError
+
+// unknown(): accepts any value, typed as unknown
+const unknownSchema = unknown();
+const value = unknownSchema.parse({ a: 1 }); // type: unknown
+
+// HTML attributes
+anySchema.toJSON(); // { type: 'any', required: true }
+neverSchema.toJSON(); // { type: 'never', required: true }
+unknownSchema.toJSON(); // { type: 'unknown', required: true }
+```
 
 ### Number-Specific Methods
 
