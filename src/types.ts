@@ -77,15 +77,18 @@ export type Infer<T extends SchemaTypeAny> = Prettify<TypeOf<T>>;
  * type Result = ObjectInfer<typeof schema.shape>;
  * // Result is { name: string; nickname?: string | undefined }
  */
-export type ObjectInfer<Shape extends { [key: string]: SchemaTypeAny }> = Prettify<{
-  [K in keyof Shape as undefined extends TypeOf<Shape[K]> ? K : never]?: TypeOf<
-    Shape[K]
+export type ObjectInfer<Shape extends { [key: string]: SchemaTypeAny }> =
+  Prettify<
+    {
+      [K in keyof Shape as undefined extends TypeOf<Shape[K]>
+        ? K
+        : never]?: TypeOf<Shape[K]>;
+    } & {
+      [K in keyof Shape as undefined extends TypeOf<Shape[K]>
+        ? never
+        : K]-?: TypeOf<Shape[K]>;
+    }
   >;
-} & {
-  [K in keyof Shape as undefined extends TypeOf<Shape[K]>
-    ? never
-    : K]-?: TypeOf<Shape[K]>;
-}>;
 
 /**
  * Defines the shape of an object schema as a mapping of property names to schemas.
