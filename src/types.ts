@@ -545,4 +545,8 @@ export type HTMLAttributes = (
   | HtmlAnyAttributes
   | HtmlNeverAttributes
   | HtmlUnknownAttributes
-) & { [k in `data-${string}`]?: unknown };
+) & {
+  metadata?: Record<string, unknown>;
+} & {
+  [k in `data-${string}`]?: unknown;
+};

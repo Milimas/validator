@@ -271,8 +271,8 @@ export abstract class SchemaType<Output = any, Input = Output> {
    * const schema = string().metadata({ 'data-info': 'extra' });
    * // schema.htmlAttributes will include 'data-info': 'extra'
    */
-  metadata(metadata: Record<`data-${string}`, string>): this {
-    this.htmlAttributes = { ...this.htmlAttributes, ...metadata };
+  metadata(metadata: Record<string, unknown>): this {
+    this.htmlAttributes = { ...this.htmlAttributes, metadata };
     return this;
   }
 }
