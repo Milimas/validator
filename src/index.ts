@@ -11,7 +11,7 @@ export { v };
 
 // Named exports for tree-shaking and direct access to individual schema factories.
 export * from "./external.js";
-export type { ValidationAggregateError, ValidationError } from "./error.js";
+export { ValidationAggregateError, ValidationError } from "./error.js";
 
 // Default export exposes the namespace for ergonomic usage.
 export default v;
