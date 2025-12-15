@@ -86,7 +86,11 @@ export class NumberSchema extends SchemaType<number> {
       return e.ValidationResult.fail<number>(errors);
     }
 
-    if (data < (this.htmlAttributes.min ?? -Infinity)) {
+    if (
+      (this.htmlAttributes.min !== undefined &&
+        data < this.htmlAttributes.min) ||
+      data <= -Infinity
+    ) {
       errors.push(
         new ValidationError(
           [],
@@ -100,7 +104,11 @@ export class NumberSchema extends SchemaType<number> {
       );
     }
 
-    if (data > (this.htmlAttributes.max ?? Infinity)) {
+    if (
+      (this.htmlAttributes.max !== undefined &&
+        data > this.htmlAttributes.max) ||
+      data >= Infinity
+    ) {
       errors.push(
         new ValidationError(
           [],
@@ -178,6 +186,31 @@ export class NumberSchema extends SchemaType<number> {
   ): this {
     this.errorMap.set("max", message);
     this.htmlAttributes = { ...this.htmlAttributes, max: value };
+    return this;
+  }
+
+  int(): this {
+    this.errorMap.set("int", "Number must be an integer");
+    const originalValidate = this.validate.bind(this);
+    this.validate = (data: unknown): e.ValidationResult<number> => {
+      const result = originalValidate(data);
+      if (!result.success) {
+        return result;
+      }
+      if (!Number.isInteger(result.data)) {
+        return e.ValidationResult.fail<number>([
+          new ValidationError(
+            [],
+            this.errorMap.get("int") || "Number must be an integer",
+            "not_integer",
+            "number",
+            "number",
+            result.data
+          ),
+        ]);
+      }
+      return result;
+    };
     return this;
   }
 }
