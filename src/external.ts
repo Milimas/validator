@@ -51,9 +51,7 @@ export { Infer as infer } from "./types";
  * const result = schema.safeParse('hello');
  */
 export function string(): StringSchema {
-  return new StringSchema({
-    description: "A string field",
-  });
+  return new StringSchema();
 }
 
 /**
@@ -70,9 +68,7 @@ export function string(): StringSchema {
  * const result = emailSchema.safeParse('user@example.com');
  */
 export function email(): EmailSchema {
-  return new EmailSchema({
-    description: "An email field",
-  });
+  return new EmailSchema();
 }
 
 /**
@@ -89,9 +85,7 @@ export function email(): EmailSchema {
  * const result = urlSchema.safeParse('https://example.com');
  */
 export function url(): UrlSchema {
-  return new UrlSchema({
-    description: "A URL field",
-  });
+  return new UrlSchema();
 }
 
 /**
@@ -108,9 +102,7 @@ export function url(): UrlSchema {
  * const result = dateSchema.safeParse('2024-12-25');
  */
 export function date(): DateSchema {
-  return new DateSchema({
-    description: "A date field",
-  });
+  return new DateSchema();
 }
 
 /**
@@ -127,9 +119,7 @@ export function date(): DateSchema {
  * const result = datetimeSchema.safeParse('2024-12-25T14:30:00');
  */
 export function datetime(): DatetimeLocalSchema {
-  return new DatetimeLocalSchema({
-    description: "A datetime-local field",
-  });
+  return new DatetimeLocalSchema();
 }
 
 /**
@@ -146,9 +136,7 @@ export function datetime(): DatetimeLocalSchema {
  * const result = passwordSchema.safeParse('SecurePass123');
  */
 export function password(): PasswordSchema {
-  return new PasswordSchema({
-    description: "A password field",
-  });
+  return new PasswordSchema();
 }
 
 /**
@@ -165,9 +153,7 @@ export function password(): PasswordSchema {
  * const result = colorSchema.safeParse('#FF5733');
  */
 export function hexColor(): HexColorSchema {
-  return new HexColorSchema({
-    description: "A hex color field",
-  });
+  return new HexColorSchema();
 }
 
 /**
@@ -184,9 +170,7 @@ export function hexColor(): HexColorSchema {
  * const result = isoSchema.safeParse('2024-12-25T14:30:00Z');
  */
 export function isoDate(): ISODateSchema {
-  return new ISODateSchema({
-    description: "An ISO date field",
-  });
+  return new ISODateSchema();
 }
 
 /**
@@ -203,9 +187,7 @@ export function isoDate(): ISODateSchema {
  * const result = zipSchema.safeParse('12345');
  */
 export function zipCode(): ZipCodeSchema {
-  return new ZipCodeSchema({
-    description: "A zip code field",
-  });
+  return new ZipCodeSchema();
 }
 
 /**
@@ -222,9 +204,7 @@ export function zipCode(): ZipCodeSchema {
  * const result = xmlSchema.safeParse('<root><item>data</item></root>');
  */
 export function xml(): XMLSchema {
-  return new XMLSchema({
-    description: "An XML field",
-  });
+  return new XMLSchema();
 }
 
 /**
@@ -241,9 +221,7 @@ export function xml(): XMLSchema {
  * const result = jsonSchema.safeParse('{"name":"John","age":30}');
  */
 export function json(): JSONSchema {
-  return new JSONSchema({
-    description: "A JSON field",
-  });
+  return new JSONSchema();
 }
 
 /**
@@ -260,9 +238,7 @@ export function json(): JSONSchema {
  * const result = uuidSchema.safeParse('550e8400-e29b-41d4-a716-446655440000');
  */
 export function uuid(): UUIDSchema {
-  return new UUIDSchema({
-    description: "A UUID field",
-  });
+  return new UUIDSchema();
 }
 
 /**
@@ -279,9 +255,7 @@ export function uuid(): UUIDSchema {
  * const result = addressSchema.safeParse('123 Main Street');
  */
 export function streetAddress(): StreetAddressSchema {
-  return new StreetAddressSchema({
-    description: "A street address field",
-  });
+  return new StreetAddressSchema();
 }
 
 /**
@@ -298,9 +272,7 @@ export function streetAddress(): StreetAddressSchema {
  * const result = phoneSchema.safeParse('+1-555-123-4567');
  */
 export function phoneNumber(): PhoneNumberSchema {
-  return new PhoneNumberSchema({
-    description: "A phone number field",
-  });
+  return new PhoneNumberSchema();
 }
 
 /**
@@ -317,9 +289,7 @@ export function phoneNumber(): PhoneNumberSchema {
  * const result = numberStrSchema.safeParse('12345');
  */
 export function stringNumber(): StringNumberSchema {
-  return new StringNumberSchema({
-    description: "A string number field",
-  });
+  return new StringNumberSchema();
 }
 
 /**
@@ -336,9 +306,7 @@ export function stringNumber(): StringNumberSchema {
  * const result = macSchema.safeParse('00:1A:2B:3C:4D:5E');
  */
 export function macAddress(): MacAddressSchema {
-  return new MacAddressSchema({
-    description: "A MAC address field",
-  });
+  return new MacAddressSchema();
 }
 
 /**
@@ -359,9 +327,7 @@ export function macAddress(): MacAddressSchema {
  * const result2 = ipv6Schema.safeParse('2001:0db8:85a3::8a2e:0370:7334');
  */
 export function ip(version: "IPV4" | "IPV6"): IPAddressSchema {
-  return new IPAddressSchema(version, {
-    description: `An IP address field for version ${version}`,
-  });
+  return new IPAddressSchema(version);
 }
 
 /**
@@ -378,9 +344,7 @@ export function ip(version: "IPV4" | "IPV6"): IPAddressSchema {
  * const result = htmlSchema.safeParse('<div><p>Hello</p></div>');
  */
 export function html(): HTMLSchema {
-  return new HTMLSchema({
-    description: "An HTML field",
-  });
+  return new HTMLSchema();
 }
 
 /**
@@ -397,9 +361,7 @@ export function html(): HTMLSchema {
  * const result = guidSchema.safeParse('{550e8400-e29b-41d4-a716-446655440000}');
  */
 export function guid(): GUIDSchema {
-  return new GUIDSchema({
-    description: "A GUID field",
-  });
+  return new GUIDSchema();
 }
 
 ////////////////////////////
@@ -420,7 +382,7 @@ export function guid(): GUIDSchema {
  * const result = schema.safeParse(50);
  */
 export function number(): NumberSchema {
-  return new NumberSchema({});
+  return new NumberSchema();
 }
 
 ////////////////////////////
@@ -441,7 +403,7 @@ export function number(): NumberSchema {
  * const result = schema.safeParse(true);
  */
 export function boolean(): BooleanSchema {
-  return new BooleanSchema({});
+  return new BooleanSchema();
 }
 
 ////////////////////////////
@@ -518,9 +480,7 @@ export function array<T extends SchemaTypeAny>(itemSchema: T): ArraySchema<T> {
  * const result3 = anySchema.safeParse({ key: 'value' }); // Accepts object
  */
 export function any(): AnySchema {
-  return new AnySchema({
-    description: "An any type field",
-  });
+  return new AnySchema();
 }
 
 ////////////////////////////
@@ -541,9 +501,7 @@ export function any(): AnySchema {
  * const result = neverSchema.safeParse('any value'); // Always fails
  */
 export function never(): NeverSchema {
-  return new NeverSchema({
-    description: "A never type field",
-  });
+  return new NeverSchema();
 }
 
 ////////////////////////////
@@ -566,9 +524,7 @@ export function never(): NeverSchema {
  * const result3 = unknownSchema.safeParse({ key: 'value' }); // Accepts object
  */
 export function unknown(): UnknownSchema {
-  return new UnknownSchema({
-    description: "An unknown type field",
-  });
+  return new UnknownSchema();
 }
 
 ////////////////////////////
@@ -608,7 +564,7 @@ function _enum<const T extends readonly string[]>(values: T): EnumSchema<T> {
 // export
 const union = <S extends readonly SchemaTypeAny[]>(
   schemas: S
-): UnionSchema<S> => new UnionSchema(schemas, { description: "A union field" });
+): UnionSchema<S> => new UnionSchema(schemas);
 
 ////////////////////////////
 ////       Record       ////
@@ -651,10 +607,12 @@ const union = <S extends readonly SchemaTypeAny[]>(
 export function record<TValue extends SchemaTypeAny>(
   valueSchema: TValue
 ): RecordSchema<TValue>;
+
 export function record<
   TKey extends SchemaType<String>,
   TValue extends SchemaTypeAny
 >(keySchema: TKey, valueSchema: TValue): RecordSchema<TValue, TKey>;
+
 export function record<
   TKey extends SchemaType<String>,
   TValue extends SchemaTypeAny
@@ -663,14 +621,10 @@ export function record<
   valueSchemaMaybe?: TValue
 ): RecordSchema<TValue, SchemaTypeAny> {
   if (valueSchemaMaybe === undefined) {
-    return new RecordSchema(keySchemaOrValue as TValue, undefined, {
-      description: "A record field",
-    });
+    return new RecordSchema(keySchemaOrValue as TValue);
   }
 
-  return new RecordSchema(valueSchemaMaybe, keySchemaOrValue as TKey, {
-    description: "A record field",
-  });
+  return new RecordSchema(valueSchemaMaybe, keySchemaOrValue as TKey);
 }
 
 /**

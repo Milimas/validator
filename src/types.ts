@@ -12,7 +12,7 @@ import { SchemaType } from "./schema.js";
  *   return schemas.map((schema, i) => schema.safeParse(data[i]));
  * }
  */
-export type SchemaTypeAny = SchemaType<any, any, any>;
+export type SchemaTypeAny = SchemaType<any, any>;
 
 /**
  * Extracts the output type from a schema type.
@@ -106,23 +106,6 @@ export type ObjectInfer<Shape extends { [key: string]: SchemaTypeAny }> =
  * const userSchema = object(userShape);
  */
 export type ObjectShape = { [key: string]: SchemaTypeAny };
-
-/**
- * Configuration options for schema definitions.
- *
- * Base configuration that can be extended by specific schema types. Currently supports
- * an optional description field for documenting the schema's purpose and validation rules.
- *
- * @property {string} [description] - Optional human-readable description of what the schema validates
- *
- * @example
- * const def: SchemaDef = {
- *   description: "User email address field with RFC 5322 validation"
- * };
- */
-export type SchemaDef = {
-  description?: string;
-};
 
 /**
  * Defines a conditional validation rule based on another field's value.

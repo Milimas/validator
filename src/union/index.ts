@@ -1,27 +1,48 @@
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
-import {
-  HTMLAttributes,
-  SchemaDef,
-  SchemaTypeAny,
-  TypeOf,
-  UnionAttributes,
-} from "../types.js";
+import { SchemaTypeAny, TypeOf, UnionAttributes } from "../types.js";
 
 /**
- * Union schema that succeeds when at least one of the provided schemas validates the input.
+ * Union schema for validating data against multiple possible schemas.
  *
- * Mirrors zod's union behavior: input is parsed against each schema in order until one
- * succeeds; otherwise, all collected validation errors are returned.
+ * UnionSchema allows data to be validated against a set of different schemas,
+ * passing validation if it conforms to at least one of them. This is useful for
+ * scenarios where input data can take multiple valid forms or types.
+ *
+ * Key features:
+ * - Flexible validation against multiple schema types
+ * - Comprehensive error reporting from all attempted schemas
+ * - TypeScript type inference for union types
+ * - Automatic HTML form attribute generation from constituent schemas
+ *
+ * @template Schemas - A tuple of SchemaType instances representing the possible valid schemas
+ *
+ * @example
+ * // Union of string and number schemas
+ * const schema = new UnionSchema([new StringSchema().minLength(3), new NumberSchema().min(0)]);
+ *
+ * const result1 = schema.validate('hello');
+ * if (result1.success) {
+ *   console.log(result1.data); // 'hello'
+ * }
+ *
+ * const result2 = schema.validate(42);
+ * if (result2.success) {
+ *   console.log(result2.data); // 42
+ * }
+ *
+ * const result3 = schema.validate(true);
+ * if (!result3.success) {
+ *   console.log(result3.errors); // Detailed errors from both StringSchema and NumberSchema
+ * }
  */
 export class UnionSchema<
-  Schemas extends readonly SchemaTypeAny[],
-  D extends SchemaDef = SchemaDef
-> extends SchemaType<TypeOf<Schemas[number]>, D> {
+  Schemas extends readonly SchemaTypeAny[]
+> extends SchemaType<TypeOf<Schemas[number]>> {
   public htmlAttributes: UnionAttributes;
 
-  constructor(private readonly schemas: Schemas, def: D) {
-    super(def);
+  constructor(private readonly schemas: Schemas) {
+    super();
     this.htmlAttributes = {
       type: "union",
       required: true,

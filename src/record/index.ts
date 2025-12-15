@@ -1,6 +1,6 @@
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
-import { HTMLAttributes, SchemaTypeAny, SchemaDef, TypeOf } from "../types.js";
+import { HTMLAttributes, SchemaTypeAny, TypeOf } from "../types.js";
 
 /**
  * Record schema for validating objects with dynamic string keys and uniform value types.
@@ -22,9 +22,8 @@ import { HTMLAttributes, SchemaTypeAny, SchemaDef, TypeOf } from "../types.js";
  */
 export class RecordSchema<
   TValue extends SchemaTypeAny,
-  TKey extends SchemaTypeAny = SchemaType<string>,
-  D extends SchemaDef = SchemaDef
-> extends SchemaType<Record<string, TypeOf<TValue>>, D> {
+  TKey extends SchemaTypeAny = SchemaType<string>
+> extends SchemaType<Record<string, TypeOf<TValue>>> {
   public htmlAttributes: {
     type: "record";
     keySchema: HTMLAttributes;
@@ -51,10 +50,9 @@ export class RecordSchema<
         }
         return e.ValidationResult.ok(data);
       }
-    })({}) as TKey,
-    def: D
+    })() as TKey
   ) {
-    super(def);
+    super();
     this.htmlAttributes = {
       type: "record",
       keySchema: keySchema.toJSON(),

@@ -71,7 +71,7 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
    * const objectArray = new ArraySchema(new EmailSchema());
    */
   constructor(private itemSchema: T) {
-    super({});
+    super();
   }
 
   /**

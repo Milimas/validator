@@ -1,6 +1,6 @@
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
-import { HtmlStringAttributes, SchemaDef } from "../types.js";
+import { HtmlStringAttributes } from "../types.js";
 
 /**
  * Generic string validation schema for flexible text input validation.
@@ -9,8 +9,6 @@ import { HtmlStringAttributes, SchemaDef } from "../types.js";
  * pattern matching, and custom error messages. Easily extensible with additional
  * validation rules and HTML form attributes. This is the foundation for all
  * specialized string-based schemas like email, URL, and phone number validation.
- *
- * @template D - The schema definition type extending SchemaDef
  *
  * @example
  * // Basic string validation
@@ -23,10 +21,7 @@ import { HtmlStringAttributes, SchemaDef } from "../types.js";
  *   .pattern(/^[A-Za-z]+$/, 'Name must contain only letters')
  *   .minLength(2);
  */
-export class StringSchema<D extends SchemaDef = SchemaDef> extends SchemaType<
-  string,
-  D
-> {
+export class StringSchema extends SchemaType<string> {
   public htmlAttributes: HtmlStringAttributes = {
     type: "text",
     defaultValue: undefined,
@@ -688,7 +683,6 @@ export class MacAddressSchema extends StringSchema {
  * and developers to enforce specific IP standards in their applications.
  *
  * @template V - The IP version to validate ("IPV4" or "IPV6")
- * @template D - The schema definition type
  *
  * IPv4 Format:
  * - Dotted decimal notation: 192.168.1.1
@@ -710,9 +704,8 @@ export class MacAddressSchema extends StringSchema {
  * const result2 = ipv6Schema.safeParse('2001:0db8:85a3::8a2e:0370:7334');
  */
 export class IPAddressSchema<
-  V extends "IPV4" | "IPV6" = "IPV4" | "IPV6",
-  D extends SchemaDef = SchemaDef
-> extends StringSchema<D> {
+  V extends "IPV4" | "IPV6" = "IPV4" | "IPV6"
+> extends StringSchema {
   private patterns: Record<V, RegExp> = {
     IPV4: /^(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
     IPV6: /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/,
@@ -730,14 +723,13 @@ export class IPAddressSchema<
    * pattern matching and user-friendly placeholder/title text based on the selected version.
    *
    * @param {V} version - The IP protocol version ("IPV4" or "IPV6") to validate against
-   * @param {D} def - The schema definition configuration
    *
    * @example
    * const ipv4 = new IPAddressSchema('IPV4', {});
    * const ipv6 = new IPAddressSchema('IPV6', {});
    */
-  constructor(private version: V, def: D) {
-    super(def);
+  constructor(private version: V) {
+    super();
     this.htmlAttributes.pattern = this.patterns[version];
     this.htmlAttributes.placeholder =
       version === "IPV4"

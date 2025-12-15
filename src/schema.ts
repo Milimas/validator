@@ -1,6 +1,5 @@
 import { e, ValidationError } from "./error.js";
 import {
-  SchemaDef,
   HTMLAttributes,
   Condition,
   HtmlAnyAttributes,
@@ -16,22 +15,17 @@ import {
  * object, etc.) extend this base class to inherit common validation methods and behaviors.
  *
  * @template Output - The TypeScript type produced after successful validation
- * @template Def - The schema definition type extending SchemaDef
  * @template Input - The TypeScript type accepted as input (defaults to Output)
  *
  * @example
- * class CustomSchema extends SchemaType<string, SchemaDef, unknown> {
+ * class CustomSchema extends SchemaType<string, unknown> {
  *   htmlAttributes = { type: 'text', required: true };
  *   validate(data: unknown) {
  *     // Custom validation logic
  *   }
  * }
  */
-export abstract class SchemaType<
-  Output = any,
-  Def extends SchemaDef = SchemaDef,
-  Input = Output
-> {
+export abstract class SchemaType<Output = any, Input = Output> {
   /**
    * HTML attributes for rendering the schema as a form input element.
    * Must be implemented by all concrete schema classes.
@@ -55,32 +49,6 @@ export abstract class SchemaType<
    * Not available at runtime - used only for compile-time type checking.
    */
   readonly _input!: Input;
-
-  /**
-   * The schema definition containing configuration and metadata.
-   */
-  readonly _def!: Def;
-
-  /**
-   * Constructs a new schema instance with the provided definition.
-   *
-   * @param def - The schema definition containing configuration options
-   */
-  constructor(def: Def) {
-    this._def = def;
-  }
-
-  /**
-   * Gets the optional description from the schema definition.
-   *
-   * Returns a human-readable description of what this schema validates,
-   * useful for generating documentation or form labels.
-   *
-   * @returns The schema description if defined, otherwise undefined
-   */
-  get description(): string | undefined {
-    return this._def.description;
-  }
 
   /**
    * Validates the provided data against this schema's rules.
@@ -308,11 +276,8 @@ export abstract class SchemaType<
  * optionalEmail.parse('user@example.com'); // Returns 'user@example.com'
  * optionalEmail.parse('invalid'); // Throws error
  */
-export class OptionalSchema<
-  T extends SchemaType<any, any, any>
-> extends SchemaType<
+export class OptionalSchema<T extends SchemaType<any, any>> extends SchemaType<
   T["_output"] | undefined,
-  T["_def"],
   T["_input"] | undefined
 > {
   /**
@@ -321,7 +286,7 @@ export class OptionalSchema<
    * @param inner - The schema to make optional
    */
   constructor(private inner: T) {
-    super(inner._def);
+    super();
     this.htmlAttributes = { ...inner.htmlAttributes, required: false };
   }
 
@@ -404,16 +369,17 @@ export class OptionalSchema<
  * nullableNumber.parse(42); // Returns 42
  * nullableNumber.parse('text'); // Throws error
  */
-export class NullableSchema<
-  T extends SchemaType<any, any, any>
-> extends SchemaType<T["_output"] | null, T["_def"], T["_input"] | null> {
+export class NullableSchema<T extends SchemaType<any, any>> extends SchemaType<
+  T["_output"] | null,
+  T["_input"] | null
+> {
   /**
    * Creates a new nullable schema wrapper.
    *
    * @param inner - The schema to make nullable
    */
   constructor(private inner: T) {
-    super(inner._def);
+    super();
     this.htmlAttributes = inner.htmlAttributes;
   }
 
@@ -480,9 +446,10 @@ export class NullableSchema<
  * nameSchema.parse(undefined); // Returns 'Anonymous'
  * nameSchema.parse('John'); // Returns 'John'
  */
-export class DefaultSchema<
-  T extends SchemaType<any, any, any>
-> extends SchemaType<T["_output"], T["_def"], T["_input"] | undefined> {
+export class DefaultSchema<T extends SchemaType<any, any>> extends SchemaType<
+  T["_output"],
+  T["_input"] | undefined
+> {
   /**
    * HTML attributes with defaultValue set.
    */
@@ -495,7 +462,7 @@ export class DefaultSchema<
    * @param defaultValue - The default value to use for undefined/null inputs
    */
   constructor(private inner: T, private defaultValue: T["_output"]) {
-    super(inner._def);
+    super();
     this.htmlAttributes = {
       ...(inner.htmlAttributes as any),
       defaultValue: defaultValue,
@@ -584,11 +551,8 @@ export class DefaultSchema<
  * );
  * // Tax ID is only required when accountType is 'business'
  */
-export class DependsOnSchema<
-  T extends SchemaType<any, any, any>
-> extends SchemaType<
+export class DependsOnSchema<T extends SchemaType<any, any>> extends SchemaType<
   T["_output"] | undefined,
-  T["_def"],
   T["_input"] | undefined
 > {
   /**
@@ -601,7 +565,7 @@ export class DependsOnSchema<
     private inner: T,
     public _dependsOn: [Condition, ...Condition[]]
   ) {
-    super(inner._def);
+    super();
     this.htmlAttributes = {
       ...inner.htmlAttributes,
       required: false,

@@ -50,7 +50,7 @@ import { HTMLAttributes, HtmlObjectType, ObjectInfer } from "../types.js";
  * });
  */
 export class ObjectSchema<
-  Shape extends { [key: string]: SchemaType<any, any, any> }
+  Shape extends { [key: string]: SchemaType<any, any> }
 > extends SchemaType<ObjectInfer<Shape>> {
   public htmlAttributes: HtmlObjectType<{
     [K in keyof Shape]: HTMLAttributes;
@@ -82,7 +82,7 @@ export class ObjectSchema<
    * });
    */
   constructor(private shape: Shape) {
-    super({});
+    super();
   }
 
   /**

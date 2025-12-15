@@ -62,7 +62,7 @@ export class EnumSchema<const T extends readonly string[]> extends SchemaType<
    * const daySchema = new EnumSchema(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as const);
    */
   constructor(private readonly values: T) {
-    super({});
+    super();
     this.valuesSet = new Set(values);
     this.htmlAttributes.options = values;
   }
