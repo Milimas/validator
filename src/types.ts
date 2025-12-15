@@ -458,6 +458,29 @@ export type UnionAttributes<T extends readonly any[] = readonly any[]> = {
 };
 
 /**
+ * HTML attributes for record types with dynamic keys and uniform value types.
+ *
+ * Represents a record/dictionary structure where keys and values are validated
+ * by their respective schemas. Used for dynamic key-value collections like
+ * configuration objects, user settings, or score boards.
+ *
+ * @example
+ * const recordAttrs: RecordAttributes = {
+ *   type: 'record',
+ *   keySchema: { type: 'text', pattern: /^[a-z_]+$/, required: true },
+ *   valueSchema: { type: 'number', min: 0, max: 100, required: true },
+ *   required: true
+ * };
+ */
+export type RecordAttributes = {
+  type: "record";
+  keySchema: HTMLAttributes;
+  valueSchema: HTMLAttributes;
+  defaultValue?: never;
+  required: boolean;
+};
+
+/**
  * HTML attributes for inputs that can accept any value type.
  *
  * Used for fields where the value type is not constrained, allowing any input.
@@ -535,6 +558,7 @@ export type HTMLAttributes = (
   | HtmlContainerAttributes
   | HtmlSelectAttributes
   | UnionAttributes
+  | RecordAttributes
   | HtmlAnyAttributes
   | HtmlNeverAttributes
   | HtmlUnknownAttributes

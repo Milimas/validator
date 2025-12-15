@@ -29,7 +29,7 @@ Validator supports multiple import patterns:
 
 ```typescript
 // Named imports (recommended for tree-shaking)
-import { string, email, number, object, array, union, any, never, unknown } from 'validator';
+import { string, email, number, object, array, union, any, never, unknown, record } from 'validator';
 
 // Default import (namespace-like)
 import validator from 'validator';
@@ -135,6 +135,65 @@ const schema = object({
   age: number(),
   email: email(),
 });
+```
+
+### Record Validation
+
+```typescript
+import { record, number, string, object, boolean } from 'validator';
+
+// Simple record: dynamic keys with uniform value type
+const scoresSchema = record(string(), number().min(0).max(100));
+scoresSchema.parse({ alice: 95, bob: 87, charlie: 92 }); // Valid
+// Type: Record<string, number>
+
+// Record with key constraints
+const configSchema = record(
+  string().pattern(/^[a-z_]+$/),
+  string().minLength(2)
+);
+configSchema.parse({ theme_color: "dark", user_lang: "en" }); // Valid
+configSchema.parse({ "Theme-Color": "dark" }); // Fails: invalid key
+
+// Complex nested records
+const settingsSchema = record(
+  string(),
+  object({
+    enabled: boolean(),
+    value: string()
+  })
+);
+const settings = settingsSchema.parse({
+  notifications: { enabled: true, value: "all" },
+  darkMode: { enabled: false, value: "auto" }
+});
+
+// HTML attributes for form rendering
+const html = scoresSchema.toJSON();
+// {
+//   type: 'record',
+//   keySchema: { type: 'text', required: true },
+//   valueSchema: { type: 'number', min: 0, max: 100, required: true },
+//   required: true
+// }
+
+// With custom key schema
+const customSchema = record(
+  string().pattern(/^[a-z_]+$/).minLength(3),
+  string()
+);
+const customHtml = customSchema.toJSON();
+// {
+//   type: 'record',
+//   keySchema: { type: 'text', pattern: '[a-z_]+', minLength: 3, required: true },
+//   valueSchema: { type: 'text', required: true },
+//   required: true
+// }
+
+// Frontend can use both schemas for validation:
+// - Validate each key against keySchema constraints (pattern, length, etc.)
+// - Validate each value against valueSchema constraints
+// - Render appropriate input elements for both keys and values
 ```
 
 ### Enum Validation

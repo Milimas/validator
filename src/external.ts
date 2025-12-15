@@ -4,6 +4,7 @@ import { NumberSchema } from "./number/index.js";
 import { ObjectSchema } from "./object/index.js";
 import { EnumSchema } from "./enum/index.js";
 import { UnionSchema } from "./union/index.js";
+import { RecordSchema } from "./record/index.js";
 import {
   DateSchema,
   DatetimeLocalSchema,
@@ -605,8 +606,71 @@ function _enum<const T extends readonly string[]>(values: T): EnumSchema<T> {
  * schema.parse(42); // 42
  */
 // export
-function union<S extends readonly SchemaTypeAny[]>(schemas: S): UnionSchema<S> {
-  return new UnionSchema(schemas, { description: "A union field" });
+const union = <S extends readonly SchemaTypeAny[]>(
+  schemas: S
+): UnionSchema<S> => new UnionSchema(schemas, { description: "A union field" });
+
+////////////////////////////
+////       Record       ////
+////////////////////////////
+
+/**
+ * Initializes a record schema for dynamic key-value objects with uniform value types.
+ *
+ * Creates a schema that validates objects whose keys are validated by `keySchema` and values by
+ * `valueSchema`. The factory follows the `(keySchema, valueSchema)` order. If only `valueSchema`
+ * is provided, the key schema defaults to a string schema.
+ *
+ * @template TKey - Schema for keys (defaults to string when omitted)
+ * @template TValue - Schema for values
+ * @param {TKey} keySchema - Schema used to validate keys
+ * @param {TValue} valueSchema - Schema used to validate values
+ * @returns {RecordSchema<TValue, TKey>} A new RecordSchema instance
+ *
+ * @example
+ * // Simple record: user scores
+ * const scoresSchema = record(string(), number().min(0).max(100));
+ * const scores = scoresSchema.parse({ alice: 95, bob: 87, charlie: 92 });
+ *
+ * @example
+ * // Record with key constraints
+ * const configSchema = record(
+ *   string().pattern(/^[a-z_]+$/),
+ *   string().minLength(2)
+ * );
+ *
+ * @example
+ * // Complex nested records (default string keys)
+ * const userSettingsSchema = record(
+ *   object({
+ *     enabled: boolean(),
+ *     value: string()
+ *   })
+ * );
+ */
+export function record<TValue extends SchemaTypeAny>(
+  valueSchema: TValue
+): RecordSchema<TValue>;
+export function record<
+  TKey extends SchemaTypeAny,
+  TValue extends SchemaTypeAny
+>(keySchema: TKey, valueSchema: TValue): RecordSchema<TValue, TKey>;
+export function record<
+  TKey extends SchemaTypeAny,
+  TValue extends SchemaTypeAny
+>(
+  keySchemaOrValue: TKey | TValue,
+  valueSchemaMaybe?: TValue
+): RecordSchema<TValue, SchemaTypeAny> {
+  if (valueSchemaMaybe === undefined) {
+    return new RecordSchema(keySchemaOrValue as TValue, undefined, {
+      description: "A record field",
+    });
+  }
+
+  return new RecordSchema(valueSchemaMaybe, keySchemaOrValue as TKey, {
+    description: "A record field",
+  });
 }
 
 /**
