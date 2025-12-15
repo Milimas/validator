@@ -562,9 +562,9 @@ function _enum<const T extends readonly string[]>(values: T): EnumSchema<T> {
  * schema.parse(42); // 42
  */
 // export
-const union = <S extends readonly SchemaTypeAny[]>(
-  schemas: S
-): UnionSchema<S> => new UnionSchema(schemas);
+function union<S extends readonly SchemaTypeAny[]>(schemas: S): UnionSchema<S> {
+  return new UnionSchema(schemas);
+}
 
 ////////////////////////////
 ////       Record       ////

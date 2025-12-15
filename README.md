@@ -20,6 +20,15 @@ npm install validator
 # or
 pnpm add validator
 # or
+## Development
+
+```bash
+pnpm install
+pnpm build   # type-check and emit
+pnpm test    # run unit tests
+```
+
+During development you can run `pnpm dev` to start the local playground if configured.
 yarn add validator
 ```
 
@@ -54,15 +63,17 @@ const userSchema = object({
 });
 
 // Parse and validate data
-const user = userSchema.parse({
+const userInput = {
   name: 'John Doe',
   email: 'john@example.com',
   age: 25,
   subscribe: true,
-});
+};
+
+const user = userSchema.parse(userInput);
 
 // Or safely parse without throwing
-const result = userSchema.safeParse(data);
+const result = userSchema.safeParse(userInput);
 if (result.success) {
   console.log(result.data);
 } else {
@@ -242,6 +253,7 @@ if (result.success) {
 - `nullable()` - Make field nullable (allows null)
 - `required(isRequired, message)` - Set required state and custom error message
 - `dependsOn(conditions)` - Make field conditionally required based on other fields
+- `metadata(metadata)` - Adds custom data-* attributes to the schema's HTML attributes.
 
 ### String-Specific Methods
 
@@ -314,6 +326,11 @@ anySchema.toJSON(); // { type: 'any', required: true }
 neverSchema.toJSON(); // { type: 'never', required: true }
 unknownSchema.toJSON(); // { type: 'unknown', required: true }
 ```
+
+### Helpers
+
+- `infer<typeof schema>` — infer the validated TypeScript type from a schema.
+- `toJSONSchema(schema)` — convert any schema to its HTML attributes/JSON representation for form builders.
 
 ### Number-Specific Methods
 
@@ -441,9 +458,9 @@ const schema = string()
 Full type inference from schemas:
 
 ```typescript
-import { Infer } from 'validator';
+import { v } from 'validator';
 
-type UserData = Infer<typeof userSchema>;
+type UserData = v.infer<typeof userSchema>;
 
 // UserData is inferred as:
 // {
