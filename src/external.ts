@@ -652,11 +652,11 @@ export function record<TValue extends SchemaTypeAny>(
   valueSchema: TValue
 ): RecordSchema<TValue>;
 export function record<
-  TKey extends SchemaTypeAny,
+  TKey extends SchemaType<String>,
   TValue extends SchemaTypeAny
 >(keySchema: TKey, valueSchema: TValue): RecordSchema<TValue, TKey>;
 export function record<
-  TKey extends SchemaTypeAny,
+  TKey extends SchemaType<String>,
   TValue extends SchemaTypeAny
 >(
   keySchemaOrValue: TKey | TValue,
