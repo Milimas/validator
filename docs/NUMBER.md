@@ -2,6 +2,32 @@
 
 Numeric validation schema for integer and floating-point number validation.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Basic Usage](#basic-usage)
+- [API Methods](#api-methods)
+  - [Value Constraints](#value-constraints)
+    - [`min(value: number, message?: string)`](#minvalue-number-message-string)
+    - [`max(value: number, message?: string)`](#maxvalue-number-message-string)
+  - [Type Constraints](#type-constraints)
+    - [`int()`](#int)
+- [Common Patterns](#common-patterns)
+  - [Age Validation](#age-validation)
+  - [Price Validation](#price-validation)
+  - [Rating Validation](#rating-validation)
+  - [Quantity Validation](#quantity-validation)
+  - [Percentage Validation](#percentage-validation)
+- [Type Safety](#type-safety)
+  - [Strict Type Checking](#strict-type-checking)
+- [HTML Attributes](#html-attributes)
+- [Validation Error Codes](#validation-error-codes)
+- [Advanced Usage](#advanced-usage)
+  - [Form Validation](#form-validation)
+  - [Safe Parsing](#safe-parsing)
+- [Related](#related)
+
 ## Overview
 
 `NumberSchema` provides comprehensive validation for numeric values with support for min/max constraints. Essential for form fields involving quantities, prices, ratings, ages, and any numeric input. Automatically rejects NaN and enforces strict numeric type checking.

@@ -2,6 +2,39 @@
 
 Record schema for validating objects with dynamic string keys and uniform value types.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Basic Usage](#basic-usage)
+- [API Methods](#api-methods)
+  - [Simple Record (Default String Keys)](#simple-record-default-string-keys)
+    - [Single parameter - valueSchema](#single-parameter---valueschema)
+  - [Record with Key Constraints](#record-with-key-constraints)
+    - [Two parameters - keySchema and valueSchema](#two-parameters---keyschema-and-valueschema)
+- [Common Patterns](#common-patterns)
+  - [User Scores](#user-scores)
+  - [Configuration Object](#configuration-object)
+  - [Feature Flags](#feature-flags)
+  - [Translations/i18n](#translationsi18n)
+  - [User Permissions](#user-permissions)
+- [Nested Records](#nested-records)
+  - [Record of Objects](#record-of-objects)
+  - [Record of Records](#record-of-records)
+  - [Record of Arrays](#record-of-arrays)
+- [Error Handling](#error-handling)
+  - [Key Validation Errors](#key-validation-errors)
+  - [Value Validation Errors](#value-validation-errors)
+- [HTML Attributes](#html-attributes)
+- [Type Inference](#type-inference)
+  - [TypeScript Support](#typescript-support)
+- [Advanced Examples](#advanced-examples)
+  - [Database Configuration](#database-configuration)
+  - [API Endpoints](#api-endpoints)
+  - [Theme Configuration](#theme-configuration)
+- [Validation Error Codes](#validation-error-codes)
+- [Related](#related)
+
 ## Overview
 
 Similar to TypeScript's `Record<string, T>`, `RecordSchema` validates objects where:

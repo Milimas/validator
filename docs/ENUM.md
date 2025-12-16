@@ -2,6 +2,37 @@
 
 Enumeration schema for validating against a fixed set of allowed values.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Basic Usage](#basic-usage)
+- [API Methods](#api-methods)
+  - [Creating Enums](#creating-enums)
+- [Common Patterns](#common-patterns)
+  - [User Roles](#user-roles)
+  - [Order Status](#order-status)
+  - [Product Category](#product-category)
+  - [Priority Level](#priority-level)
+  - [Payment Method](#payment-method)
+- [Type Inference](#type-inference)
+  - [TypeScript Type Safety](#typescript-type-safety)
+- [Nested in Objects](#nested-in-objects)
+  - [User Model with Status](#user-model-with-status)
+  - [Product with Category and Status](#product-with-category-and-status)
+- [Arrays of Enums](#arrays-of-enums)
+  - [Multiple Selections](#multiple-selections)
+  - [Tags with Predefined Options](#tags-with-predefined-options)
+- [Error Handling](#error-handling)
+  - [Safe Parsing with Error Details](#safe-parsing-with-error-details)
+- [HTML Attributes](#html-attributes)
+- [Validation Error Codes](#validation-error-codes)
+- [Advanced Examples](#advanced-examples)
+  - [Complex Form with Multiple Enums](#complex-form-with-multiple-enums)
+  - [Dynamic Configuration](#dynamic-configuration)
+- [Performance Notes](#performance-notes)
+- [Related](#related)
+
 ## Overview
 
 `EnumSchema` provides type-safe validation that restricts input to one of a predefined set of string values. Ideal for dropdowns, radio buttons, status fields, and any categorical data with a finite set of valid options. Generates HTML select element attributes for form rendering.

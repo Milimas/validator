@@ -2,6 +2,31 @@
 
 Composite schema for validating object structures with typed properties.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Basic Usage](#basic-usage)
+- [API Methods](#api-methods)
+  - [Composition Methods](#composition-methods)
+    - [`extend(...schemas: ObjectSchema[])`](#extendschemas-objectschema)
+    - [`omit(...keys: (keyof Shape)[])`](#omitkeys-keyof-shape)
+    - [`pick(...keys: (keyof Shape)[])`](#pickkeys-keyof-shape)
+  - [Chaining Composition Methods](#chaining-composition-methods)
+- [Nested Objects](#nested-objects)
+  - [Basic Nesting](#basic-nesting)
+  - [Deep Nesting](#deep-nesting)
+- [Complex Examples](#complex-examples)
+  - [User Registration Form](#user-registration-form)
+  - [Product Catalog with Dynamic Fields](#product-catalog-with-dynamic-fields)
+- [Error Handling](#error-handling)
+- [Optional and Nullable Properties](#optional-and-nullable-properties)
+  - [Optional Properties](#optional-properties)
+  - [Nullable Properties](#nullable-properties)
+- [Validation Error Codes](#validation-error-codes)
+- [Type Inference](#type-inference)
+- [Related](#related)
+
 ## Overview
 
 `ObjectSchema` provides comprehensive validation for complex object types by composing multiple property schemas together. Each property in the object is validated according to its defined schema, enabling type-safe validation of nested and complex data structures.

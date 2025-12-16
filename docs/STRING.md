@@ -2,6 +2,41 @@
 
 Generic string validation schema for flexible text input validation.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Basic Usage](#basic-usage)
+- [API Methods](#api-methods)
+  - [Length Constraints](#length-constraints)
+    - [`minLength(value: number, message?: string)`](#minlengthvalue-number-message-string)
+    - [`maxLength(value: number, message?: string)`](#maxlengthvalue-number-message-string)
+    - [`min(value: number, message?: string)`](#minvalue-number-message-string)
+    - [`max(value: number, message?: string)`](#maxvalue-number-message-string)
+  - [Pattern Matching](#pattern-matching)
+    - [`pattern(regex: RegExp, message?: string, title?: string)`](#patternregex-regexp-message-string-title-string)
+  - [HTML Attributes](#html-attributes)
+    - [`placeholder(text: string)`](#placeholdertext-string)
+    - [`datalist(listId: string, options: string[])`](#datalistlistid-string-options-string)
+  - [Required/Optional](#requiredoptional)
+    - [`required(isRequired?: boolean, message?: string)`](#requiredisrequired-boolean-message-string)
+- [Specialized String Schemas](#specialized-string-schemas)
+  - [EmailSchema](#emailschema)
+  - [UrlSchema](#urlschema)
+  - [PasswordSchema](#passwordschema)
+  - [PhoneNumberSchema](#phonenumberschema)
+  - [UUIDSchema](#uuidschema)
+  - [ZipCodeSchema](#zipcodeschema)
+  - [HexColorSchema](#hexcolorschema)
+  - [JSONSchema](#jsonschema)
+  - [XMLSchema](#xmlschema)
+  - [ISODateSchema](#isodateschema)
+- [Examples](#examples)
+  - [Username Validation](#username-validation)
+  - [Form Field with Validation](#form-field-with-validation)
+- [Validation Error Codes](#validation-error-codes)
+- [Related](#related)
+
 ## Overview
 
 `StringSchema` provides comprehensive string validation with support for length constraints, pattern matching, and custom error messages. It serves as the foundation for all specialized string-based schemas like email, URL, and phone number validation.

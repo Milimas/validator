@@ -2,6 +2,35 @@
 
 Union schema for validating data against multiple possible schemas.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Basic Usage](#basic-usage)
+- [Common Patterns](#common-patterns)
+  - [String or Number ID](#string-or-number-id)
+  - [Email or Phone Number](#email-or-phone-number)
+  - [Response Data (Success or Error)](#response-data-success-or-error)
+- [Type Inference](#type-inference)
+  - [Union of Specific Types](#union-of-specific-types)
+  - [Complex Union Types](#complex-union-types)
+- [Nested Unions](#nested-unions)
+  - [Union of Objects](#union-of-objects)
+  - [Union of Arrays](#union-of-arrays)
+- [Nested in Objects](#nested-in-objects)
+  - [API Response Handler](#api-response-handler)
+  - [Flexible Configuration](#flexible-configuration)
+- [Error Handling](#error-handling)
+  - [Error Collection](#error-collection)
+  - [Detailed Error Context](#detailed-error-context)
+- [HTML Attributes](#html-attributes)
+- [Validation Error Codes](#validation-error-codes)
+- [Advanced Examples](#advanced-examples)
+  - [Polymorphic Data Handler](#polymorphic-data-handler)
+  - [GraphQL-like Query Responses](#graphql-like-query-responses)
+- [Performance Considerations](#performance-considerations)
+- [Related](#related)
+
 ## Overview
 
 `UnionSchema` allows data to be validated against a set of different schemas, passing validation if it conforms to at least one of them. This is useful for scenarios where input data can take multiple valid forms or types.

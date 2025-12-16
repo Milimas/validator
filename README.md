@@ -2,6 +2,30 @@
 
 A type-safe TypeScript validation library built for modern form builders. Define schemas once, infer precise types, and validate confidently across client and server.
 
+## Table of Contents
+
+- [Features](#features)
+- [Installation (GitHub)](#installation-github)
+- [Development](#development)
+- [Import Styles](#import-styles)
+- [Quick Start](#quick-start)
+- [API Reference](#api-reference)
+  - [Quick Reference](#quick-reference)
+    - [String Validation](#string-validation)
+    - [Number Validation](#number-validation)
+    - [Boolean Validation](#boolean-validation)
+    - [Array Validation](#array-validation)
+    - [Object Validation](#object-validation)
+    - [Enum Validation](#enum-validation)
+    - [Union Validation](#union-validation)
+    - [Record Validation](#record-validation)
+- [Schema Methods](#schema-methods)
+- [Error Handling](#error-handling)
+- [Form Integration](#form-integration)
+- [License](#license)
+- [Contributing](#contributing)
+- [Repository](#repository)
+
 ## Features
 
 - 🎯 **Type-Safe by Default**: End-to-end TypeScript inference from schemas to runtime parsing

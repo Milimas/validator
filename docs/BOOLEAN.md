@@ -2,6 +2,30 @@
 
 Boolean schema for validating true/false values and checkbox inputs.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Basic Usage](#basic-usage)
+- [API Methods](#api-methods)
+  - [Default Values](#default-values)
+    - [`default(value: boolean)`](#defaultvalue-boolean)
+  - [Required/Optional](#requiredoptional)
+    - [`required(isRequired?: boolean, message?: string)`](#requiredisrequired-boolean-message-string)
+- [Common Patterns](#common-patterns)
+  - [Terms and Conditions Checkbox](#terms-and-conditions-checkbox)
+  - [Feature Toggle](#feature-toggle)
+  - [Newsletter Subscription (Optional)](#newsletter-subscription-optional)
+- [Type Safety](#type-safety)
+  - [Strict Type Checking](#strict-type-checking)
+- [HTML Attributes](#html-attributes)
+- [Validation Error Codes](#validation-error-codes)
+- [Complex Examples](#complex-examples)
+  - [User Registration Form](#user-registration-form)
+  - [Preference Settings](#preference-settings)
+  - [Safe Parsing](#safe-parsing)
+- [Related](#related)
+
 ## Overview
 
 `BooleanSchema` provides validation for boolean values with HTML5 checkbox input type attributes. Essential for feature toggles, agreement checkboxes, and any binary choice fields in forms. Supports default values and integrates seamlessly with form builders.

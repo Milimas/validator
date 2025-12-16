@@ -2,6 +2,33 @@
 
 Array schema for validating collections of homogeneous typed items.
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Basic Usage](#basic-usage)
+- [API Methods](#api-methods)
+  - [Length Constraints](#length-constraints)
+    - [`minLength(min: number, message?: string)`](#minlengthmin-number-message-string)
+    - [`maxLength(max: number, message?: string)`](#maxlengthmax-number-message-string)
+- [Common Patterns](#common-patterns)
+  - [Tag Validation](#tag-validation)
+  - [Email List Validation](#email-list-validation)
+  - [Checkbox Group Validation](#checkbox-group-validation)
+  - [Product List Validation](#product-list-validation)
+- [Nested Arrays](#nested-arrays)
+  - [Array of Arrays](#array-of-arrays)
+  - [Array of Objects](#array-of-objects)
+- [Error Handling](#error-handling)
+  - [Error Paths](#error-paths)
+- [HTML Attributes](#html-attributes)
+- [Validation Error Codes](#validation-error-codes)
+- [Complex Examples](#complex-examples)
+  - [Form Submission with Multiple Items](#form-submission-with-multiple-items)
+  - [Safe Parsing with Detailed Error Reporting](#safe-parsing-with-detailed-error-reporting)
+- [Performance Considerations](#performance-considerations)
+- [Related](#related)
+
 ## Overview
 
 `ArraySchema` provides comprehensive validation for arrays/lists by applying a single item schema to every element in the array. Ensures type consistency and enables validation of collections of objects, strings, numbers, or any other SchemaType.
