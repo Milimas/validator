@@ -261,15 +261,18 @@ export abstract class SchemaType<Output = any, Input = Output> {
   }
 
   /**
-   * Adds custom data-* attributes to the schema's HTML attributes.
-   * Merges the provided metadata into the existing HTML attributes.
-   * Useful for attaching additional information for form rendering or processing.
+   * Adds custom metadata to the schema's HTML attributes.
    *
-   * @param metadata - An object containing data-* attributes to add
+   * Attaches arbitrary key-value pairs as metadata in the HTML attributes.
+   * Useful for storing additional information about the schema that can be
+   * utilized by form builders or UI frameworks.
+   *
+   * @param metadata - A record of key-value pairs to attach as metadata
    * @returns This schema instance for method chaining
+   *
    * @example
-   * const schema = string().metadata({ 'data-info': 'extra' });
-   * // schema.htmlAttributes will include 'data-info': 'extra'
+   * const schema = string().metadata({ info: 'This is a username field' });
+   * console.log(schema.toJSON().metadata); // { info: 'This is a username field' }
    */
   metadata(metadata: Record<string, unknown>): this {
     this.htmlAttributes = { ...this.htmlAttributes, metadata };
