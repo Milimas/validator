@@ -148,6 +148,58 @@ const schema = object({
 });
 ```
 
+#### Object Schema Composition
+
+Object schemas support powerful composition methods for building schemas from existing ones:
+
+```typescript
+import { object, string, number, boolean, email } from 'validator';
+
+// Base schemas
+const userBase = object({
+  id: number().int(),
+  username: string().minLength(3),
+});
+
+const contactInfo = object({
+  email: email(),
+  phone: string().pattern(/^\+?[0-9]{10,}$/),
+});
+
+// extend() - merge multiple schemas
+const userSchema = userBase.extend(contactInfo);
+// Result: { id, username, email, phone }
+
+// extend with multiple schemas at once
+const preferences = object({ newsletter: boolean() });
+const metadata = object({ createdAt: string() });
+
+const fullSchema = userBase.extend(contactInfo, preferences, metadata);
+// Result: { id, username, email, phone, newsletter, createdAt }
+
+// omit() - remove specific keys
+const withoutEmail = userSchema.omit('email');
+// Result: { id, username, phone }
+
+// pick() - keep only specific keys
+const onlyCredentials = userSchema.pick('username', 'email');
+// Result: { username, email }
+
+// Chain composition methods
+const customSchema = userBase
+  .extend(contactInfo, preferences)
+  .omit('phone')
+  .pick('username', 'email', 'newsletter');
+// Result: { username, email, newsletter }
+
+// All validation rules are preserved after composition
+const extended = object({ name: string().minLength(2) })
+  .extend(object({ age: number().min(18) }));
+
+extended.parse({ name: 'Jo', age: 20 }); // Valid
+extended.parse({ name: 'J', age: 20 }); // Throws: name too short
+```
+
 ### Record Validation
 
 ```typescript
@@ -329,8 +381,45 @@ unknownSchema.toJSON(); // { type: 'unknown', required: true }
 
 ### Helpers
 
-- `infer<typeof schema>` — infer the validated TypeScript type from a schema.
-- `toJSONSchema(schema)` — convert any schema to its HTML attributes/JSON representation for form builders.
+The library exports several helper functions and types for working with schemas:
+
+#### Type Inference
+
+```typescript
+import { Infer, infer } from 'validator';
+
+const userSchema = object({
+  name: string(),
+  age: number().min(18),
+  email: email(),
+});
+
+type User = infer<typeof userSchema>;
+// User: { name: string; age: number; email: string }
+```
+
+#### Schema to JSON Conversion
+
+```typescript
+import { toJSONSchema } from 'validator';
+
+const schema = string().minLength(3).maxLength(50);
+const htmlAttrs = toJSONSchema(schema);
+// { type: 'text', minLength: 3, maxLength: 50, required: true }
+```
+
+#### Union Schema Helper
+
+```typescript
+import { union, string, number } from 'validator';
+
+// Create union schemas programmatically
+const stringOrNumber = union([string(), number()]);
+
+stringOrNumber.parse('hello'); // 'hello'
+stringOrNumber.parse(42); // 42
+stringOrNumber.parse(true); // Throws: invalid type
+```
 
 ### Number-Specific Methods
 

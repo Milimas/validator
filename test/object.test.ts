@@ -528,4 +528,283 @@ describe("ObjectSchema", () => {
       }
     });
   });
+
+  describe("Schema composition", () => {
+    it("extend should merge shapes and validate", () => {
+      const object1 = object({ firstName: string() });
+      const object2 = object({ age: number() });
+
+      const object3 = object1.extend(object2);
+
+      // Valid when both properties provided
+      expect(object3.parse({ firstName: "John", age: 30 })).toEqual({
+        firstName: "John",
+        age: 30,
+      });
+
+      // toJSON should include both properties
+      const json = object3.toJSON();
+      expect(json.properties.firstName).toBeDefined();
+      expect(json.properties.age).toBeDefined();
+    });
+
+    it("extend should merge multiple schemas at once", () => {
+      const object1 = object({ firstName: string() });
+      const object2 = object({ lastName: string() });
+      const object3 = object({ age: number().min(0) });
+      const object4 = object({ email: email() });
+
+      const merged = object1.extend(object2, object3, object4);
+
+      // Valid when all properties provided
+      const result = merged.parse({
+        firstName: "John",
+        lastName: "Doe",
+        age: 30,
+        email: "john@example.com",
+      });
+      expect(result).toEqual({
+        firstName: "John",
+        lastName: "Doe",
+        age: 30,
+        email: "john@example.com",
+      });
+
+      // toJSON should include all properties
+      const json = merged.toJSON();
+      expect(json.properties.firstName).toBeDefined();
+      expect(json.properties.lastName).toBeDefined();
+      expect(json.properties.age).toBeDefined();
+      expect(json.properties.email).toBeDefined();
+
+      // Validation should still work for all fields
+      expect(() =>
+        merged.parse({
+          firstName: "John",
+          lastName: "Doe",
+          age: -5, // min(0) constraint
+          email: "john@example.com",
+        })
+      ).toThrow();
+
+      expect(() =>
+        merged.parse({
+          firstName: "John",
+          lastName: "Doe",
+          age: 30,
+          email: "invalid", // email validation
+        })
+      ).toThrow();
+    });
+
+    it("omit should drop keys and forbid them thereafter", () => {
+      const base = object({ firstName: string(), age: number() });
+      const withoutAge = base.omit("age");
+
+      // Valid when omitted key is not present
+      expect(withoutAge.parse({ firstName: "Jane" })).toEqual({
+        firstName: "Jane",
+      });
+
+      // Including the omitted key should fail (unexpected property)
+      expect(() => withoutAge.parse({ firstName: "Jane", age: 25 })).toThrow();
+
+      // toJSON should only include remaining keys
+      const json = withoutAge.toJSON();
+      expect(json.properties.firstName).toBeDefined();
+      expect((json.properties as any).age).toBeUndefined();
+    });
+
+    it("pick should select only specified keys and forbid the rest", () => {
+      const base = object({
+        firstName: string(),
+        age: number(),
+        email: string(),
+      });
+
+      const onlyFirst = base.pick("firstName");
+
+      // Valid with only picked key
+      expect(onlyFirst.parse({ firstName: "Alex" })).toEqual({
+        firstName: "Alex",
+      });
+
+      // Any other key should be rejected as unexpected
+      expect(() => onlyFirst.parse({ firstName: "Alex", age: 20 })).toThrow();
+      expect(() => onlyFirst.parse({ email: "a@b.com" } as any)).toThrow();
+
+      // toJSON includes only the picked key
+      const json = onlyFirst.toJSON();
+      expect(json.properties.firstName).toBeDefined();
+      expect((json.properties as any).age).toBeUndefined();
+      expect((json.properties as any).email).toBeUndefined();
+    });
+  });
+
+  describe("Complex composition", () => {
+    it("extend with nested objects/arrays enforces all inner checks", () => {
+      const base = object({
+        user: object({
+          username: string().minLength(3),
+          age: number().min(18).int(),
+        }),
+      });
+
+      const extras = object({
+        address: object({
+          street: string().minLength(3),
+          zip: string().pattern(/^[0-9]{5}(?:-[0-9]{4})?$/),
+        }),
+        tags: array(string().minLength(2)).minLength(1).maxLength(5),
+      });
+
+      const schema = base.extend(extras);
+
+      // Valid case
+      const ok = schema.parse({
+        user: { username: "alice", age: 22 },
+        address: { street: "Main St", zip: "12345" },
+        tags: ["aa", "bb"],
+      });
+      expect(ok.user.username).toBe("alice");
+
+      // Invalid: inner item too short and array too short
+      const res1 = schema.safeParse({
+        user: { username: "al", age: 22 }, // too short username
+        address: { street: "St", zip: "12" }, // street too short, zip invalid
+        tags: [], // minLength(1)
+      });
+      expect(res1.success).toBe(false);
+      if (!res1.success) {
+        const paths = res1.errors.map((e) => e.path.join("."));
+        expect(paths).toContain("user.username");
+        expect(paths).toContain("address.street");
+        expect(paths).toContain("address.zip");
+        // Ensure there is at least one error under tags (size or item)
+        expect(paths.some((p) => p === "tags" || p.startsWith("tags"))).toBe(
+          true
+        );
+      }
+
+      // Unexpected properties should be caught against the extended shape
+      const res2 = schema.safeParse({
+        user: { username: "alice", age: 22 },
+        address: { street: "Main St", zip: "12345" },
+        tags: ["aa"],
+        extra: true,
+      } as any);
+      expect(res2.success).toBe(false);
+      if (!res2.success) {
+        const unexpected = res2.errors.find((e) => e.path[0] === "extra");
+        expect(unexpected).toBeDefined();
+      }
+    });
+
+    it("omit removes keys before validating and forbids them thereafter", () => {
+      const base = object({
+        profile: object({
+          name: string().minLength(2),
+          bio: string().maxLength(10),
+        }),
+        settings: object({
+          theme: string().minLength(3),
+        }),
+      });
+
+      const withoutSettings = base.omit("settings");
+
+      // Valid without settings
+      expect(
+        withoutSettings.parse({ profile: { name: "Jo", bio: "short bio" } })
+      ).toEqual({ profile: { name: "Jo", bio: "short bio" } });
+
+      // Provided omitted key becomes unexpected (and not validated)
+      const res = withoutSettings.safeParse({
+        profile: { name: "Jo", bio: "short bio" },
+        settings: { theme: "dk" }, // would fail minLength(3) if validated
+      } as any);
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        // Ensure error is unexpected_property on settings rather than theme length
+        const hasUnexpectedSettings = res.errors.some(
+          (e) =>
+            e.path.join(".") === "settings" && e.code === "unexpected_property"
+        );
+        expect(hasUnexpectedSettings).toBe(true);
+      }
+    });
+
+    it("pick keeps only selected keys but preserves their inner checks", () => {
+      const base = object({
+        user: object({
+          username: string().minLength(4),
+          email: email(),
+        }),
+        tags: array(string().minLength(3)).minLength(1),
+        meta: object({ createdAt: string() }),
+      });
+
+      const onlyUserAndTags = base.pick("user", "tags");
+
+      // Other keys should be unexpected
+      expect(() =>
+        onlyUserAndTags.parse({
+          user: { username: "john", email: "john@example.com" },
+          tags: ["dev"],
+          meta: { createdAt: "2024-01-01" },
+        } as any)
+      ).toThrow();
+
+      // Inner checks still apply
+      const r = onlyUserAndTags.safeParse({
+        user: { username: "jon", email: "x@y.z" }, // username too short
+        tags: ["ok"], // item too short for minLength(3)
+      });
+      expect(r.success).toBe(false);
+      if (!r.success) {
+        const paths = r.errors.map((e) => e.path.join("."));
+        expect(paths).toContain("user.username");
+        // Could be tags (length) or tags.0 (item), accept either
+        expect(paths.some((p) => p === "tags" || p.startsWith("tags."))).toBe(
+          true
+        );
+      }
+    });
+
+    it("composition chaining (extend → omit → pick) produces expected validation", () => {
+      const a = object({ id: number().int(), role: string().minLength(4) });
+      const b = object({
+        profile: object({ name: string().minLength(2) }),
+        flags: array(string()).maxLength(2),
+      });
+
+      const chained = a
+        .extend(b) // id, role, profile, flags
+        .omit("role") // remove role
+        .pick("id", "profile", "flags"); // keep these three
+
+      // Valid
+      expect(
+        chained.parse({
+          id: 1,
+          profile: { name: "Al" },
+          flags: ["x", "y"],
+        })
+      ).toEqual({ id: 1, profile: { name: "Al" }, flags: ["x", "y"] });
+
+      // Invalid due to int(), minLength(2), and maxLength(2)
+      const bad = chained.safeParse({
+        id: 1.5, // not integer
+        profile: { name: "A" }, // too short
+        flags: ["x", "y", "z"], // too many
+      });
+      expect(bad.success).toBe(false);
+      if (!bad.success) {
+        const paths = bad.errors.map((e) => e.path.join("."));
+        expect(paths).toContain("id");
+        expect(paths).toContain("profile.name");
+        expect(paths).toContain("flags");
+      }
+    });
+  });
 });
