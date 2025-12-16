@@ -179,7 +179,8 @@ export type HtmlStringInputType =
   | "datetime-local"
   | "color"
   | "tel"
-  | "json";
+  | "json"
+  | "code";
 
 /**
  * HTML attributes for string-based input elements with validation constraints.
@@ -215,6 +216,30 @@ export type HtmlStringAttributes = {
   list?: string;
   dataList?: string[];
 } & HtmlGenericInputAttributes;
+
+/**
+ * HTML attributes for code editor input elements.
+ *
+ * Defines properties specific to code input fields, including optional language
+ * specification for syntax highlighting. Extends generic string input attributes
+ * to support code editing use cases.
+ *
+ * @property {"code"} type - The HTML input type (always "code")
+ * @property {string} [language] - Optional programming language for syntax highlighting
+ *
+ * @example
+ * const codeAttrs: HtmlCodeAttributes = {
+ *   type: 'code',
+ *   required: true,
+ *   placeholder: '// your code here',
+ * };
+ */
+export type HtmlCodeAttributes = HtmlStringAttributes & {
+  type: "code";
+  language?: CodeLanguages;
+};
+
+export type CodeLanguages = "javascript" | "json" | "xml" | "html";
 
 /**
  * HTML attributes for checkbox and radio button input elements.
@@ -545,6 +570,7 @@ export type HTMLAttributes = (
   | HtmlAnyAttributes
   | HtmlNeverAttributes
   | HtmlUnknownAttributes
+  | HtmlCodeAttributes
 ) & {
   metadata?: Record<string, unknown>;
 } & {

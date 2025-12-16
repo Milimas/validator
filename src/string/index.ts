@@ -1,6 +1,10 @@
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
-import { HtmlStringAttributes } from "../types.js";
+import {
+  CodeLanguages,
+  HtmlCodeAttributes,
+  HtmlStringAttributes,
+} from "../types.js";
 
 /**
  * Generic string validation schema for flexible text input validation.
@@ -1005,5 +1009,24 @@ export class JSONSchema extends StringSchema {
       ];
       return e.ValidationResult.fail<string>(errors);
     }
+  }
+}
+
+export class CodeSchema extends StringSchema {
+  public htmlAttributes: HtmlCodeAttributes = {
+    type: "code",
+    placeholder: "<your code here>",
+    required: true,
+  };
+  constructor(language?: CodeLanguages) {
+    super();
+    if (language) {
+      this.language(language);
+    }
+  }
+
+  language(language: CodeLanguages): this {
+    this.htmlAttributes.language = language;
+    return this;
   }
 }

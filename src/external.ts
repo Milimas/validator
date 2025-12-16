@@ -6,6 +6,7 @@ import { EnumSchema } from "./enum/index.js";
 import { UnionSchema } from "./union/index.js";
 import { RecordSchema } from "./record/index.js";
 import {
+  CodeSchema,
   DateSchema,
   DatetimeLocalSchema,
   EmailSchema,
@@ -26,7 +27,12 @@ import {
   XMLSchema,
   ZipCodeSchema,
 } from "./string/index.js";
-import { HTMLAttributes, ObjectShape, SchemaTypeAny } from "./types.js";
+import {
+  CodeLanguages,
+  HTMLAttributes,
+  ObjectShape,
+  SchemaTypeAny,
+} from "./types.js";
 import { AnySchema, NeverSchema, SchemaType, UnknownSchema } from "./schema.js";
 
 // export * from "./types";
@@ -626,6 +632,31 @@ export function record<
 
   return new RecordSchema(valueSchemaMaybe, keySchemaOrValue as TKey);
 }
+
+////////////////////////////
+////     Code           ////
+////////////////////////////
+
+/**
+ * Initializes a code schema for validating code snippets or programming language text.
+ *
+ * Creates a specialized string schema that validates code content. Supports optional
+ * language specification for syntax highlighting and formatting. Ideal for code editors,
+ * documentation, and developer tools.
+ *
+ * @returns {CodeSchema} A new CodeSchema instance with code-specific validation rules
+ *
+ * @example
+ * const codeSchema = code().language('javascript');
+ * const result = codeSchema.safeParse('console.log("Hello, world!");');
+ */
+export function code(language?: CodeLanguages): CodeSchema {
+  return new CodeSchema(language);
+}
+
+////////////////////////////
+////      Utilities     ////
+////////////////////////////
 
 /**
  * Converts a SchemaType instance to its corresponding JSON representation.

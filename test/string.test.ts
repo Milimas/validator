@@ -9,6 +9,7 @@ import {
   zipCode,
   hexColor,
   json,
+  code,
 } from "../src/index.js";
 
 describe("StringSchema", () => {
@@ -493,6 +494,26 @@ describe("JSONSchema", () => {
       const complexJson =
         '{"users":[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}],"meta":{"total":2}}';
       expect(schema.parse(complexJson)).toBe(complexJson);
+    });
+  });
+
+  describe("CodeSchema", () => {
+    it("should validate code strings", () => {
+      const schema = code("javascript");
+      const codeStr = 'console.log("Hello, world!");';
+      expect(schema.parse(codeStr)).toBe(codeStr);
+    });
+
+    it("should have code input type in HTML attributes", () => {
+      const schema = code("json");
+      expect(schema.toJSON().type).toBe("code");
+      expect(schema.toJSON().language).toBe("json");
+    });
+
+    it("should support optional language parameter", () => {
+      const schema = code();
+      expect(schema.toJSON().type).toBe("code");
+      expect(schema.toJSON().language).toBeUndefined();
     });
   });
 });
