@@ -34,7 +34,7 @@ export class BooleanSchema extends SchemaType<boolean> {
     type: "checkbox",
     defaultValue: false,
     checked: false,
-    required: true,
+    required: false,
   };
 
   /**
