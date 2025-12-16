@@ -577,48 +577,85 @@ function union<S extends readonly SchemaTypeAny[]>(schemas: S): UnionSchema<S> {
 ////////////////////////////
 
 /**
+ *
  * Initializes a record schema for dynamic key-value objects with uniform value types.
  *
- * Creates a schema that validates objects whose keys are validated by `keySchema` and values by
- * `valueSchema`. The factory follows the `(keySchema, valueSchema)` order. If only `valueSchema`
- * is provided, the key schema defaults to a string schema.
+ * Creates a schema that validates objects whose keys are strings and values conform to
+ * the provided value schema. The factory follows the `(valueSchema)` order.
  *
- * @template TKey - Schema for keys (defaults to string when omitted)
  * @template TValue - Schema for values
- * @param {TKey} keySchema - Schema used to validate keys
- * @param {TValue} valueSchema - Schema used to validate values
- * @returns {RecordSchema<TValue, TKey>} A new RecordSchema instance
+ * @param valueSchema - Schema for values
+ * @returns {RecordSchema<TValue>} A new RecordSchema instance
  *
  * @example
- * // Simple record: user scores
- * const scoresSchema = record(string(), number().min(0).max(100));
- * const scores = scoresSchema.parse({ alice: 95, bob: 87, charlie: 92 });
- *
- * @example
- * // Record with key constraints
- * const configSchema = record(
- *   string().pattern(/^[a-z_]+$/),
- *   string().minLength(2)
- * );
- *
- * @example
- * // Complex nested records (default string keys)
- * const userSettingsSchema = record(
- *   object({
- *     enabled: boolean(),
- *     value: string()
- *   })
- * );
+ * // Record with string keys and boolean values
+ * const featureFlagsSchema = record(boolean());
+ * const result = featureFlagsSchema.safeParse({
+ *   darkMode: true,
+ *   betaUser: false
+ * });
  */
 export function record<TValue extends SchemaTypeAny>(
   valueSchema: TValue
 ): RecordSchema<TValue>;
 
+/**
+ *
+ * Initializes a record schema for dynamic key-value objects with uniform value types.
+ *
+ * Creates a schema that validates objects whose keys are validated by `keySchema` and values by
+ * `valueSchema`. The factory follows the `(keySchema, valueSchema)` order.
+ *
+ * @template TKey - Schema for keys
+ * @template TValue - Schema for values
+ * @returns {RecordSchema<TValue, TKey>} A new RecordSchema instance
+ *
+ * @example
+ * // Record with custom key schema: numeric string keys
+ * const numericKeySchema = record(
+ *   string().pattern(/^\d+$/),
+ *   boolean()
+ * );
+ * const result = numericKeySchema.safeParse({
+ *   '123': true,
+ *   '456': false
+ * });
+ */
 export function record<
   TKey extends SchemaType<String>,
   TValue extends SchemaTypeAny
 >(keySchema: TKey, valueSchema: TValue): RecordSchema<TValue, TKey>;
 
+/**
+ * Factory function overload implementation for creating RecordSchema instances.
+ *
+ * Determines the correct constructor parameters based on the provided arguments.
+ *
+ * @template TKey - Schema for keys
+ * @template TValue - Schema for values
+ * @param {TKey | TValue} keySchemaOrValue - Either the key schema or value schema
+ * @param {TValue | undefined} valueSchemaMaybe - The value schema if the first param is key schema
+ * @returns {RecordSchema<TValue, TKey>} A new RecordSchema instance
+ *
+ * @example
+ * // Record with string keys and boolean values
+ * const featureFlagsSchema = record(boolean());
+ * const result = featureFlagsSchema.safeParse({
+ *   darkMode: true,
+ *   betaUser: false
+ * });
+ *
+ * @example
+ * // Record with custom key schema: numeric string keys
+ * const numericKeySchema = record(
+ *   string().pattern(/^\d+$/),
+ *   boolean()
+ * );
+ * const result2 = numericKeySchema.safeParse({
+ *   '123': true,
+ *   '456': false
+ * });
+ */
 export function record<
   TKey extends SchemaType<String>,
   TValue extends SchemaTypeAny
