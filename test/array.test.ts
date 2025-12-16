@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { array, string, number } from "../src/index.js";
+import { array, string, number, object } from "../src/index.js";
 
 describe("ArraySchema", () => {
   describe("Basic validation", () => {
@@ -164,6 +164,30 @@ describe("ArraySchema", () => {
       expect(schema.parse([10, 50, 90])).toEqual([10, 50, 90]);
       expect(() => schema.parse([-1, 50, 90])).toThrow();
       expect(() => schema.parse([10, 150, 90])).toThrow();
+    });
+  });
+
+  describe("Specific edge cases", () => {
+    it("", () => {
+      const schema = object({
+        headers: array(
+          object({
+            key: string(),
+            value: string(),
+          })
+        ).optional(),
+      });
+      const result = schema.safeParse({
+        headers: [{ key: "Content-Type", value: "application/json" }],
+      });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toEqual({
+          headers: [{ key: "Content-Type", value: "application/json" }],
+        });
+      }
+
+      expect(schema.toJSON().properties.headers.items).toBeDefined();
     });
   });
 });

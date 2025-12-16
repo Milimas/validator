@@ -219,8 +219,10 @@ export class ObjectSchema<
    * //   defaultValue: undefined
    * // }
    */
-  toJSON(): HtmlObjectType<{ [K in keyof Shape]: HTMLAttributes }> {
-    const json: HtmlObjectType<{ [K in keyof Shape]: HTMLAttributes }> = {
+  toJSON(): HtmlObjectType<{ [K in keyof Shape]: Shape[K]["htmlAttributes"] }> {
+    const json: HtmlObjectType<{
+      [K in keyof Shape]: Shape[K]["htmlAttributes"];
+    }> = {
       ...this.htmlAttributes,
       type: "object",
       defaultValue: this.htmlAttributes?.defaultValue,

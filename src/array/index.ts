@@ -51,7 +51,7 @@ import {
 export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
   TypeOf<T>[]
 > {
-  public htmlAttributes: HtmlArrayType<HTMLAttributes> = {
+  public htmlAttributes: HtmlArrayType<T["htmlAttributes"]> = {
     type: "array",
     items: [],
     required: true,
@@ -257,7 +257,7 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
    * - minLength: The minimum array size constraint if set
    * - maxLength: The maximum array size constraint if set
    *
-   * @returns {HtmlArrayType<HTMLAttributes>} A JSON representation containing array type
+   * @returns {HtmlArrayType<T["htmlAttributes"]>} A JSON representation containing array type
    *          information, item schema HTML attributes, and length constraints
    *
    * @example
@@ -274,8 +274,8 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
    * //   maxLength: 10
    * // }
    */
-  toJSON(): HtmlArrayType<HTMLAttributes> {
-    const json: HtmlArrayType<HTMLAttributes> = {
+  toJSON(): HtmlArrayType<T["htmlAttributes"]> {
+    const json: HtmlArrayType<T["htmlAttributes"]> = {
       ...this.htmlAttributes,
       type: "array",
       items: [this.itemSchema.toJSON()],

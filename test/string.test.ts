@@ -516,4 +516,19 @@ describe("JSONSchema", () => {
       expect(schema.toJSON().language).toBeUndefined();
     });
   });
+
+  describe("Specific cases", () => {
+    it("", () => {
+      const schema = string()
+        .pattern(/^[A-Z]{3}-\d{4}$/)
+        .optional();
+
+      expect(schema.parse("ABC-1234")).toBe("ABC-1234");
+      expect(schema.parse(undefined)).toBeUndefined();
+      expect(() => schema.parse("abc-1234")).toThrow();
+      expect(() => schema.parse("ABCD-123")).toThrow();
+
+      expect(schema.toJSON().pattern).toBe("^[A-Z]{3}-\\d{4}$");
+    });
+  });
 });

@@ -364,10 +364,10 @@ export class OptionalSchema<T extends SchemaType<any, any>> extends SchemaType<
    *
    * @returns JSON-serializable HTML attributes with required: false
    */
-  toJSON(): this["htmlAttributes"] {
+  toJSON(): T["htmlAttributes"] {
     return {
       ...this.inner.toJSON(),
-      pattern: (this.inner.htmlAttributes as any)?.pattern?.source,
+      // pattern: (this.inner.htmlAttributes as any)?.pattern?.source,
       required: false,
     };
   }
