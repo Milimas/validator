@@ -54,6 +54,7 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
   public htmlAttributes: HtmlArrayType<HTMLAttributes> = {
     type: "array",
     items: [],
+    required: true,
   };
 
   /**
