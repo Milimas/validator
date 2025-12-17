@@ -1,3 +1,4 @@
+import { ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
 import { SchemaTypeAny, TypeOf, UnionAttributes } from "../types.js";
@@ -50,21 +51,22 @@ export class UnionSchema<
     };
   }
 
-  validate(data: unknown): e.ValidationResult<TypeOf<Schemas[number]>> {
-    const collected: ValidationError[] = [];
-
+  protected validate(
+    data: unknown,
+    ctx: ValidationContext
+  ): e.ValidationResult<TypeOf<Schemas[number]>> {
     for (const schema of this.schemas) {
-      const result = schema.validate(data);
+      const result = schema.safeParse(data, ctx);
       if (result.success) {
         return e.ValidationResult.ok(result.data as TypeOf<Schemas[number]>);
       }
-      collected.push(...result.errors);
+      ctx.addErrors(result.errors);
     }
 
-    if (collected.length === 0) {
-      collected.push(
+    if (ctx.getErrors().length === 0) {
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           "Invalid union input",
           "invalid_union",
           undefined,
@@ -74,7 +76,7 @@ export class UnionSchema<
       );
     }
 
-    return e.ValidationResult.fail(collected);
+    return e.ValidationResult.fail(ctx.getErrors());
   }
 
   toJSON() {

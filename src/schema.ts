@@ -1,3 +1,4 @@
+import { createValidationContext, ValidationContext } from "./context.js";
 import { e, ValidationError } from "./error.js";
 import {
   HTMLAttributes,
@@ -60,7 +61,10 @@ export abstract class SchemaType<Output = any, Input = Output> {
    * @param data - The unknown data to validate
    * @returns A ValidationResult containing either the validated data or validation errors
    */
-  abstract validate(data: unknown): e.ValidationResult<Output>;
+  protected abstract validate(
+    data: unknown,
+    ctx: ValidationContext
+  ): e.ValidationResult<Output>;
 
   /**
    * Parses and validates data, throwing an error if validation fails.
@@ -78,8 +82,11 @@ export abstract class SchemaType<Output = any, Input = Output> {
    * const validEmail = emailSchema.parse('user@example.com'); // Returns 'user@example.com'
    * emailSchema.parse('invalid'); // Throws ValidationAggregateError
    */
-  parse(data: unknown): Output {
-    const result = this.validate(data);
+  parse(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): Output {
+    const result = this.validate(data, ctx);
     if (!result.success) {
       throw result.intoError();
     }
@@ -106,7 +113,10 @@ export abstract class SchemaType<Output = any, Input = Output> {
    *   console.log(result.errors); // Array of validation errors
    * }
    */
-  safeParse(data: unknown): e.ValidationResult<Output> {
+  safeParse(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): e.ValidationResult<Output> {
     if (this.htmlAttributes?.defaultValue === null) {
       data = this.htmlAttributes.defaultValue;
     }
@@ -116,7 +126,7 @@ export abstract class SchemaType<Output = any, Input = Output> {
     ) {
       return e.ValidationResult.ok<Output>(data as Output);
     }
-    return this.validate(data);
+    return this.validate(data, ctx);
   }
 
   /**
@@ -224,7 +234,7 @@ export abstract class SchemaType<Output = any, Input = Output> {
    * const taxIdSchema = string().dependsOn([
    *   { field: 'accountType', condition: /^business$/ }
    * ]);
-   * // Tax ID is only required when accountType is buisness
+   * // Tax ID is only required when accountType is business
    *
    * @example
    * const emailSchema = string().dependsOn([
@@ -323,11 +333,14 @@ export class OptionalSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @param data - The data to validate
    * @returns ValidationResult with undefined or the validated inner type
    */
-  validate(data: unknown): e.ValidationResult<T["_output"] | undefined> {
+  protected validate(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): e.ValidationResult<T["_output"] | undefined> {
     if (data === undefined || data === null) {
       return e.ValidationResult.ok<undefined>(data as undefined);
     }
-    return this.inner.validate(data);
+    return this.inner.safeParse(data, ctx);
   }
 
   /**
@@ -337,13 +350,16 @@ export class OptionalSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @returns Undefined for empty values, or the validated data from inner schema
    * @throws {ValidationAggregateError} If inner schema validation fails
    */
-  parse(data: unknown) {
+  parse(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): T["_output"] | undefined {
     if (data === undefined || data === null) {
       if (this.htmlAttributes?.defaultValue !== undefined)
         return this.htmlAttributes.defaultValue as T["_output"];
       return undefined as T["_output"] | undefined;
     }
-    return this.inner.parse(data);
+    return this.inner.parse(data, ctx);
   }
 
   /**
@@ -352,11 +368,14 @@ export class OptionalSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @param data - The data to parse
    * @returns ValidationResult with undefined for empty values or inner schema result
    */
-  safeParse(data: unknown) {
+  safeParse(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): e.ValidationResult<T["_output"] | undefined> {
     if (data === undefined || data === null) {
       return e.ValidationResult.ok<undefined>(data as undefined);
     }
-    return this.inner.safeParse(data);
+    return this.inner.safeParse(data, ctx);
   }
 
   /**
@@ -416,11 +435,14 @@ export class NullableSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @param data - The data to validate
    * @returns ValidationResult with null or the validated inner type
    */
-  validate(data: unknown): e.ValidationResult<T["_output"] | null> {
+  protected validate(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): e.ValidationResult<T["_output"] | null> {
     if (data === null) {
       return e.ValidationResult.ok<null>(null);
     }
-    return this.inner.validate(data);
+    return this.inner.safeParse(data, ctx);
   }
 
   /**
@@ -430,11 +452,14 @@ export class NullableSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @returns Null for null input, or the validated data from inner schema
    * @throws {ValidationAggregateError} If inner schema validation fails
    */
-  parse(data: unknown) {
+  parse(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): T["_output"] | null {
     if (data === null) {
       return null as T["_output"] | null;
     }
-    return this.inner.parse(data);
+    return this.inner.parse(data, ctx);
   }
 
   /**
@@ -443,11 +468,14 @@ export class NullableSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @param data - The data to parse
    * @returns ValidationResult with null for null input or inner schema result
    */
-  safeParse(data: unknown) {
+  safeParse(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): e.ValidationResult<T["_output"] | null> {
     if (data === null) {
       return e.ValidationResult.ok<null>(null);
     }
-    return this.inner.safeParse(data);
+    return this.inner.safeParse(data, ctx);
   }
 }
 
@@ -500,11 +528,14 @@ export class DefaultSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @param data - The data to validate
    * @returns ValidationResult from the inner schema
    */
-  validate(data: unknown): e.ValidationResult<T["_output"]> {
+  protected validate(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): e.ValidationResult<T["_output"]> {
     if (data === undefined || data === null) {
       data = this.defaultValue;
     }
-    return this.inner.validate(data);
+    return this.inner.safeParse(data, ctx);
   }
 
   /**
@@ -514,11 +545,14 @@ export class DefaultSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @returns The validated data or default value
    * @throws {ValidationAggregateError} If validation fails
    */
-  parse(data: unknown): T["_output"] {
+  parse(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): T["_output"] {
     if (data === undefined || data === null) {
       data = this.defaultValue;
     }
-    return this.inner.parse(data);
+    return this.inner.parse(data, ctx);
   }
 
   /**
@@ -527,11 +561,14 @@ export class DefaultSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @param data - The data to parse
    * @returns ValidationResult with the validated data or default value
    */
-  safeParse(data: unknown): e.ValidationResult<T["_output"]> {
+  safeParse(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): e.ValidationResult<T["_output"]> {
     if (data === undefined || data === null) {
       data = this.defaultValue;
     }
-    return this.inner.safeParse(data);
+    return this.inner.safeParse(data, ctx);
   }
 
   /**
@@ -587,7 +624,6 @@ export class DependsOnSchema<T extends SchemaType<any, any>> extends SchemaType<
     super();
     this.htmlAttributes = {
       ...inner.htmlAttributes,
-      required: false,
       "data-depends-on": this._dependsOn,
     };
     this.inner.htmlAttributes.required = false;
@@ -608,8 +644,11 @@ export class DependsOnSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @param data - The data to validate
    * @returns ValidationResult from the inner schema
    */
-  validate(data: unknown): e.ValidationResult<T["_output"]> {
-    return this.inner.validate(data);
+  protected validate(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): e.ValidationResult<T["_output"]> {
+    return this.inner.safeParse(data, ctx);
   }
 
   /**
@@ -619,8 +658,11 @@ export class DependsOnSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @returns The validated data from inner schema
    * @throws {ValidationAggregateError} If validation fails
    */
-  parse(data: unknown): T["_output"] {
-    return this.inner.parse(data);
+  parse(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): T["_output"] {
+    return this.inner.parse(data, ctx);
   }
 
   /**
@@ -629,8 +671,11 @@ export class DependsOnSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @param data - The data to parse
    * @returns ValidationResult from the inner schema
    */
-  safeParse(data: unknown): e.ValidationResult<T["_output"]> {
-    return this.inner.safeParse(data);
+  safeParse(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): e.ValidationResult<T["_output"]> {
+    return this.inner.safeParse(data, ctx);
   }
 
   /**
@@ -642,7 +687,10 @@ export class DependsOnSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @returns JSON-serializable HTML attributes with serialized conditions
    */
   toJSON(): this["htmlAttributes"] {
-    const out: any = { ...this.inner.toJSON() };
+    const out: any = {
+      ...this.inner.toJSON(),
+      required: this.htmlAttributes.required,
+    };
     pattern: (this.inner.htmlAttributes as any)?.pattern?.source,
       (out["data-depends-on"] = this._dependsOn.map((cond: Condition) => ({
         field: cond.field,
@@ -676,7 +724,10 @@ export class AnySchema extends SchemaType<any> {
    * schema.validate({ key: 'value' }); // ✓ Success
    * schema.validate(null);         // ✓ Success
    */
-  validate(data: unknown): e.ValidationResult<any> {
+  validate(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): e.ValidationResult<any> {
     return e.ValidationResult.ok<any>(data);
   }
 }
@@ -704,9 +755,11 @@ export class NeverSchema extends SchemaType<never> {
    * schema.validate({ key: 'value' }); // ✗ Error: value is not allowed
    * schema.validate(null);         // ✗ Error: value is not allowed
    */
-  validate(data: unknown): e.ValidationResult<never> {
-    const errors: ValidationError[] = [];
-    errors.push(
+  validate(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): e.ValidationResult<never> {
+    ctx.addError(
       new ValidationError(
         [],
         "Value is not allowed",
@@ -716,7 +769,7 @@ export class NeverSchema extends SchemaType<never> {
         data
       )
     );
-    return e.ValidationResult.fail<never>(errors);
+    return e.ValidationResult.fail<never>(ctx.getErrors());
   }
 }
 
@@ -744,7 +797,10 @@ export class UnknownSchema extends SchemaType<unknown> {
    * schema.validate({ key: 'value' }); // ✓ Success
    * schema.validate(null);         // ✓ Success
    */
-  validate(data: unknown): e.ValidationResult<unknown> {
+  validate(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): e.ValidationResult<unknown> {
     return e.ValidationResult.ok<unknown>(data);
   }
 }

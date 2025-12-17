@@ -1,4 +1,5 @@
 import { e, ValidationError } from "../error.js";
+import { createValidationContext, ValidationContext } from "../context.js";
 import { SchemaType } from "../schema.js";
 import {
   HTMLAttributes,
@@ -36,7 +37,7 @@ import {
  * });
  *
  * const result = userSchema.safeParse({
- *   username: 'johndoe',
+ *   username: 'john_doe',
  *   email: 'john@example.com',
  *   age: 25,
  *   newsletter: true
@@ -128,8 +129,10 @@ export class ObjectSchema<
    *   });
    * }
    */
-  validate(data: unknown): e.ValidationResult<ObjectInfer<Shape>> {
-    const errors: ValidationError[] = [];
+  protected validate(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): e.ValidationResult<ObjectInfer<Shape>> {
     if (data === undefined) data = this.htmlAttributes?.defaultValue;
     if (
       typeof data !== "object" ||
@@ -137,9 +140,9 @@ export class ObjectSchema<
       (data === undefined && !this.htmlAttributes?.required) ||
       Array.isArray(data)
     ) {
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           "Invalid object",
           "invalid_type",
           "object",
@@ -148,16 +151,16 @@ export class ObjectSchema<
         )
       );
 
-      return e.ValidationResult.fail<ObjectInfer<Shape>>(errors);
+      return e.ValidationResult.fail<ObjectInfer<Shape>>(ctx.getErrors());
     }
 
     const result: ObjectInfer<Shape> = {} as ObjectInfer<Shape>;
 
     for (const key in data) {
       if (!(key in this.shape)) {
-        errors.push(
+        ctx.addError(
           new ValidationError(
-            [key],
+            [...ctx.getPath(), key],
             "Unexpected property",
             "unexpected_property",
             "object",
@@ -170,17 +173,16 @@ export class ObjectSchema<
     for (const key in this.shape) {
       const schema = this.shape[key];
       const value = (data as any)[key];
-      const fieldResult = schema.safeParse(value);
+      const fieldResult = schema.safeParse(value, ctx.child(key));
       if (!fieldResult.success) {
-        const fieldErrors = fieldResult.mapErrors([key]).errors;
-        errors.push(...fieldErrors);
+        ctx.addErrors(fieldResult.errors);
       } else {
         result[key as unknown as keyof ObjectInfer<Shape>] = fieldResult.data;
       }
     }
 
-    if (errors.length > 0) {
-      return e.ValidationResult.fail<ObjectInfer<Shape>>(errors);
+    if (ctx.hasErrors()) {
+      return e.ValidationResult.fail<ObjectInfer<Shape>>(ctx.getErrors());
     }
     return e.ValidationResult.ok<ObjectInfer<Shape>>(
       result as ObjectInfer<Shape>

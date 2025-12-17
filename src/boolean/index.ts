@@ -1,3 +1,4 @@
+import { ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
 import { HtmlCheckboxAttributes } from "../types.js";
@@ -58,12 +59,14 @@ export class BooleanSchema extends SchemaType<boolean> {
    * schema.validate('true'); // ✗ Error: invalid type
    * schema.validate(null);   // ✗ Error: invalid type
    */
-  validate(data: unknown): e.ValidationResult<boolean> {
-    const errors: ValidationError[] = [];
+  protected validate(
+    data: unknown,
+    ctx: ValidationContext
+  ): e.ValidationResult<boolean> {
     if (typeof data !== "boolean") {
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           "Invalid boolean",
           "invalid_type",
           "boolean",
@@ -71,11 +74,11 @@ export class BooleanSchema extends SchemaType<boolean> {
           data
         )
       );
-      return e.ValidationResult.fail<boolean>(errors);
+      return e.ValidationResult.fail<boolean>(ctx.getErrors());
     }
 
-    if (errors.length > 0) {
-      return e.ValidationResult.fail<boolean>(errors);
+    if (ctx.hasErrors()) {
+      return e.ValidationResult.fail<boolean>(ctx.getErrors());
     }
     return e.ValidationResult.ok<boolean>(data);
   }

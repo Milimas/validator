@@ -1,4 +1,5 @@
 import { e, ValidationError } from "../error.js";
+import { ValidationContext } from "../index.js";
 import { SchemaType } from "../schema.js";
 import { HtmlNumberInputAttributes } from "../types.js";
 
@@ -70,12 +71,14 @@ export class NumberSchema extends SchemaType<number> {
    * schema.validate(150);    // ✗ Error: too big
    * schema.validate('123');  // ✗ Error: invalid type
    */
-  validate(data: unknown): e.ValidationResult<number> {
-    const errors: ValidationError[] = [];
+  protected validate(
+    data: unknown,
+    ctx: ValidationContext
+  ): e.ValidationResult<number> {
     if (typeof data !== "number" || isNaN(data)) {
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           "Invalid number",
           "invalid_type",
           "number",
@@ -83,7 +86,7 @@ export class NumberSchema extends SchemaType<number> {
           data
         )
       );
-      return e.ValidationResult.fail<number>(errors);
+      return e.ValidationResult.fail<number>(ctx.getErrors());
     }
 
     if (
@@ -91,9 +94,9 @@ export class NumberSchema extends SchemaType<number> {
         data < this.htmlAttributes.min) ||
       data <= -Infinity
     ) {
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           this.errorMap.get("min") ||
             `Number must be greater than or equal to ${this.htmlAttributes.min}`,
           "too_small",
@@ -109,9 +112,9 @@ export class NumberSchema extends SchemaType<number> {
         data > this.htmlAttributes.max) ||
       data >= Infinity
     ) {
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           this.errorMap.get("max") ||
             `Number must be less than or equal to ${this.htmlAttributes.max}`,
           "too_big",
@@ -122,8 +125,8 @@ export class NumberSchema extends SchemaType<number> {
       );
     }
 
-    if (errors.length > 0) {
-      return e.ValidationResult.fail<number>(errors);
+    if (ctx.hasErrors()) {
+      return e.ValidationResult.fail<number>(ctx.getErrors());
     }
     return e.ValidationResult.ok<number>(data);
   }
@@ -192,15 +195,18 @@ export class NumberSchema extends SchemaType<number> {
   int(): this {
     this.errorMap.set("int", "Number must be an integer");
     const originalValidate = this.validate.bind(this);
-    this.validate = (data: unknown): e.ValidationResult<number> => {
-      const result = originalValidate(data);
+    this.validate = (
+      data: unknown,
+      ctx: ValidationContext
+    ): e.ValidationResult<number> => {
+      const result = originalValidate(data, ctx);
       if (!result.success) {
         return result;
       }
       if (!Number.isInteger(result.data)) {
         return e.ValidationResult.fail<number>([
           new ValidationError(
-            [],
+            ctx.getPath(),
             this.errorMap.get("int") || "Number must be an integer",
             "not_integer",
             "number",

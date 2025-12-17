@@ -1,3 +1,4 @@
+import { ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
 import { HtmlSelectAttributes } from "../types.js";
@@ -92,12 +93,14 @@ export class EnumSchema<const T extends readonly string[]> extends SchemaType<
    *   console.log('Valid statuses are:', ['active', 'inactive', 'pending']);
    * }
    */
-  validate(data: unknown): e.ValidationResult<T[number]> {
-    const errors: ValidationError[] = [];
+  protected validate(
+    data: unknown,
+    ctx: ValidationContext
+  ): e.ValidationResult<T[number]> {
     if (typeof data !== "string" || !this.valuesSet.has(data)) {
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           "Invalid enum value",
           "invalid_enum_value",
           this.values,
@@ -105,7 +108,7 @@ export class EnumSchema<const T extends readonly string[]> extends SchemaType<
           data
         )
       );
-      return e.ValidationResult.fail<T[number]>(errors);
+      return e.ValidationResult.fail<T[number]>(ctx.getErrors());
     }
 
     return e.ValidationResult.ok<T[number]>(data);

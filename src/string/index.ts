@@ -1,3 +1,4 @@
+import { ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
 import {
@@ -52,13 +53,12 @@ export class StringSchema extends SchemaType<string> {
    *   console.log(result.data); // 'hello'
    * }
    */
-  validate(data: unknown): e.ValidationResult<string> {
-    const errors: ValidationError[] = [];
+  validate(data: unknown, ctx: ValidationContext): e.ValidationResult<string> {
     // Basic type check
     if (typeof data !== "string") {
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           "Invalid string",
           "invalid_type",
           "string",
@@ -66,7 +66,7 @@ export class StringSchema extends SchemaType<string> {
           data
         )
       );
-      return e.ValidationResult.fail<string>(errors);
+      return e.ValidationResult.fail<string>(ctx.getErrors());
     }
 
     // Pattern check
@@ -74,9 +74,9 @@ export class StringSchema extends SchemaType<string> {
       this.htmlAttributes.pattern &&
       !this.htmlAttributes.pattern.test(data)
     ) {
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           this.errorMap.get("pattern") || "Invalid format",
           "pattern",
           this.htmlAttributes.pattern,
@@ -88,9 +88,9 @@ export class StringSchema extends SchemaType<string> {
 
     // required check
     if (this.htmlAttributes.required && (data === null || data === undefined))
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           this.errorMap.get("required") || "String is required",
           "required",
           true,
@@ -104,9 +104,9 @@ export class StringSchema extends SchemaType<string> {
       this.htmlAttributes.minLength !== undefined &&
       data.length < this.htmlAttributes.minLength
     )
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           this.errorMap.get("min") || "String is too short",
           "min",
           this.htmlAttributes.minLength,
@@ -120,9 +120,9 @@ export class StringSchema extends SchemaType<string> {
       this.htmlAttributes.maxLength !== undefined &&
       data.length > this.htmlAttributes.maxLength
     )
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           this.errorMap.get("max") || "String is too long",
           "max",
           this.htmlAttributes.maxLength,
@@ -132,9 +132,9 @@ export class StringSchema extends SchemaType<string> {
       );
 
     if (this.htmlAttributes.readOnly) {
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           this.errorMap.get("readOnly") || "String is read-only",
           "readOnly",
           true,
@@ -144,8 +144,8 @@ export class StringSchema extends SchemaType<string> {
       );
     }
 
-    if (errors.length > 0) {
-      return e.ValidationResult.fail<string>(errors);
+    if (ctx.hasErrors()) {
+      return e.ValidationResult.fail<string>(ctx.getErrors());
     }
 
     return e.ValidationResult.ok<string>(data);
@@ -984,9 +984,9 @@ export class JSONSchema extends StringSchema {
    * @param {unknown} data - The data to validate
    * @returns {e.ValidationResult<string>} Validation result with JSON parse validation
    */
-  validate(data: unknown): e.ValidationResult<string> {
+  validate(data: unknown, ctx: ValidationContext): e.ValidationResult<string> {
     // First validate as string
-    const stringResult = super.validate(data);
+    const stringResult = super.validate(data, ctx);
     if (!stringResult.success) {
       return stringResult;
     }
@@ -994,20 +994,20 @@ export class JSONSchema extends StringSchema {
     // Then validate as valid JSON
     try {
       JSON.parse(stringResult.data as string);
-      super.validate(stringResult.data);
+      super.validate(stringResult.data, ctx);
       return stringResult;
     } catch (error) {
-      const errors = [
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           this.errorMap.get("pattern") || "Invalid JSON format",
           "invalid_json",
           "valid JSON",
           stringResult.data,
           stringResult.data
-        ),
-      ];
-      return e.ValidationResult.fail<string>(errors);
+        )
+      );
+      return e.ValidationResult.fail<string>(ctx.getErrors());
     }
   }
 }

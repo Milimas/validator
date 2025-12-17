@@ -1,4 +1,5 @@
 import { e, ValidationError } from "../error.js";
+import { ValidationContext } from "../index.js";
 import { SchemaType } from "../schema.js";
 import { HTMLAttributes, SchemaTypeAny, TypeOf } from "../types.js";
 
@@ -35,7 +36,10 @@ export class RecordSchema<
     private readonly valueSchema: TValue,
     private readonly keySchema: TKey = new (class extends SchemaType<string> {
       htmlAttributes = { type: "text" as const, required: true };
-      validate(data: unknown): e.ValidationResult<string> {
+      protected validate(
+        data: unknown,
+        ctx: ValidationContext
+      ): e.ValidationResult<string> {
         if (typeof data !== "string") {
           return e.ValidationResult.fail([
             new ValidationError(
@@ -50,7 +54,7 @@ export class RecordSchema<
         }
         return e.ValidationResult.ok(data);
       }
-    })() as TKey
+    })() as unknown as TKey
   ) {
     super();
     this.htmlAttributes = {
@@ -61,13 +65,14 @@ export class RecordSchema<
     };
   }
 
-  validate(data: unknown): e.ValidationResult<Record<string, TypeOf<TValue>>> {
-    const errors: ValidationError[] = [];
-
+  protected validate(
+    data: unknown,
+    ctx: ValidationContext
+  ): e.ValidationResult<Record<string, TypeOf<TValue>>> {
     if (typeof data !== "object" || data === null || Array.isArray(data)) {
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           "Invalid record type",
           "invalid_type",
           "object",
@@ -75,52 +80,30 @@ export class RecordSchema<
           data
         )
       );
-      return e.ValidationResult.fail(errors);
+      return e.ValidationResult.fail(ctx.getErrors());
     }
 
     const result: Record<string, TypeOf<TValue>> = {};
 
     for (const [key, value] of Object.entries(data)) {
       // Validate key
-      const keyResult = this.keySchema.validate(key);
+      const keyResult = this.keySchema.safeParse(key, ctx.child(key));
       if (!keyResult.success) {
-        keyResult.errors.forEach((err) => {
-          errors.push(
-            new ValidationError(
-              [key, ...(err.path || [])],
-              err.message,
-              err.code,
-              err.expected,
-              err.received,
-              err.value
-            )
-          );
-        });
+        ctx.addErrors(keyResult.errors);
         continue;
       }
 
       // Validate value
-      const valueResult = this.valueSchema.validate(value);
+      const valueResult = this.valueSchema.safeParse(value, ctx.child(key));
       if (!valueResult.success) {
-        valueResult.errors.forEach((err) => {
-          errors.push(
-            new ValidationError(
-              [key, ...(err.path || [])],
-              err.message,
-              err.code,
-              err.expected,
-              err.received,
-              err.value
-            )
-          );
-        });
+        ctx.addErrors(valueResult.errors);
       } else {
         result[key] = valueResult.data as TypeOf<TValue>;
       }
     }
 
-    if (errors.length > 0) {
-      return e.ValidationResult.fail(errors);
+    if (ctx.hasErrors()) {
+      return e.ValidationResult.fail(ctx.getErrors());
     }
 
     return e.ValidationResult.ok(result);

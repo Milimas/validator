@@ -12,6 +12,15 @@ export { v };
 // Named exports for tree-shaking and direct access to individual schema factories.
 export * from "./external.js";
 export { ValidationAggregateError, ValidationError } from "./error.js";
+export {
+  ValidationContext,
+  createValidationContext,
+  type FieldPath,
+  type DependencyCondition,
+  type FailedDependency,
+  type ValidationContextSnapshot,
+  type ValidationContextOptions,
+} from "./context.js";
 
 // Default export exposes the namespace for ergonomic usage.
 export default v;

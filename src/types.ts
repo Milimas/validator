@@ -50,20 +50,19 @@ export type Prettify<T> = T extends infer U
  * Used to display complex object shapes (from extend/omit/pick) in a cleaner way.
  * @internal
  */
-export type PrettifyShape<
-  T extends { [key: string]: SchemaTypeAny }
-> = T extends infer U
-  ? {
-      [K in keyof U]: U[K];
-    }
-  : never;
+export type PrettifyShape<T extends { [key: string]: SchemaTypeAny }> =
+  T extends infer U
+    ? {
+        [K in keyof U]: U[K];
+      }
+    : never;
 
 /**
  * Merges multiple schema shapes into a single intersection type.
  * Used for variadic extend() to combine 1+ object schema shapes.
  * @internal
  */
-export type MergeShapes<T extends readonly { [key: string]: SchemaTypeAny }[]> = 
+export type MergeShapes<T extends readonly { [key: string]: SchemaTypeAny }[]> =
   T extends readonly [infer First, ...infer Rest]
     ? First extends { [key: string]: SchemaTypeAny }
       ? Rest extends readonly { [key: string]: SchemaTypeAny }[]

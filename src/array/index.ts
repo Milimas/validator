@@ -1,3 +1,4 @@
+import { createValidationContext, ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
 import {
@@ -107,12 +108,14 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
    *   });
    * }
    */
-  validate(data: unknown): e.ValidationResult<TypeOf<T>[]> {
-    const errors: ValidationError[] = [];
+  protected validate(
+    data: unknown,
+    ctx: ValidationContext = createValidationContext(data)
+  ): e.ValidationResult<TypeOf<T>[]> {
     if (!Array.isArray(data)) {
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           "Invalid array",
           "invalid_type",
           "array",
@@ -120,16 +123,16 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
           data
         )
       );
-      return e.ValidationResult.fail<TypeOf<T>[]>(errors);
+      return e.ValidationResult.fail<TypeOf<T>[]>(ctx.getErrors());
     }
 
     if (
       this.htmlAttributes.minLength !== undefined &&
       data.length < this.htmlAttributes.minLength
     ) {
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx .getPath(),
           this.errorMap.get("minLength") ||
             `Array must have at least ${this.htmlAttributes.minLength} items`,
           "too_small",
@@ -144,9 +147,9 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
       this.htmlAttributes.maxLength !== undefined &&
       data.length > this.htmlAttributes.maxLength
     ) {
-      errors.push(
+      ctx.addError(
         new ValidationError(
-          [],
+          ctx.getPath(),
           this.errorMap.get("maxLength") ||
             `Array must have at most ${this.htmlAttributes.maxLength} items`,
           "too_big",
@@ -161,20 +164,16 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
 
     for (let i = 0; i < data.length; i++) {
       const item = data[i];
-      const itemResult = this.itemSchema.safeParse(item);
+      const itemResult = this.itemSchema.safeParse(item, ctx.child(i));
       if (!itemResult.success) {
-        const itemErrors = itemResult.errors.map((err: ValidationError) => ({
-          ...err,
-          path: [i, ...err.path],
-        }));
-        errors.push(...itemErrors);
+        ctx.addErrors(itemResult.errors);
       } else {
         result.push(itemResult.data);
       }
     }
 
-    if (errors.length > 0) {
-      return e.ValidationResult.fail<TypeOf<T>[]>(errors);
+    if (ctx.hasErrors()) {
+      return e.ValidationResult.fail<TypeOf<T>[]>(ctx.getErrors());
     }
     return e.ValidationResult.ok<TypeOf<T>[]>(result);
   }
