@@ -483,7 +483,7 @@ describe("Complex Nested Structures", () => {
 
       const validData = {
         userId: "550e8400-e29b-41d4-a716-446655440000",
-        username: "johndoe",
+        username: "john_doe",
         email: "john@example.com",
         profile: {
           firstName: "John",
@@ -522,7 +522,7 @@ describe("Complex Nested Structures", () => {
       expect(result.success).toBe(true);
     });
 
-    it("should validate complex ecommerce product catalog", () => {
+    it("should validate complex e-commerce product catalog", () => {
       const schema = object({
         catalogId: uuid(),
         storeName: string(),
@@ -655,7 +655,7 @@ describe("Complex Schema Chains", () => {
 
       expect(schema.parse("SecurePass123")).toBe("SecurePass123");
       expect(() => schema.parse("weak")).toThrow();
-      expect(() => schema.parse("nouppercase1")).toThrow();
+      expect(() => schema.parse("no-uppercase1")).toThrow();
     });
   });
 

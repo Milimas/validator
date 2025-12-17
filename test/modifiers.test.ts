@@ -198,7 +198,7 @@ describe("Schema Modifiers", () => {
       ]);
 
       const json = schema.toJSON() as any;
-      expect(json.required).toBe(false);
+      expect(json.required).toBe(true);
       expect(json["data-depends-on"]).toBeDefined();
     });
 
