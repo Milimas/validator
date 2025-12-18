@@ -166,6 +166,10 @@ export type Condition = {
  * @property {'refine' | 'superRefine'} type - The type of refinement check
  * @property {function} check - The validation function to execute
  * @property {string} [message] - Optional error message for refine checks
+ * @property {string} [code] - Optional error code for refine checks
+ * @property {boolean} [immediate] - Whether to stop further refinements on failure (refine only)
+ * @property {unknown} [expected] - Expected value for error reporting (refine only)
+ * @property {unknown} [received] - Received value for error reporting (refine only)
  *
  * @example
  * // Simple boolean check
@@ -193,8 +197,8 @@ export type RefinementCheck<
   | {
       type: "refine";
       check: (value: Output) => boolean;
-      immediate: boolean;
-      message?: string;
+      immediate?: boolean;
+      message: () => string;
       code?: string;
       expected?: unknown;
       received?: unknown;

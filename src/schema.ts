@@ -84,13 +84,18 @@ export abstract class SchemaType<Output = any, Input = Output> {
   ): e.ValidationResult<Output> {
     const result = this.validate(data, ctx);
 
+    // If base validation fails, skip refinements and return immediately
+    if (!result.success) {
+      return result;
+    }
+
     for (const refinement of this.checks) {
       if (refinement.type === "refine") {
         const checkPassed = refinement.check(result.data as Output);
         if (!checkPassed) {
           const error = new ValidationError(
             ctx.getPath(),
-            refinement.message || "Custom validation failed",
+            refinement.message() || "Custom validation failed",
             "custom_validation"
           );
           ctx.addError(error);
@@ -103,16 +108,22 @@ export abstract class SchemaType<Output = any, Input = Output> {
         refinement.check(result.data as Output, new RefinementContext(ctx));
       }
     }
+
+    // If refinements added errors, surface them as a failed result
+    if (ctx.hasErrors()) {
+      return e.ValidationResult.fail<Output>(ctx.getErrors());
+    }
+
     return result;
   }
 
-  merge<S extends SchemaType<Output, Input>[] = SchemaType<Output, Input>[]>(
-    ...others: S
-  ): S {
-    const merged = Object.create(Object.getPrototypeOf(this), {});
-    Object.assign(merged, this, ...others);
-    return merged;
-  }
+  // merge<S extends SchemaType<Output, Input>[] = SchemaType<Output, Input>[]>(
+  //   ...others: S
+  // ): S {
+  //   const merged = Object.create(Object.getPrototypeOf(this), {});
+  //   Object.assign(merged, this, ...others);
+  //   return merged;
+  // }
 
   /**
    * Parses and validates data, throwing an error if validation fails.
@@ -170,13 +181,6 @@ export abstract class SchemaType<Output = any, Input = Output> {
       data as this["_input"]
     )
   ): e.ValidationResult<Output> {
-    if (
-      this.htmlAttributes?.required === false &&
-      (data === undefined || data === null)
-    ) {
-      return e.ValidationResult.ok<Output>(data as Output);
-    }
-
     // Run base validation first
     const result = this.#validateWithRefinements(data, ctx);
 
@@ -355,7 +359,7 @@ export abstract class SchemaType<Output = any, Input = Output> {
       type: "refine",
       check,
       immediate: immediate || false,
-      message: message || "Custom validation failed",
+      message: () => message || "Custom validation failed",
       code,
       expected,
       received,
@@ -790,6 +794,18 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
       return e.ValidationResult.ok<undefined>(undefined);
     }
 
+    // When dependency is satisfied, check if value is missing and add required error
+    if (data === undefined || data === null || data === "") {
+      ctx.addError(
+        new ValidationError(
+          ctx.getPath(),
+          this.errorMap.get("required") || "This field is required",
+          "required"
+        )
+      );
+      return e.ValidationResult.fail<this["_output"]>(ctx.getErrors());
+    }
+
     return this.inner.safeParse(data, ctx);
   }
 
@@ -812,6 +828,20 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
       return undefined;
     }
 
+    // When dependency is satisfied, check if value is missing and throw required error
+    if (data === undefined || data === null || data === "") {
+      ctx.addError(
+        new ValidationError(
+          ctx.getPath(),
+          this.errorMap.get("required") || "This field is required",
+          "required"
+        )
+      );
+      throw e.ValidationResult.fail<this["_output"]>(
+        ctx.getErrors()
+      ).intoError();
+    }
+
     return this.inner.parse(data as T["_input"], ctx);
   }
 
@@ -830,6 +860,18 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
 
     if (!isRequired) {
       return e.ValidationResult.ok<undefined>(undefined);
+    }
+
+    // When dependency is satisfied, check if value is missing and add required error
+    if (data === undefined || data === null || data === "") {
+      ctx.addError(
+        new ValidationError(
+          ctx.getPath(),
+          this.errorMap.get("required") || "This field is required",
+          "required"
+        )
+      );
+      return e.ValidationResult.fail<this["_output"]>(ctx.getErrors());
     }
 
     return this.inner.safeParse(data, ctx);

@@ -38,50 +38,25 @@ export class BooleanSchema extends SchemaType<boolean> {
     required: false,
   };
 
-  /**
-   * Validates that the input is a strict boolean value (true or false).
-   *
-   * Performs type checking to ensure the input is exactly boolean type, not truthy/falsy
-   * values like 1, 0, "true", "false", null, or undefined. Only true and false are
-   * accepted values. This strict validation prevents common form submission errors where
-   * checkbox values might be strings or numbers instead of actual booleans.
-   *
-   * @param {unknown} data - The data to validate (should be true or false)
-   * @returns {e.ValidationResult<boolean>} A validation result containing the boolean value
-   *          or an error if the input is not a strict boolean
-   *
-   * @example
-   * const schema = new BooleanSchema();
-   *
-   * schema.validate(true);   // ✓ Success
-   * schema.validate(false);  // ✓ Success
-   * schema.validate(1);      // ✗ Error: invalid type
-   * schema.validate('true'); // ✗ Error: invalid type
-   * schema.validate(null);   // ✗ Error: invalid type
-   */
-  protected validate(
-    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+  constructor() {
+    super();
 
+    this.checks.push({
+      type: "refine",
+      check: (data: boolean) => typeof data === "boolean",
+      message: () => "Invalid boolean value",
+      code: "invalid_type",
+      expected: "boolean",
+      received: "non-boolean",
+      immediate: true,
+    });
+  }
+
+  protected validate(
+    data: boolean | unknown = this.htmlAttributes.defaultValue,
     ctx: ValidationContext
   ): e.ValidationResult<boolean> {
-    if (typeof data !== "boolean") {
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          "Invalid boolean",
-          "invalid_type",
-          "boolean",
-          typeof data,
-          data
-        )
-      );
-      return e.ValidationResult.fail<boolean>(ctx.getErrors());
-    }
-
-    if (ctx.hasErrors()) {
-      return e.ValidationResult.fail<boolean>(ctx.getErrors());
-    }
-    return e.ValidationResult.ok<boolean>(data);
+    return e.ValidationResult.ok(data as boolean);
   }
 
   default(value: boolean): DefaultSchema<this> {

@@ -56,6 +56,8 @@ export class UnionSchema<
 
     ctx: ValidationContext<this>
   ): e.ValidationResult<TypeOf<Schemas[number]>> {
+    const branchErrors: ValidationError[] = [];
+
     for (const schema of this.schemas) {
       // Use an isolated branch context so errors from failed branches
       // do not pollute the main context when another branch succeeds.
@@ -64,11 +66,10 @@ export class UnionSchema<
       if (result.success) {
         return e.ValidationResult.ok(result.data as TypeOf<Schemas[number]>);
       }
-      // Accumulate errors from this branch into the main context
-      ctx.addErrors(branchCtx.getErrors());
+      branchErrors.push(...branchCtx.getErrors());
     }
 
-    if (ctx.getErrors().length === 0) {
+    if (branchErrors.length === 0) {
       ctx.addError(
         new ValidationError(
           ctx.getPath(),
@@ -79,6 +80,8 @@ export class UnionSchema<
           data
         )
       );
+    } else {
+      ctx.addErrors(branchErrors);
     }
 
     return e.ValidationResult.fail(ctx.getErrors());

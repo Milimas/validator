@@ -844,6 +844,10 @@ describe("Complex Schema Chains", () => {
       ];
 
       const result = schema.safeParse(validData);
+      expect(result.data).toStrictEqual([
+        validData[0],
+        { ...validData[1], score: 0 },
+      ]);
       expect(result.success).toBe(true);
     });
   });

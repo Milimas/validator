@@ -43,6 +43,52 @@ export class NumberSchema extends SchemaType<number> {
     required: true,
   };
 
+  constructor() {
+    super();
+    this.checks.push(
+      {
+        type: "refine",
+        check: (data: number) => typeof data === "number" && !isNaN(data),
+        message: () => "Invalid number",
+        code: "invalid_type",
+        expected: "number",
+        received: "non-number",
+        immediate: true,
+      },
+      {
+        type: "refine",
+        check: (data: number) =>
+          this.htmlAttributes.min === undefined ||
+          (this.htmlAttributes.min !== undefined &&
+            data >= this.htmlAttributes.min),
+        message: () =>
+          this.errorMap.get("min") ||
+          `Number must be greater than or equal to ${this.htmlAttributes.min}`,
+        code: "too_small",
+        immediate: false,
+      },
+      {
+        type: "refine",
+        check: (data: number) =>
+          this.htmlAttributes.max == undefined ||
+          (this.htmlAttributes.max !== undefined &&
+            data <= this.htmlAttributes.max),
+        message: () =>
+          this.errorMap.get("max") ||
+          `Number must be less than or equal to ${this.htmlAttributes.max}`,
+        code: "too_big",
+        immediate: false,
+      },
+      {
+        type: "refine",
+        check: (data: number) => data < Infinity && data > -Infinity,
+        message: () => "Number must be finite",
+        code: "not_finite",
+        immediate: true,
+      }
+    );
+  }
+
   /**
    * Validates that the input is a valid number and conforms to all constraints.
    *
@@ -75,60 +121,7 @@ export class NumberSchema extends SchemaType<number> {
     data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
     ctx: ValidationContext
   ): e.ValidationResult<number> {
-    if (typeof data !== "number" || isNaN(data)) {
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          "Invalid number",
-          "invalid_type",
-          "number",
-          typeof data,
-          data
-        )
-      );
-      return e.ValidationResult.fail<number>(ctx.getErrors());
-    }
-
-    if (
-      (this.htmlAttributes.min !== undefined &&
-        data < this.htmlAttributes.min) ||
-      data <= -Infinity
-    ) {
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          this.errorMap.get("min") ||
-            `Number must be greater than or equal to ${this.htmlAttributes.min}`,
-          "too_small",
-          "number",
-          "number",
-          data
-        )
-      );
-    }
-
-    if (
-      (this.htmlAttributes.max !== undefined &&
-        data > this.htmlAttributes.max) ||
-      data >= Infinity
-    ) {
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          this.errorMap.get("max") ||
-            `Number must be less than or equal to ${this.htmlAttributes.max}`,
-          "too_big",
-          "number",
-          "number",
-          data
-        )
-      );
-    }
-
-    if (ctx.hasErrors()) {
-      return e.ValidationResult.fail<number>(ctx.getErrors());
-    }
-    return e.ValidationResult.ok<number>(data);
+    return e.ValidationResult.ok<number>(data as number);
   }
 
   /**

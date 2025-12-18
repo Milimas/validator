@@ -70,6 +70,37 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
       items: [this.itemSchema.htmlAttributes],
       required: true,
     };
+    this.checks.push(
+      {
+        type: "refine",
+        check: (data: TypeOf<T>[]) => Array.isArray(data),
+        message: () => `Invalid array`,
+        code: "invalid_type",
+        immediate: true,
+      },
+      {
+        type: "refine",
+        check: (data: TypeOf<T>[]) =>
+          this.htmlAttributes.maxLength === undefined ||
+          data.length <= this.htmlAttributes.maxLength,
+        message: () =>
+          this.errorMap.get("maxLength") ||
+          `Array must have at most ${this.htmlAttributes.maxLength} items`,
+        code: "too_big",
+        immediate: false,
+      },
+      {
+        type: "refine",
+        check: (data: TypeOf<T>[]) =>
+          this.htmlAttributes.minLength === undefined ||
+          data.length >= this.htmlAttributes.minLength,
+        message: () =>
+          this.errorMap.get("minLength") ||
+          `Array must have at least ${this.htmlAttributes.minLength} items`,
+        code: "too_small",
+        immediate: false,
+      }
+    );
   }
 
   /**
@@ -105,60 +136,10 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
    * }
    */
   protected validate(
-    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
-    ctx: ValidationContext<this> = createValidationContext<this>(
-      data as this["_input"]
-    )
+    data: TypeOf<T>[] | [] = this.htmlAttributes.defaultValue || [],
+    ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): e.ValidationResult<TypeOf<T>[]> {
-    if (!Array.isArray(data)) {
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          "Invalid array",
-          "invalid_type",
-          "array",
-          typeof data,
-          data
-        )
-      );
-      return e.ValidationResult.fail<TypeOf<T>[]>(ctx.getErrors());
-    }
-
-    if (
-      this.htmlAttributes.minLength !== undefined &&
-      data.length < this.htmlAttributes.minLength
-    ) {
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          this.errorMap.get("minLength") ||
-            `Array must have at least ${this.htmlAttributes.minLength} items`,
-          "too_small",
-          "array",
-          "array",
-          data
-        )
-      );
-    }
-
-    if (
-      this.htmlAttributes.maxLength !== undefined &&
-      data.length > this.htmlAttributes.maxLength
-    ) {
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          this.errorMap.get("maxLength") ||
-            `Array must have at most ${this.htmlAttributes.maxLength} items`,
-          "too_big",
-          "array",
-          "array",
-          data
-        )
-      );
-    }
-
-    const result: TypeOf<T>[] = [];
+    const parsedItems: TypeOf<T>[] = [];
 
     for (let i = 0; i < data.length; i++) {
       const item = data[i];
@@ -166,14 +147,22 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
       if (!itemResult.success) {
         ctx.addErrors(itemResult.errors);
       } else {
-        result.push(itemResult.data);
+        parsedItems.push(itemResult.data);
       }
     }
 
     if (ctx.hasErrors()) {
       return e.ValidationResult.fail<TypeOf<T>[]>(ctx.getErrors());
     }
-    return e.ValidationResult.ok<TypeOf<T>[]>(result);
+
+    // Preserve the original array reference so downstream consumers
+    // keep identity while still applying any parsed/normalized values.
+    const output = data as TypeOf<T>[];
+    for (let i = 0; i < parsedItems.length; i++) {
+      output[i] = parsedItems[i];
+    }
+
+    return e.ValidationResult.ok<TypeOf<T>[]>(output);
   }
 
   /**

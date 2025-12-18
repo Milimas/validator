@@ -66,6 +66,15 @@ export class EnumSchema<const T extends readonly string[]> extends SchemaType<
     super();
     this.valuesSet = new Set(values);
     this.htmlAttributes.options = values;
+    this.checks.push({
+      type: "refine",
+      check: (data: string) => this.valuesSet.has(data),
+      message: () => "Invalid enum value",
+      code: "invalid_enum_value",
+      expected: this.values,
+      received: "invalid_value",
+      immediate: true,
+    });
   }
 
   /**
@@ -97,20 +106,6 @@ export class EnumSchema<const T extends readonly string[]> extends SchemaType<
     data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
     ctx: ValidationContext
   ): e.ValidationResult<T[number]> {
-    if (typeof data !== "string" || !this.valuesSet.has(data)) {
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          "Invalid enum value",
-          "invalid_enum_value",
-          this.values,
-          data,
-          data
-        )
-      );
-      return e.ValidationResult.fail<T[number]>(ctx.getErrors());
-    }
-
-    return e.ValidationResult.ok<T[number]>(data);
+    return e.ValidationResult.ok<T[number]>(data as T[number]);
   }
 }

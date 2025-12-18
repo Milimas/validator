@@ -245,8 +245,8 @@ describe("Schema Modifiers", () => {
       const result = schema.safeParse({ flag: true });
 
       expect(result.success).toBe(false);
-      expect(result.errors[1]?.path).toEqual(["value"]);
-      expect(result.errors[1]?.code).toBe("required");
+      expect(result.errors[0]?.path).toEqual(["value"]);
+      expect(result.errors[0]?.code).toBe("required");
     });
 
     it("should validate when dependency is satisfied and value is present", () => {

@@ -35,6 +35,65 @@ export class StringSchema extends SchemaType<string> {
     required: true,
   };
 
+  constructor() {
+    super();
+    this.checks.push(
+      {
+        type: "refine",
+        check: (data: string) => typeof data === "string",
+        message: () => "Invalid string",
+        code: "invalid_type",
+        immediate: true,
+      },
+      {
+        type: "refine",
+        check: (data: string) =>
+          !this.htmlAttributes.required ||
+          (this.htmlAttributes.required === true &&
+            data !== null &&
+            data !== undefined),
+        message: () => this.errorMap.get("required") || "String is required",
+        code: "required",
+        immediate: true,
+      },
+      {
+        type: "refine",
+        check: (data: string) =>
+          (this._pattern && this._pattern.test(data)) || !this._pattern,
+        message: () => this.errorMap.get("pattern") || "Invalid format",
+        code: "pattern",
+        immediate: false,
+      },
+      {
+        type: "refine",
+        check: (data: string) =>
+          (this.htmlAttributes.minLength &&
+            data.length >= this.htmlAttributes.minLength) ||
+          this.htmlAttributes.minLength === undefined,
+        message: () => this.errorMap.get("minLength") || "String is too short",
+        code: "minLength",
+        immediate: false,
+      },
+      {
+        type: "refine",
+        check: (data: string) =>
+          (this.htmlAttributes.maxLength &&
+            data.length <= this.htmlAttributes.maxLength) ||
+          this.htmlAttributes.maxLength === undefined,
+        message: () => this.errorMap.get("maxLength") || "String is too long",
+        code: "maxLength",
+        immediate: false,
+      },
+      {
+        type: "refine",
+        check: (data: string) => !this.htmlAttributes.readOnly,
+        message: () => this.errorMap.get("readOnly") || "String is read-only",
+        code: "readOnly",
+        immediate: true,
+      }
+    );
+  }
+
   /**
    * Validates that the input data is a string and conforms to all defined constraints.
    *
@@ -59,98 +118,7 @@ export class StringSchema extends SchemaType<string> {
     data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
     ctx: ValidationContext<this>
   ): e.ValidationResult<this["_output"]> {
-    // required check
-    if (this.htmlAttributes.required && (data === null || data === undefined))
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          this.errorMap.get("required") || "String is required",
-          "required",
-          true,
-          data,
-          data
-        )
-      );
-
-    // Basic type check
-    if (typeof data !== "string") {
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          "Invalid string",
-          "invalid_type",
-          "string",
-          typeof data,
-          data
-        )
-      );
-      return e.ValidationResult.fail<string>(ctx.getErrors());
-    }
-
-    // Pattern check
-    if (this._pattern && !this._pattern?.test(data)) {
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          this.errorMap.get("pattern") || "Invalid format",
-          "pattern",
-          this._pattern,
-          data,
-          data
-        )
-      );
-    }
-
-    // Length checks
-    if (
-      this.htmlAttributes.minLength !== undefined &&
-      data.length < this.htmlAttributes.minLength
-    )
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          this.errorMap.get("min") || "String is too short",
-          "min",
-          this.htmlAttributes.minLength,
-          data.length,
-          data
-        )
-      );
-
-    // Length checks
-    if (
-      this.htmlAttributes.maxLength !== undefined &&
-      data.length > this.htmlAttributes.maxLength
-    )
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          this.errorMap.get("max") || "String is too long",
-          "max",
-          this.htmlAttributes.maxLength,
-          data.length,
-          data
-        )
-      );
-
-    if (this.htmlAttributes.readOnly) {
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          this.errorMap.get("readOnly") || "String is read-only",
-          "readOnly",
-          true,
-          data,
-          data
-        )
-      );
-    }
-
-    if (ctx.hasErrors()) {
-      return e.ValidationResult.fail<string>(ctx.getErrors());
-    }
-
-    return e.ValidationResult.ok<string>(data);
+    return e.ValidationResult.ok<string>(data as string);
   }
 
   /**
