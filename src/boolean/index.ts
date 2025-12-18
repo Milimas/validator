@@ -1,7 +1,7 @@
 import { ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
-import { SchemaType } from "../schema.js";
-import { HtmlCheckboxAttributes } from "../types.js";
+import { DefaultSchema, SchemaType } from "../schema.js";
+import { HtmlCheckboxAttributes, HTMLAttributes } from "../types.js";
 
 /**
  * Boolean schema for validating true/false values and checkbox inputs.
@@ -31,7 +31,7 @@ import { HtmlCheckboxAttributes } from "../types.js";
  * const newsletterSchema = new BooleanSchema().required(false);
  */
 export class BooleanSchema extends SchemaType<boolean> {
-  public htmlAttributes: HtmlCheckboxAttributes = {
+  public htmlAttributes: HTMLAttributes<HtmlCheckboxAttributes> = {
     type: "checkbox",
     defaultValue: false,
     checked: false,
@@ -60,7 +60,8 @@ export class BooleanSchema extends SchemaType<boolean> {
    * schema.validate(null);   // ✗ Error: invalid type
    */
   protected validate(
-    data: unknown,
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+
     ctx: ValidationContext
   ): e.ValidationResult<boolean> {
     if (typeof data !== "boolean") {
@@ -81,5 +82,10 @@ export class BooleanSchema extends SchemaType<boolean> {
       return e.ValidationResult.fail<boolean>(ctx.getErrors());
     }
     return e.ValidationResult.ok<boolean>(data);
+  }
+
+  default(value: boolean): DefaultSchema<this> {
+    this.htmlAttributes.checked = value;
+    return new DefaultSchema(this, value);
   }
 }

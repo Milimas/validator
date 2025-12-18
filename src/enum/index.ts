@@ -94,7 +94,7 @@ export class EnumSchema<const T extends readonly string[]> extends SchemaType<
    * }
    */
   protected validate(
-    data: unknown,
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
     ctx: ValidationContext
   ): e.ValidationResult<T[number]> {
     if (typeof data !== "string" || !this.valuesSet.has(data)) {

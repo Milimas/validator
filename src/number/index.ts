@@ -1,7 +1,7 @@
 import { e, ValidationError } from "../error.js";
 import { ValidationContext } from "../index.js";
 import { SchemaType } from "../schema.js";
-import { HtmlNumberInputAttributes } from "../types.js";
+import { HtmlNumberInputAttributes, HTMLAttributes } from "../types.js";
 
 /**
  * Numeric validation schema for integer and floating-point number validation.
@@ -37,7 +37,7 @@ import { HtmlNumberInputAttributes } from "../types.js";
  *   .max(5, 'Rating cannot exceed 5 stars');
  */
 export class NumberSchema extends SchemaType<number> {
-  public htmlAttributes: HtmlNumberInputAttributes = {
+  public htmlAttributes: HTMLAttributes<HtmlNumberInputAttributes> = {
     type: "number",
     defaultValue: undefined,
     required: true,
@@ -72,7 +72,7 @@ export class NumberSchema extends SchemaType<number> {
    * schema.validate('123');  // ✗ Error: invalid type
    */
   protected validate(
-    data: unknown,
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
     ctx: ValidationContext
   ): e.ValidationResult<number> {
     if (typeof data !== "number" || isNaN(data)) {
@@ -196,8 +196,8 @@ export class NumberSchema extends SchemaType<number> {
     this.errorMap.set("int", "Number must be an integer");
     const originalValidate = this.validate.bind(this);
     this.validate = (
-      data: unknown,
-      ctx: ValidationContext
+      data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+      ctx: ValidationContext<this>
     ): e.ValidationResult<number> => {
       const result = originalValidate(data, ctx);
       if (!result.success) {

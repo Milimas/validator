@@ -1,13 +1,12 @@
 import { e, ValidationError } from "../error.js";
 import { createValidationContext, ValidationContext } from "../context.js";
-import { SchemaType } from "../schema.js";
+import { DefaultSchema, SchemaType } from "../schema.js";
 import {
   HTMLAttributes,
   HtmlObjectType,
   MergeShapes,
   ObjectInfer,
   PrettifyShape,
-  SchemaTypeAny,
 } from "../types.js";
 
 /**
@@ -58,15 +57,18 @@ import {
  * });
  */
 export class ObjectSchema<
-  Shape extends { [key: string]: SchemaType<any, any> }
+  Shape extends { [key: string]: SchemaType<any> }
 > extends SchemaType<ObjectInfer<Shape>> {
-  public htmlAttributes: HtmlObjectType<{
-    [K in keyof Shape]: HTMLAttributes;
-  }> = {
+  public htmlAttributes: HTMLAttributes<HtmlObjectType<Shape>> = {
     type: "object",
     properties: Object.fromEntries(
-      Object.entries(this.shape).map(([key, schema]) => [key, schema.toJSON()])
-    ) as { [K in keyof Shape]: HTMLAttributes },
+      Object.entries(this.shape).map(
+        ([key, schema]: [string, SchemaType<any>]) => [
+          key,
+          schema.htmlAttributes,
+        ]
+      )
+    ) as { [K in keyof Shape]: Shape[K]["htmlAttributes"] },
     defaultValue: undefined,
   };
 
@@ -91,6 +93,18 @@ export class ObjectSchema<
    */
   constructor(public shape: Shape) {
     super();
+    this.htmlAttributes = {
+      type: "object",
+      properties: Object.fromEntries(
+        Object.entries(this.shape).map(
+          ([key, schema]: [string, SchemaType<any>]) => [
+            key,
+            schema.htmlAttributes,
+          ]
+        )
+      ) as { [K in keyof Shape]: Shape[K]["htmlAttributes"] },
+      defaultValue: undefined,
+    };
   }
 
   /**
@@ -130,10 +144,14 @@ export class ObjectSchema<
    * }
    */
   protected validate(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+    data: this["_input"] | unknown = this.htmlAttributes
+      ?.defaultValue as this["_input"],
+    ctx: ValidationContext<this> = createValidationContext<this>(
+      data as this["_input"]
+    )
   ): e.ValidationResult<ObjectInfer<Shape>> {
-    if (data === undefined) data = this.htmlAttributes?.defaultValue;
+    if (data === undefined)
+      data = this.htmlAttributes.defaultValue as this["_input"];
     if (
       typeof data !== "object" ||
       data === null ||
@@ -172,7 +190,7 @@ export class ObjectSchema<
     }
     for (const key in this.shape) {
       const schema = this.shape[key];
-      const value = (data as any)[key];
+      const value = (data as Record<string, unknown>)[key];
       const fieldResult = schema.safeParse(value, ctx.child(key));
       if (!fieldResult.success) {
         ctx.addErrors(fieldResult.errors);
@@ -187,49 +205,6 @@ export class ObjectSchema<
     return e.ValidationResult.ok<ObjectInfer<Shape>>(
       result as ObjectInfer<Shape>
     );
-  }
-
-  /**
-   * Converts the object schema to a JSON representation of HTML form attributes.
-   *
-   * Generates a JSON object containing HTML form attributes for all properties in the schema.
-   * This is useful for form builders and UI frameworks that need to render form fields
-   * with proper HTML attributes based on the validation schema definitions.
-   *
-   * The returned object includes:
-   * - type: "object" to identify this as an object schema
-   * - properties: HTML attributes for each property (minLength, maxLength, pattern, etc.)
-   * - defaultValue: The default value for the entire object if one is set
-   *
-   * @returns {HtmlObjectType<{ [K in keyof Shape]: HTMLAttributes }>} A JSON representation containing
-   *          object type information and HTML attributes for all properties
-   *
-   * @example
-   * const schema = new ObjectSchema({
-   *   username: new StringSchema().minLength(3).maxLength(20),
-   *   email: new EmailSchema()
-   * });
-   *
-   * const htmlAttrs = schema.toJSON();
-   * console.log(htmlAttrs);
-   * // {
-   * //   type: 'object',
-   * //   properties: {
-   * //     username: { type: 'text', minLength: 3, maxLength: 20 },
-   * //     email: { type: 'email' }
-   * //   },
-   * //   defaultValue: undefined
-   * // }
-   */
-  toJSON(): HtmlObjectType<{ [K in keyof Shape]: Shape[K]["htmlAttributes"] }> {
-    const json: HtmlObjectType<{
-      [K in keyof Shape]: Shape[K]["htmlAttributes"];
-    }> = {
-      ...this.htmlAttributes,
-      type: "object",
-      defaultValue: this.htmlAttributes?.defaultValue,
-    };
-    return json;
   }
 
   /**
@@ -269,23 +244,24 @@ export class ObjectSchema<
    * //   lastName: string (minLength 1)
    * // }
    */
-  extend<S extends readonly ObjectSchema<any>[]>(
-    ...schemas: S
-  ): ObjectSchema<
-    PrettifyShape<
-      Shape &
-        MergeShapes<{
-          [K in keyof S]: S[K] extends ObjectSchema<infer U> ? U : never;
-        }>
+  extend<
+    S extends readonly ObjectSchema<any>[],
+    ReturnObject extends ObjectSchema<
+      PrettifyShape<
+        Shape &
+          MergeShapes<{
+            [K in keyof S]: S[K] extends ObjectSchema<infer U> ? U : never;
+          }>
+      >
     >
-  > {
+  >(...schemas: S): ReturnObject {
     const newShape: any = { ...this.shape };
     for (const sch of schemas) {
       for (const key in sch.shape) {
         newShape[key] = sch.shape[key];
       }
     }
-    return new ObjectSchema(newShape) as any;
+    return new ObjectSchema(newShape) as ReturnObject;
   }
 
   /**

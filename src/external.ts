@@ -712,7 +712,9 @@ export function code(language?: CodeLanguages): CodeSchema {
  * const schema = string().minLength(3).maxLength(50);
  * const jsonSchema = toJSONSchema(schema);
  */
-function toJSONSchema<R extends HTMLAttributes>(schema: SchemaTypeAny): R {
+function toJSONSchema<R extends ReturnType<SchemaType<any>["toJSON"]>>(
+  schema: SchemaTypeAny
+): R {
   return schema.toJSON() as R;
 }
 

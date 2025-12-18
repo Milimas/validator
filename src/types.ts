@@ -12,7 +12,7 @@ import { SchemaType } from "./schema.js";
  *   return schemas.map((schema, i) => schema.safeParse(data[i]));
  * }
  */
-export type SchemaTypeAny = SchemaType<any, any>;
+export type SchemaTypeAny = SchemaType<any>;
 
 /**
  * Extracts the output type from a schema type.
@@ -152,7 +152,7 @@ export type ObjectShape = { [key: string]: SchemaTypeAny };
  */
 export type Condition = {
   field: string;
-  condition: RegExp;
+  condition: RegExp | string;
 };
 
 /**
@@ -238,7 +238,7 @@ export type HtmlStringAttributes = {
   placeholder?: string;
   minLength?: number;
   maxLength?: number;
-  pattern?: RegExp;
+  pattern?: string;
   list?: string;
   dataList?: string[];
 } & HtmlGenericInputAttributes;
@@ -345,7 +345,7 @@ export type HtmlNumberInputAttributes = {
  */
 export type HtmlFileInputAttributes = {
   type: "file";
-  defaultValue?: any;
+  defaultValue?: Base64URLString | ArrayBufferLike | null;
   accept?: string;
   multiple?: boolean;
 } & HtmlGenericInputAttributes;
@@ -402,7 +402,7 @@ export type HtmlSelectAttributes<T = string> = {
  *   required: true
  * };
  */
-export type HtmlArrayType<ItemType = any> = {
+export type HtmlArrayType<ItemType> = {
   type: "array";
   defaultValue?: ItemType[];
   items: ItemType[];
@@ -438,15 +438,21 @@ export type HtmlArrayType<ItemType = any> = {
  *   }
  * };
  */
-export type HtmlObjectType<ObjectProperties = Record<string, HTMLAttributes>> =
-  {
-    type: "object";
-    properties: ObjectProperties;
-    defaultValue?: ObjectProperties;
-    minLength?: number;
-    maxLength?: number;
-    required?: boolean;
-  };
+export type HtmlObjectType<
+  Shape extends { [key: string]: SchemaType<any> },
+  TProperties extends {
+    [K in keyof Shape]: Shape[K]["htmlAttributes"];
+  } = {
+    [K in keyof Shape]: Shape[K]["htmlAttributes"];
+  }
+> = {
+  type: "object";
+  properties: TProperties;
+  defaultValue?: { [x: string]: any };
+  minLength?: number;
+  maxLength?: number;
+  required?: boolean;
+};
 
 /**
  * Union type for HTML container attributes (objects and arrays).
@@ -467,9 +473,12 @@ export type HtmlObjectType<ObjectProperties = Record<string, HTMLAttributes>> =
  *   }
  * }
  */
-export type HtmlContainerAttributes<R = Record<string, any>, I = any> =
-  | HtmlObjectType<R>
-  | HtmlArrayType<I>;
+export type HtmlContainerAttributes<
+  Shape extends { [key: string]: SchemaType<any> } = {
+    [key: string]: SchemaType<any>;
+  },
+  I = any
+> = HtmlObjectType<Shape> | HtmlArrayType<I>;
 
 /**
  * HTML attributes for union types.
@@ -510,7 +519,7 @@ export type RecordAttributes = {
   type: "record";
   keySchema: HTMLAttributes;
   valueSchema: HTMLAttributes;
-  defaultValue?: never;
+  defaultValue?: Record<string, any>;
   required: boolean;
 };
 
@@ -558,17 +567,25 @@ export type HtmlUnknownAttributes = {
 } & HtmlGenericInputAttributes;
 
 /**
- * Union of all possible HTML form input attribute types with data attribute support.
+ * Generic HTML attributes type that represents form input field configuration.
  *
- * Comprehensive type that encompasses all HTML input types (string, number, checkbox,
- * file, select, object, array) along with support for custom data-* attributes.
- * This is the primary type used for representing form field configurations.
+ * Provides a flexible, type-safe way to represent HTML form input attributes across all input types.
+ * The generic parameter T allows for precise type checking while the default union maintains backward compatibility.
  *
- * Supports all standard HTML5 input types plus custom data attributes for storing
- * additional metadata on form elements.
+ * @template T - The specific HTML attribute structure (e.g., HtmlStringAttributes, HtmlNumberInputAttributes).
+ *              Defaults to a union of all possible attribute types for maximum compatibility.
  *
  * @example
- * const fieldAttrs: HTMLAttributes = {
+ * // Type-safe string attributes
+ * const emailField: HTMLAttributes<HtmlStringAttributes> = {
+ *   type: 'email',
+ *   required: true,
+ *   placeholder: 'user@example.com'
+ * };
+ *
+ * @example
+ * // Generic union (default, backward compatible)
+ * const anyField: HTMLAttributes = {
  *   type: 'email',
  *   required: true,
  *   placeholder: 'user@example.com',
@@ -576,28 +593,41 @@ export type HtmlUnknownAttributes = {
  * };
  *
  * @example
- * // Can represent any input type
- * const numberField: HTMLAttributes = {
+ * // Number attributes with strong typing
+ * const ageField: HTMLAttributes<HtmlNumberInputAttributes> = {
  *   type: 'number',
  *   min: 0,
- *   max: 100,
+ *   max: 120,
  *   required: true
  * };
  */
-export type HTMLAttributes = (
-  | HtmlStringAttributes
-  | HtmlCheckboxAttributes
-  | HtmlNumberInputAttributes
-  | HtmlFileInputAttributes
-  | HtmlContainerAttributes
-  | HtmlSelectAttributes
-  | UnionAttributes
-  | RecordAttributes
-  | HtmlAnyAttributes
-  | HtmlNeverAttributes
-  | HtmlUnknownAttributes
-  | HtmlCodeAttributes
-) & {
+export type HTMLAttributes<
+  T extends
+    | HtmlStringAttributes
+    | HtmlCheckboxAttributes
+    | HtmlNumberInputAttributes
+    | HtmlFileInputAttributes
+    | HtmlContainerAttributes
+    | HtmlSelectAttributes
+    | UnionAttributes
+    | RecordAttributes
+    | HtmlAnyAttributes
+    | HtmlNeverAttributes
+    | HtmlUnknownAttributes
+    | HtmlCodeAttributes =
+    | HtmlStringAttributes
+    | HtmlCheckboxAttributes
+    | HtmlNumberInputAttributes
+    | HtmlFileInputAttributes
+    | HtmlContainerAttributes
+    | HtmlSelectAttributes
+    | UnionAttributes
+    | RecordAttributes
+    | HtmlAnyAttributes
+    | HtmlNeverAttributes
+    | HtmlUnknownAttributes
+    | HtmlCodeAttributes
+> = T & {
   metadata?: Record<string, unknown>;
 } & {
   [k in `data-${string}`]?: unknown;

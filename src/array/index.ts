@@ -1,12 +1,8 @@
 import { createValidationContext, ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
-import { SchemaType } from "../schema.js";
-import {
-  HtmlArrayType,
-  HTMLAttributes,
-  SchemaTypeAny,
-  TypeOf,
-} from "../types.js";
+import { ObjectSchema } from "../object/index.js";
+import { DefaultSchema, SchemaType } from "../schema.js";
+import { HtmlArrayType, SchemaTypeAny, TypeOf } from "../types.js";
 
 /**
  * Array schema for validating collections of homogeneous typed items.
@@ -52,11 +48,7 @@ import {
 export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
   TypeOf<T>[]
 > {
-  public htmlAttributes: HtmlArrayType<T["htmlAttributes"]> = {
-    type: "array",
-    items: [],
-    required: true,
-  };
+  public htmlAttributes: HtmlArrayType<T["htmlAttributes"]>;
 
   /**
    * Initializes the ArraySchema with an item schema.
@@ -74,6 +66,11 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
    */
   constructor(private itemSchema: T) {
     super();
+    this.htmlAttributes = {
+      type: "array",
+      items: [this.itemSchema.htmlAttributes],
+      required: true,
+    };
   }
 
   /**
@@ -109,8 +106,10 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
    * }
    */
   protected validate(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+    ctx: ValidationContext<this> = createValidationContext<this>(
+      data as this["_input"]
+    )
   ): e.ValidationResult<TypeOf<T>[]> {
     if (!Array.isArray(data)) {
       ctx.addError(
@@ -132,7 +131,7 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
     ) {
       ctx.addError(
         new ValidationError(
-          ctx .getPath(),
+          ctx.getPath(),
           this.errorMap.get("minLength") ||
             `Array must have at least ${this.htmlAttributes.minLength} items`,
           "too_small",
@@ -243,42 +242,7 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
     return this;
   }
 
-  /**
-   * Converts the array schema to a JSON representation of HTML form attributes.
-   *
-   * Generates a JSON object containing HTML form attributes for the array and its items.
-   * This is useful for form builders and UI frameworks that need to render array inputs
-   * with proper HTML attributes based on the validation schema definitions.
-   *
-   * The returned object includes:
-   * - type: "array" to identify this as an array schema
-   * - items: An array containing the item schema's HTML attributes
-   * - minLength: The minimum array size constraint if set
-   * - maxLength: The maximum array size constraint if set
-   *
-   * @returns {HtmlArrayType<T["htmlAttributes"]>} A JSON representation containing array type
-   *          information, item schema HTML attributes, and length constraints
-   *
-   * @example
-   * const schema = new ArraySchema(
-   *   new StringSchema().minLength(2).maxLength(50)
-   * ).minLength(1).maxLength(10);
-   *
-   * const htmlAttrs = schema.toJSON();
-   * console.log(htmlAttrs);
-   * // {
-   * //   type: 'array',
-   * //   items: [{ type: 'text', minLength: 2, maxLength: 50 }],
-   * //   minLength: 1,
-   * //   maxLength: 10
-   * // }
-   */
-  toJSON(): HtmlArrayType<T["htmlAttributes"]> {
-    const json: HtmlArrayType<T["htmlAttributes"]> = {
-      ...this.htmlAttributes,
-      type: "array",
-      items: [this.itemSchema.toJSON()],
-    };
-    return json;
+  default(value: T["_input"][]): DefaultSchema<this> {
+    return new DefaultSchema(this, value as T["_input"][]);
   }
 }

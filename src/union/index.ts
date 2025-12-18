@@ -52,15 +52,20 @@ export class UnionSchema<
   }
 
   protected validate(
-    data: unknown,
-    ctx: ValidationContext
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+
+    ctx: ValidationContext<this>
   ): e.ValidationResult<TypeOf<Schemas[number]>> {
     for (const schema of this.schemas) {
-      const result = schema.safeParse(data, ctx);
+      // Use an isolated branch context so errors from failed branches
+      // do not pollute the main context when another branch succeeds.
+      const branchCtx = new ValidationContext(ctx.getRootData(), ctx.getPath());
+      const result = schema.safeParse(data, branchCtx);
       if (result.success) {
         return e.ValidationResult.ok(result.data as TypeOf<Schemas[number]>);
       }
-      ctx.addErrors(result.errors);
+      // Accumulate errors from this branch into the main context
+      ctx.addErrors(branchCtx.getErrors());
     }
 
     if (ctx.getErrors().length === 0) {

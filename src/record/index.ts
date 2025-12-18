@@ -25,20 +25,31 @@ export class RecordSchema<
   TValue extends SchemaTypeAny,
   TKey extends SchemaTypeAny = SchemaType<string>
 > extends SchemaType<Record<string, TypeOf<TValue>>> {
-  public htmlAttributes: {
+  public htmlAttributes: HTMLAttributes<{
     type: "record";
     keySchema: HTMLAttributes;
     valueSchema: HTMLAttributes;
+    defaultValue?: Record<string, any>;
     required: boolean;
+  }> = {
+    type: "record" as const,
+    keySchema: {} as HTMLAttributes,
+    valueSchema: {} as HTMLAttributes,
+    required: true,
   };
 
   constructor(
     private readonly valueSchema: TValue,
     private readonly keySchema: TKey = new (class extends SchemaType<string> {
-      htmlAttributes = { type: "text" as const, required: true };
+      htmlAttributes = {
+        type: "text" as const,
+        required: true,
+        defaultValue: undefined,
+      };
       protected validate(
-        data: unknown,
-        ctx: ValidationContext
+        data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+
+        ctx: ValidationContext<this>
       ): e.ValidationResult<string> {
         if (typeof data !== "string") {
           return e.ValidationResult.fail([
@@ -62,12 +73,14 @@ export class RecordSchema<
       keySchema: keySchema.toJSON(),
       valueSchema: valueSchema.toJSON(),
       required: true,
+      defaultValue: undefined,
     };
   }
 
   protected validate(
-    data: unknown,
-    ctx: ValidationContext
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+
+    ctx: ValidationContext<this>
   ): e.ValidationResult<Record<string, TypeOf<TValue>>> {
     if (typeof data !== "object" || data === null || Array.isArray(data)) {
       ctx.addError(

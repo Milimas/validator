@@ -1,5 +1,5 @@
 import { ValidationError } from "./error.js";
-import { Condition } from "./types.js";
+import { SchemaTypeAny } from "./types.js";
 
 /**
  * Represents the path to a field in a nested data structure.
@@ -21,7 +21,7 @@ export interface DependencyCondition {
   /** The field name that this field depends on */
   field: string;
   /** RegExp pattern that must match the dependency field's value */
-  condition: RegExp;
+  condition: RegExp | string;
 }
 
 /**
@@ -72,7 +72,10 @@ export interface FailedDependency {
  *   { field: 'userType', condition: /^business$/ }
  * );
  */
-export class ValidationContext {
+export class ValidationContext<
+  S extends SchemaTypeAny = SchemaTypeAny,
+  Input extends S["_input"] = S["_input"]
+> {
   /**
    * Accumulated validation errors collected during parsing.
    * Will be reported at the end of validation.
@@ -90,7 +93,7 @@ export class ValidationContext {
    * @param data - The complete root data being validated
    * @param path - The current path in the data structure (empty for root)
    */
-  constructor(private data: unknown, private path: FieldPath = []) {}
+  constructor(private data: Input, private path: FieldPath = []) {}
 
   /**
    * Gets the current field path.
@@ -151,7 +154,7 @@ export class ValidationContext {
       if (value === null || value === undefined) {
         return undefined;
       }
-      value = (value as any)[segment];
+      value = (value as Record<string, unknown>)[segment];
     }
     return value;
   }
@@ -229,6 +232,17 @@ export class ValidationContext {
       return false;
     }
 
+    if (typeof condition.condition === "string") {
+      const isSatisfied = String(fieldValue) === condition.condition;
+      if (!isSatisfied) {
+        this.failedDependencies.push({
+          condition,
+          actualValue: fieldValue,
+          isRequired: true,
+        });
+      }
+      return isSatisfied;
+    }
     const stringValue = String(fieldValue);
     const isSatisfied = condition.condition.test(stringValue);
 
@@ -412,9 +426,9 @@ export interface ValidationContextOptions {
  *   stopOnFirstError: false
  * });
  */
-export function createValidationContext(
-  data: unknown,
-  options?: ValidationContextOptions
-): ValidationContext {
+export function createValidationContext<
+  S extends SchemaTypeAny = SchemaTypeAny,
+  T extends S["_input"] = S["_input"]
+>(data: T, options?: ValidationContextOptions): ValidationContext<S, T> {
   return new ValidationContext(data);
 }

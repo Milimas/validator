@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { string, number, object, array } from "../src/index.js";
+import { string, number, object, array, boolean } from "../src/index.js";
 
 describe("Schema Modifiers", () => {
   describe("optional()", () => {
@@ -220,6 +220,65 @@ describe("Schema Modifiers", () => {
       const json = schema.toJSON() as any;
       expect(json.minLength).toBe(5);
       expect(json["data-depends-on"]).toBeDefined();
+    });
+
+    it("should skip validation when dependency is not satisfied", () => {
+      const schema = object({
+        flag: boolean().required(),
+        value: string()
+          .minLength(3)
+          .dependsOn([{ field: "flag", condition: /true/ }]),
+      });
+
+      const result = schema.safeParse({ flag: false, value: "x" });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.value).toBeUndefined();
+    });
+
+    it("should require the field when dependency is satisfied", () => {
+      const schema = object({
+        flag: boolean(),
+        value: string().dependsOn([{ field: "flag", condition: /true/ }]),
+      });
+
+      const result = schema.safeParse({ flag: true });
+
+      expect(result.success).toBe(false);
+      expect(result.errors[1]?.path).toEqual(["value"]);
+      expect(result.errors[1]?.code).toBe("required");
+    });
+
+    it("should validate when dependency is satisfied and value is present", () => {
+      const schema = object({
+        flag: boolean(),
+        value: string()
+          .minLength(3)
+          .dependsOn([{ field: "flag", condition: /true/ }]),
+      });
+
+      const result = schema.safeParse({ flag: true, value: "hello" });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.value).toBe("hello");
+    });
+
+    it("should work with default values", () => {
+      const schema = object({
+        flag: boolean().default(false),
+        value: string()
+          .minLength(3)
+          .default("default")
+          .dependsOn([{ field: "flag", condition: /true/ }]),
+      });
+
+      const result = schema.safeParse({});
+
+      expect(result.success).toBe(true);
+      expect(result.data?.flag).toBe(false);
+      // When dependency is not satisfied, field is not applicable and returns undefined
+      // (not the default, since it wasn't needed)
+      expect(result.data?.value).toBeUndefined();
     });
   });
 });

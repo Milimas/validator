@@ -62,7 +62,7 @@ export abstract class SchemaType<Output = any, Input = Output> {
    * @returns A ValidationResult containing either the validated data or validation errors
    */
   protected abstract validate(
-    data: unknown,
+    data: this["_input"] | unknown,
     ctx: ValidationContext
   ): e.ValidationResult<Output>;
 
@@ -83,8 +83,10 @@ export abstract class SchemaType<Output = any, Input = Output> {
    * emailSchema.parse('invalid'); // Throws ValidationAggregateError
    */
   parse(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+    ctx: ValidationContext<this> = createValidationContext<this>(
+      data as this["_input"]
+    )
   ): Output {
     const result = this.validate(data, ctx);
     if (!result.success) {
@@ -114,12 +116,11 @@ export abstract class SchemaType<Output = any, Input = Output> {
    * }
    */
   safeParse(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+    ctx: ValidationContext<this> = createValidationContext<this>(
+      data as this["_input"]
+    )
   ): e.ValidationResult<Output> {
-    if (this.htmlAttributes?.defaultValue === null) {
-      data = this.htmlAttributes.defaultValue;
-    }
     if (
       this.htmlAttributes?.required === false &&
       (data === undefined || data === null)
@@ -127,39 +128,6 @@ export abstract class SchemaType<Output = any, Input = Output> {
       return e.ValidationResult.ok<Output>(data as Output);
     }
     return this.validate(data, ctx);
-  }
-
-  /**
-   * Serializes the schema to a JSON-compatible object of HTML attributes.
-   *
-   * Converts the schema's HTML attributes to a plain JavaScript object suitable
-   * for JSON serialization. Handles special cases like RegExp patterns (converts
-   * to string source) and conditional dependencies (serializes functions to strings).
-   *
-   * @returns A JSON-serializable representation of the schema's HTML attributes
-   *
-   * @example
-   * const schema = string().minLength(3).maxLength(10);
-   * const attrs = schema.toJSON();
-   * // { type: 'text', required: true, minLength: 3, maxLength: 10 }
-   */
-  toJSON(): this["htmlAttributes"] {
-    const attributes = { ...this.htmlAttributes } as any;
-    // Ensure pattern is a string if it exists
-    if (attributes.pattern instanceof RegExp) {
-      attributes.pattern = attributes.pattern.source;
-    }
-    if (attributes["data-depends-on"]) {
-      const out: any = { ...attributes };
-      out["data-depends-on"] = out["data-depends-on"].map(
-        (cond: Condition) => ({
-          field: cond.field,
-          condition: cond.condition.source,
-        })
-      );
-      return out;
-    }
-    return attributes;
   }
 
   /**
@@ -216,7 +184,7 @@ export abstract class SchemaType<Output = any, Input = Output> {
    * nameSchema.parse(undefined); // Returns 'Anonymous'
    * nameSchema.parse('John'); // Returns 'John'
    */
-  default(value: Output): DefaultSchema<this> {
+  default(value: this["_input"]): DefaultSchema<this> {
     return new DefaultSchema(this, value);
   }
 
@@ -288,6 +256,23 @@ export abstract class SchemaType<Output = any, Input = Output> {
     this.htmlAttributes = { ...this.htmlAttributes, metadata };
     return this;
   }
+
+  /**
+   * Converts the schema's HTML attributes to a JSON-serializable format.
+   *
+   * This method can be overridden by subclasses to customize serialization.
+   * By default, it returns the htmlAttributes property as is.
+   *
+   * @returns JSON-serializable HTML attributes
+   * @example
+   * const schema = string().minLength(3).maxLength(50);
+   * const json = schema.toJSON();
+   * console.log(json.minLength); // 3
+   * console.log(json.maxLength); // 50
+   */
+  toJSON(): this["htmlAttributes"] {
+    return this.htmlAttributes;
+  }
 }
 
 /**
@@ -334,8 +319,8 @@ export class OptionalSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @returns ValidationResult with undefined or the validated inner type
    */
   protected validate(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+    ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): e.ValidationResult<T["_output"] | undefined> {
     if (data === undefined || data === null) {
       return e.ValidationResult.ok<undefined>(data as undefined);
@@ -351,11 +336,12 @@ export class OptionalSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @throws {ValidationAggregateError} If inner schema validation fails
    */
   parse(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+
+    ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): T["_output"] | undefined {
     if (data === undefined || data === null) {
-      if (this.htmlAttributes?.defaultValue !== undefined)
+      if (this.htmlAttributes.defaultValue !== undefined)
         return this.htmlAttributes.defaultValue as T["_output"];
       return undefined as T["_output"] | undefined;
     }
@@ -369,26 +355,14 @@ export class OptionalSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @returns ValidationResult with undefined for empty values or inner schema result
    */
   safeParse(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+
+    ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): e.ValidationResult<T["_output"] | undefined> {
     if (data === undefined || data === null) {
       return e.ValidationResult.ok<undefined>(data as undefined);
     }
     return this.inner.safeParse(data, ctx);
-  }
-
-  /**
-   * Serializes to JSON with required attribute set to false.
-   *
-   * @returns JSON-serializable HTML attributes with required: false
-   */
-  toJSON(): T["htmlAttributes"] {
-    return {
-      ...this.inner.toJSON(),
-      // pattern: (this.inner.htmlAttributes as any)?.pattern?.source,
-      required: false,
-    };
   }
 }
 
@@ -436,8 +410,9 @@ export class NullableSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @returns ValidationResult with null or the validated inner type
    */
   protected validate(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+
+    ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): e.ValidationResult<T["_output"] | null> {
     if (data === null) {
       return e.ValidationResult.ok<null>(null);
@@ -453,8 +428,9 @@ export class NullableSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @throws {ValidationAggregateError} If inner schema validation fails
    */
   parse(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+
+    ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): T["_output"] | null {
     if (data === null) {
       return null as T["_output"] | null;
@@ -469,8 +445,9 @@ export class NullableSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @returns ValidationResult with null for null input or inner schema result
    */
   safeParse(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+
+    ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): e.ValidationResult<T["_output"] | null> {
     if (data === null) {
       return e.ValidationResult.ok<null>(null);
@@ -495,7 +472,7 @@ export class NullableSchema<T extends SchemaType<any, any>> extends SchemaType<
  */
 export class DefaultSchema<T extends SchemaType<any, any>> extends SchemaType<
   T["_output"],
-  T["_input"] | undefined
+  T["_input"]
 > {
   /**
    * HTML attributes with defaultValue set.
@@ -508,15 +485,15 @@ export class DefaultSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @param inner - The schema to add default value to
    * @param defaultValue - The default value to use for undefined/null inputs
    */
-  constructor(private inner: T, private defaultValue: T["_output"]) {
+  constructor(
+    private inner: T,
+    private defaultValue: T["htmlAttributes"]["defaultValue"]
+  ) {
     super();
     this.htmlAttributes = {
-      ...(inner.htmlAttributes as any),
+      ...inner.htmlAttributes,
       defaultValue: defaultValue,
     };
-    if (this.inner.htmlAttributes.hasOwnProperty("checked")) {
-      (this.htmlAttributes as any).checked = defaultValue;
-    }
   }
 
   /**
@@ -529,8 +506,9 @@ export class DefaultSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @returns ValidationResult from the inner schema
    */
   protected validate(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+    data: this["_input"] | unknown = this.defaultValue,
+
+    ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): e.ValidationResult<T["_output"]> {
     if (data === undefined || data === null) {
       data = this.defaultValue;
@@ -546,8 +524,8 @@ export class DefaultSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @throws {ValidationAggregateError} If validation fails
    */
   parse(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+    data: this["_input"] | unknown = this.defaultValue,
+    ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): T["_output"] {
     if (data === undefined || data === null) {
       data = this.defaultValue;
@@ -562,8 +540,8 @@ export class DefaultSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @returns ValidationResult with the validated data or default value
    */
   safeParse(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+    data: this["_input"] | unknown = this.defaultValue,
+    ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): e.ValidationResult<T["_output"]> {
     if (data === undefined || data === null) {
       data = this.defaultValue;
@@ -624,10 +602,14 @@ export class DependsOnSchema<T extends SchemaType<any, any>> extends SchemaType<
     super();
     this.htmlAttributes = {
       ...inner.htmlAttributes,
-      "data-depends-on": this._dependsOn,
+      "data-depends-on": this._dependsOn.map((cond) => ({
+        field: cond.field,
+        condition:
+          typeof cond.condition === "string"
+            ? cond.condition
+            : cond.condition.toString(),
+      })),
     };
-    this.inner.htmlAttributes.required = false;
-    this.inner.htmlAttributes["data-depends-on"] = this._dependsOn;
   }
 
   /**
@@ -645,9 +627,17 @@ export class DependsOnSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @returns ValidationResult from the inner schema
    */
   protected validate(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
-  ): e.ValidationResult<T["_output"]> {
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+    ctx: ValidationContext<this> = createValidationContext<this>(data)
+  ): e.ValidationResult<this["_output"]> {
+    const isRequired = ctx.isFieldRequired(this._dependsOn);
+
+    if (!isRequired) {
+      // When dependency conditions are not satisfied, skip validation entirely
+      // and treat the field as not applicable.
+      return e.ValidationResult.ok<undefined>(undefined);
+    }
+
     return this.inner.safeParse(data, ctx);
   }
 
@@ -659,10 +649,18 @@ export class DependsOnSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @throws {ValidationAggregateError} If validation fails
    */
   parse(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
-  ): T["_output"] {
-    return this.inner.parse(data, ctx);
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+
+    ctx: ValidationContext<this> = createValidationContext<this>(data)
+  ): this["_output"] {
+    const isRequired = ctx.isFieldRequired(this._dependsOn);
+
+    if (!isRequired) {
+      // Not required: ignore value and return undefined
+      return undefined;
+    }
+
+    return this.inner.parse(data as T["_input"], ctx);
   }
 
   /**
@@ -672,36 +670,22 @@ export class DependsOnSchema<T extends SchemaType<any, any>> extends SchemaType<
    * @returns ValidationResult from the inner schema
    */
   safeParse(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
-  ): e.ValidationResult<T["_output"]> {
-    return this.inner.safeParse(data, ctx);
-  }
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
 
-  /**
-   * Serializes to JSON with condition functions converted to strings.
-   *
-   * Converts the dependency conditions to a JSON-serializable format by
-   * transforming condition functions to their string representations.
-   *
-   * @returns JSON-serializable HTML attributes with serialized conditions
-   */
-  toJSON(): this["htmlAttributes"] {
-    const out: any = {
-      ...this.inner.toJSON(),
-      required: this.htmlAttributes.required,
-    };
-    pattern: (this.inner.htmlAttributes as any)?.pattern?.source,
-      (out["data-depends-on"] = this._dependsOn.map((cond: Condition) => ({
-        field: cond.field,
-        condition: cond.condition.source,
-      })));
-    return out;
+    ctx: ValidationContext<this> = createValidationContext<this>(data)
+  ): e.ValidationResult<this["_output"]> {
+    const isRequired = ctx.isFieldRequired(this._dependsOn);
+
+    if (!isRequired) {
+      return e.ValidationResult.ok<undefined>(undefined);
+    }
+
+    return this.inner.safeParse(data, ctx);
   }
 }
 
 export class AnySchema extends SchemaType<any> {
-  public htmlAttributes: HtmlAnyAttributes = {
+  public htmlAttributes: HTMLAttributes<HtmlAnyAttributes> = {
     type: "any",
     defaultValue: undefined,
     required: true,
@@ -724,16 +708,17 @@ export class AnySchema extends SchemaType<any> {
    * schema.validate({ key: 'value' }); // ✓ Success
    * schema.validate(null);         // ✓ Success
    */
-  validate(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+  protected validate(
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+
+    ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): e.ValidationResult<any> {
     return e.ValidationResult.ok<any>(data);
   }
 }
 
 export class NeverSchema extends SchemaType<never> {
-  public htmlAttributes: HtmlNeverAttributes = {
+  public htmlAttributes: HTMLAttributes<HtmlNeverAttributes> = {
     type: "never",
     required: true,
   };
@@ -755,9 +740,11 @@ export class NeverSchema extends SchemaType<never> {
    * schema.validate({ key: 'value' }); // ✗ Error: value is not allowed
    * schema.validate(null);         // ✗ Error: value is not allowed
    */
-  validate(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+  protected validate(
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+    ctx: ValidationContext<this> = createValidationContext<this>(
+      data as this["_input"]
+    )
   ): e.ValidationResult<never> {
     ctx.addError(
       new ValidationError(
@@ -774,7 +761,7 @@ export class NeverSchema extends SchemaType<never> {
 }
 
 export class UnknownSchema extends SchemaType<unknown> {
-  public htmlAttributes: HtmlUnknownAttributes = {
+  public htmlAttributes: HTMLAttributes<HtmlUnknownAttributes> = {
     type: "unknown",
     defaultValue: undefined,
     required: true,
@@ -797,9 +784,10 @@ export class UnknownSchema extends SchemaType<unknown> {
    * schema.validate({ key: 'value' }); // ✓ Success
    * schema.validate(null);         // ✓ Success
    */
-  validate(
-    data: unknown,
-    ctx: ValidationContext = createValidationContext(data)
+  protected validate(
+    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+
+    ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): e.ValidationResult<unknown> {
     return e.ValidationResult.ok<unknown>(data);
   }
