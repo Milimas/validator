@@ -1,6 +1,5 @@
 import { createValidationContext, ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
-import { ObjectSchema } from "../object/index.js";
 import { DefaultSchema, SchemaType } from "../schema.js";
 import { HtmlArrayType, SchemaTypeAny, TypeOf } from "../types.js";
 

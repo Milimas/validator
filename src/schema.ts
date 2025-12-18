@@ -1,4 +1,8 @@
-import { createValidationContext, ValidationContext } from "./context.js";
+import {
+  createValidationContext,
+  RefinementContext,
+  ValidationContext,
+} from "./context.js";
 import { e, ValidationError } from "./error.js";
 import {
   HTMLAttributes,
@@ -6,6 +10,8 @@ import {
   HtmlAnyAttributes,
   HtmlNeverAttributes,
   HtmlUnknownAttributes,
+  RefinementCheck,
+  SchemaTypeAny,
 } from "./types.js";
 
 /**
@@ -40,6 +46,12 @@ export abstract class SchemaType<Output = any, Input = Output> {
   protected errorMap: Map<string, string> = new Map();
 
   /**
+   * Array of custom refinement checks for advanced validation logic.
+   * Populated by refine() and superRefine() methods.
+   */
+  protected checks: RefinementCheck<any>[] = [];
+
+  /**
    * Phantom type property for TypeScript type inference of the output type.
    * Not available at runtime - used only for compile-time type checking.
    */
@@ -66,6 +78,42 @@ export abstract class SchemaType<Output = any, Input = Output> {
     ctx: ValidationContext
   ): e.ValidationResult<Output>;
 
+  #validateWithRefinements(
+    data: this["_input"] | unknown,
+    ctx: ValidationContext
+  ): e.ValidationResult<Output> {
+    const result = this.validate(data, ctx);
+
+    for (const refinement of this.checks) {
+      if (refinement.type === "refine") {
+        const checkPassed = refinement.check(result.data as Output);
+        if (!checkPassed) {
+          const error = new ValidationError(
+            ctx.getPath(),
+            refinement.message || "Custom validation failed",
+            "custom_validation"
+          );
+          ctx.addError(error);
+          if (refinement.immediate) {
+            break;
+          }
+        }
+      } else if (refinement.type === "superRefine") {
+        // superRefine checks add errors directly via ctx
+        refinement.check(result.data as Output, new RefinementContext(ctx));
+      }
+    }
+    return result;
+  }
+
+  merge<S extends SchemaType<Output, Input>[] = SchemaType<Output, Input>[]>(
+    ...others: S
+  ): S {
+    const merged = Object.create(Object.getPrototypeOf(this), {});
+    Object.assign(merged, this, ...others);
+    return merged;
+  }
+
   /**
    * Parses and validates data, throwing an error if validation fails.
    *
@@ -88,10 +136,11 @@ export abstract class SchemaType<Output = any, Input = Output> {
       data as this["_input"]
     )
   ): Output {
-    const result = this.validate(data, ctx);
+    const result = this.#validateWithRefinements(data, ctx);
     if (!result.success) {
       throw result.intoError();
     }
+
     return result.data as Output;
   }
 
@@ -127,7 +176,21 @@ export abstract class SchemaType<Output = any, Input = Output> {
     ) {
       return e.ValidationResult.ok<Output>(data as Output);
     }
-    return this.validate(data, ctx);
+
+    // Run base validation first
+    const result = this.#validateWithRefinements(data, ctx);
+
+    // If base validation failed, return the error result
+    if (!result.success) {
+      return result;
+    }
+
+    // If any refinement checks added errors, return failure
+    if (ctx.hasErrors()) {
+      return e.ValidationResult.fail<Output>(ctx.getErrors());
+    }
+
+    return result;
   }
 
   /**
@@ -258,6 +321,95 @@ export abstract class SchemaType<Output = any, Input = Output> {
   }
 
   /**
+   * Adds a custom validation refinement with a simple boolean check.
+   *
+   * Use this method to add custom validation logic that returns true if the value
+   * is valid or false if it's invalid. The check runs after the schema's base
+   * validation succeeds. If the check returns false, a validation error is added
+   * with the provided message.
+   *
+   * @param check - Function that returns true if value is valid, false otherwise
+   * @param message - Error message to display when check returns false
+   * @returns This schema instance for method chaining
+   *
+   * @example
+   * const schema = string().refine(
+   *   (val) => !val.includes('banned'),
+   *   'Value contains banned words'
+   * );
+   * schema.parse('hello'); // OK
+   * schema.parse('banned word'); // Throws error: Value contains banned words
+   */
+  refine(
+    check: (value: Output) => boolean,
+    params: {
+      message?: string;
+      code?: string;
+      expected?: unknown;
+      received?: unknown;
+      immediate?: boolean;
+    }
+  ): this {
+    const { message, code, expected, received, immediate } = params;
+    this.checks.push({
+      type: "refine",
+      check,
+      immediate: immediate || false,
+      message: message || "Custom validation failed",
+      code,
+      expected,
+      received,
+    });
+    return this;
+  }
+
+  /**
+   * Adds a custom validation refinement with access to the validation context.
+   *
+   * Use this method for complex validation logic that needs access to the validation
+   * context. The check function receives the validated value and the context, allowing
+   * you to add custom errors, access sibling values, check dependencies, and more.
+   * Unlike refine(), this method doesn't automatically add errors - you must call
+   * ctx.addError() explicitly within the check function.
+   *
+   * @param check - Function that validates value with context access
+   * @returns This schema instance for method chaining
+   *
+   * @example
+   * const schema = string().superRefine((val, ctx) => {
+   *   if (val.length < 10) {
+   *     ctx.addError(new ValidationError(
+   *       ctx.getPath(),
+   *       'Value must be at least 10 characters',
+   *       'too_short'
+   *     ));
+   *   }
+   * });
+   *
+   * @example
+   * // Check against sibling field
+   * const passwordConfirm = string().superRefine((val, ctx) => {
+   *   const password = ctx.getSiblingValue('password');
+   *   if (val !== password) {
+   *     ctx.addError(new ValidationError(
+   *       ctx.getPath(),
+   *       'Passwords must match',
+   *       'passwords_mismatch'
+   *     ));
+   *   }
+   * });
+   */
+  superRefine(
+    check: (value: Output, ctx: RefinementContext<this>) => void
+  ): this {
+    this.checks.push({
+      type: "superRefine",
+      check,
+    });
+    return this;
+  }
+
+  /**
    * Converts the schema's HTML attributes to a JSON-serializable format.
    *
    * This method can be overridden by subclasses to customize serialization.
@@ -290,7 +442,7 @@ export abstract class SchemaType<Output = any, Input = Output> {
  * optionalEmail.parse('user@example.com'); // Returns 'user@example.com'
  * optionalEmail.parse('invalid'); // Throws error
  */
-export class OptionalSchema<T extends SchemaType<any, any>> extends SchemaType<
+export class OptionalSchema<T extends SchemaTypeAny> extends SchemaType<
   T["_output"] | undefined,
   T["_input"] | undefined
 > {
@@ -381,7 +533,7 @@ export class OptionalSchema<T extends SchemaType<any, any>> extends SchemaType<
  * nullableNumber.parse(42); // Returns 42
  * nullableNumber.parse('text'); // Throws error
  */
-export class NullableSchema<T extends SchemaType<any, any>> extends SchemaType<
+export class NullableSchema<T extends SchemaTypeAny> extends SchemaType<
   T["_output"] | null,
   T["_input"] | null
 > {
@@ -470,7 +622,7 @@ export class NullableSchema<T extends SchemaType<any, any>> extends SchemaType<
  * nameSchema.parse(undefined); // Returns 'Anonymous'
  * nameSchema.parse('John'); // Returns 'John'
  */
-export class DefaultSchema<T extends SchemaType<any, any>> extends SchemaType<
+export class DefaultSchema<T extends SchemaTypeAny> extends SchemaType<
   T["_output"],
   T["_input"]
 > {
@@ -585,7 +737,7 @@ export class DefaultSchema<T extends SchemaType<any, any>> extends SchemaType<
  * );
  * // Tax ID is only required when accountType is 'business'
  */
-export class DependsOnSchema<T extends SchemaType<any, any>> extends SchemaType<
+export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
   T["_output"] | undefined,
   T["_input"] | undefined
 > {

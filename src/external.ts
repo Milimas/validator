@@ -27,12 +27,7 @@ import {
   XMLSchema,
   ZipCodeSchema,
 } from "./string/index.js";
-import {
-  CodeLanguages,
-  HTMLAttributes,
-  ObjectShape,
-  SchemaTypeAny,
-} from "./types.js";
+import { CodeLanguages, ObjectShape, SchemaTypeAny } from "./types.js";
 import { AnySchema, NeverSchema, SchemaType, UnknownSchema } from "./schema.js";
 
 // export * from "./types";
@@ -712,7 +707,7 @@ export function code(language?: CodeLanguages): CodeSchema {
  * const schema = string().minLength(3).maxLength(50);
  * const jsonSchema = toJSONSchema(schema);
  */
-function toJSONSchema<R extends ReturnType<SchemaType<any>["toJSON"]>>(
+function toJSONSchema<R extends ReturnType<SchemaTypeAny["toJSON"]>>(
   schema: SchemaTypeAny
 ): R {
   return schema.toJSON() as R;

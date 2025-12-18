@@ -1,12 +1,13 @@
 import { e, ValidationError } from "../error.js";
 import { createValidationContext, ValidationContext } from "../context.js";
-import { DefaultSchema, SchemaType } from "../schema.js";
+import { SchemaType } from "../schema.js";
 import {
   HTMLAttributes,
   HtmlObjectType,
   MergeShapes,
   ObjectInfer,
   PrettifyShape,
+  SchemaTypeAny,
 } from "../types.js";
 
 /**
@@ -57,16 +58,13 @@ import {
  * });
  */
 export class ObjectSchema<
-  Shape extends { [key: string]: SchemaType<any> }
+  Shape extends { [key: string]: SchemaTypeAny }
 > extends SchemaType<ObjectInfer<Shape>> {
   public htmlAttributes: HTMLAttributes<HtmlObjectType<Shape>> = {
     type: "object",
     properties: Object.fromEntries(
       Object.entries(this.shape).map(
-        ([key, schema]: [string, SchemaType<any>]) => [
-          key,
-          schema.htmlAttributes,
-        ]
+        ([key, schema]: [string, SchemaTypeAny]) => [key, schema.htmlAttributes]
       )
     ) as { [K in keyof Shape]: Shape[K]["htmlAttributes"] },
     defaultValue: undefined,
@@ -97,7 +95,7 @@ export class ObjectSchema<
       type: "object",
       properties: Object.fromEntries(
         Object.entries(this.shape).map(
-          ([key, schema]: [string, SchemaType<any>]) => [
+          ([key, schema]: [string, SchemaTypeAny]) => [
             key,
             schema.htmlAttributes,
           ]
@@ -150,44 +148,39 @@ export class ObjectSchema<
       data as this["_input"]
     )
   ): e.ValidationResult<ObjectInfer<Shape>> {
-    if (data === undefined)
-      data = this.htmlAttributes.defaultValue as this["_input"];
-    if (
-      typeof data !== "object" ||
-      data === null ||
-      (data === undefined && !this.htmlAttributes?.required) ||
-      Array.isArray(data)
-    ) {
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          "Invalid object",
-          "invalid_type",
-          "object",
-          typeof data,
-          data
-        )
-      );
-
-      return e.ValidationResult.fail<ObjectInfer<Shape>>(ctx.getErrors());
-    }
+    this.checks.push({
+      type: "refine",
+      check: (value: ObjectInfer<Shape>) => {
+        return (
+          typeof value !== "object" ||
+          value === null ||
+          (data === undefined && !this.htmlAttributes?.required) ||
+          Array.isArray(value)
+        );
+      },
+      immediate: true,
+      message: "Invalid object",
+      code: "invalid_type",
+      expected: "object",
+      received: typeof data,
+    });
 
     const result: ObjectInfer<Shape> = {} as ObjectInfer<Shape>;
 
-    for (const key in data) {
-      if (!(key in this.shape)) {
-        ctx.addError(
-          new ValidationError(
-            [...ctx.getPath(), key],
-            "Unexpected property",
-            "unexpected_property",
-            "object",
-            "object",
-            data
-          )
-        );
-      }
-    }
+    this.checks.push({
+      type: "superRefine",
+      check: (value: ObjectInfer<Shape>, ctx) => {
+        for (const key in data as Record<string, unknown>) {
+          if (!(key in this.shape)) {
+            ctx.addIssue({
+              code: "unexpected_property",
+              message: "Unexpected property",
+              path: [key],
+            });
+          }
+        }
+      },
+    });
     for (const key in this.shape) {
       const schema = this.shape[key];
       const value = (data as Record<string, unknown>)[key];
@@ -261,7 +254,9 @@ export class ObjectSchema<
         newShape[key] = sch.shape[key];
       }
     }
+
     return new ObjectSchema(newShape) as ReturnObject;
+    // return this.merge<ObjectSchema<any>>(...schemas) as ReturnObject;
   }
 
   /**

@@ -1,3 +1,4 @@
+import { RefinementContext } from "./context.js";
 import { SchemaType } from "./schema.js";
 
 /**
@@ -154,6 +155,54 @@ export type Condition = {
   field: string;
   condition: RegExp | string;
 };
+
+/**
+ * Defines a custom refinement check for advanced validation logic.
+ *
+ * Refinement checks allow you to add custom validation logic beyond the built-in
+ * validation rules. Each check can be either a simple boolean function (refine) or
+ * a complex function with access to the validation context (superRefine).
+ *
+ * @property {'refine' | 'superRefine'} type - The type of refinement check
+ * @property {function} check - The validation function to execute
+ * @property {string} [message] - Optional error message for refine checks
+ *
+ * @example
+ * // Simple boolean check
+ * const check: RefinementCheck = {
+ *   type: 'refine',
+ *   check: (val) => val.length > 5,
+ *   message: 'Must be longer than 5 characters'
+ * };
+ *
+ * @example
+ * // Complex check with context access
+ * const check: RefinementCheck = {
+ *   type: 'superRefine',
+ *   check: (val, ctx) => {
+ *     if (val.includes('banned')) {
+ *       ctx.addError(new ValidationError(ctx.getPath(), 'Contains banned word', 'banned_word'));
+ *     }
+ *   }
+ * };
+ */
+export type RefinementCheck<
+  S extends SchemaTypeAny = SchemaTypeAny,
+  Output = S["_output"]
+> =
+  | {
+      type: "refine";
+      check: (value: Output) => boolean;
+      immediate: boolean;
+      message?: string;
+      code?: string;
+      expected?: unknown;
+      received?: unknown;
+    }
+  | {
+      type: "superRefine";
+      check: (value: Output, ctx: RefinementContext<S>) => void;
+    };
 
 /**
  * Base HTML input attributes shared across all input element types.
@@ -439,7 +488,7 @@ export type HtmlArrayType<ItemType> = {
  * };
  */
 export type HtmlObjectType<
-  Shape extends { [key: string]: SchemaType<any> },
+  Shape extends { [key: string]: SchemaTypeAny },
   TProperties extends {
     [K in keyof Shape]: Shape[K]["htmlAttributes"];
   } = {
@@ -474,8 +523,8 @@ export type HtmlObjectType<
  * }
  */
 export type HtmlContainerAttributes<
-  Shape extends { [key: string]: SchemaType<any> } = {
-    [key: string]: SchemaType<any>;
+  Shape extends { [key: string]: SchemaTypeAny } = {
+    [key: string]: SchemaTypeAny;
   },
   I = any
 > = HtmlObjectType<Shape> | HtmlArrayType<I>;
@@ -632,3 +681,7 @@ export type HTMLAttributes<
 } & {
   [k in `data-${string}`]?: unknown;
 };
+
+export type RefineFunction<T> = (data: T) => boolean | Promise<boolean>;
+
+export type RefineAsyncFunction<T> = (data: T) => Promise<boolean>;

@@ -432,3 +432,41 @@ export function createValidationContext<
 >(data: T, options?: ValidationContextOptions): ValidationContext<S, T> {
   return new ValidationContext(data);
 }
+
+export interface IRefinementContext<S extends SchemaTypeAny> {
+  readonly data: S["_output"];
+  addIssue: (error: {
+    message: string;
+    code: string;
+    expected?: unknown;
+    received?: unknown;
+    path?: string[] | number[];
+  }) => void;
+}
+export class RefinementContext<S extends SchemaTypeAny>
+  implements IRefinementContext<S>
+{
+  constructor(private ctx: ValidationContext<S>) {}
+
+  get data(): S["_output"] {
+    return this.ctx.getCurrentValue() as S["_output"];
+  }
+  public addIssue(error: {
+    message: string;
+    code: string;
+    expected?: unknown;
+    received?: unknown;
+    path?: string[] | number[];
+  }): void {
+    this.ctx.addError(
+      new ValidationError(
+        [...this.ctx.getPath(), ...(error.path ?? [])],
+        error.message,
+        error.code,
+        error.expected,
+        error.received,
+        this.ctx.getCurrentValue()
+      )
+    );
+  }
+}
