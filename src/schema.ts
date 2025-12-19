@@ -553,7 +553,6 @@ export class NullableSchema<T extends SchemaTypeAny> extends SchemaType<
     super();
     this.htmlAttributes = {
       ...inner.htmlAttributes,
-      required: false,
     };
   }
 
