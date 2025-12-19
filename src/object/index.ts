@@ -60,16 +60,7 @@ import {
 export class ObjectSchema<
   Shape extends { [key: string]: SchemaTypeAny }
 > extends SchemaType<ObjectInfer<Shape>> {
-  public htmlAttributes: HTMLAttributes<HtmlObjectType<Shape>> = {
-    type: "object",
-    properties: Object.fromEntries(
-      Object.entries(this.shape).map(
-        ([key, schema]: [string, SchemaTypeAny]) => [key, schema.htmlAttributes]
-      )
-    ) as { [K in keyof Shape]: Shape[K]["htmlAttributes"] },
-    defaultValue: undefined,
-    required: true,
-  };
+  public htmlAttributes: HTMLAttributes<HtmlObjectType<Shape>>;
 
   /**
    * Initializes the ObjectSchema with a shape definition.
@@ -103,6 +94,7 @@ export class ObjectSchema<
         )
       ) as { [K in keyof Shape]: Shape[K]["htmlAttributes"] },
       defaultValue: undefined,
+      required: true,
     };
   }
 
