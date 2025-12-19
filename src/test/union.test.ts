@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { union, string, number, boolean } from "validator";
+import { union, string, number, boolean } from "../index.js";
 
 describe("UnionSchema (array-based)", () => {
   const schema = union([string(), number(), boolean()] as const);

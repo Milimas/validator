@@ -1,5 +1,5 @@
-import { v } from "../index";
 import { describe, it, expect } from "vitest";
+import { v } from "../index.js";
 
 describe("StringSchema", () => {
   it("should parse valid strings", () => {

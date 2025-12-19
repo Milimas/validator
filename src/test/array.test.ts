@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { array, string, number, object, enum as enumSchema } from "validator";
+import { array, string, number, object, enum as enumSchema } from "../index.js";
 
 describe("ArraySchema", () => {
   describe("Basic validation", () => {

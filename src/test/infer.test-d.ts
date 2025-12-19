@@ -1,7 +1,6 @@
-// tests/infer.test.ts
 import { describe, it, assertType, expectTypeOf } from "vitest";
 
-import { v } from "..";
+import { v } from "../index.js";
 
 import { Infer } from "../types";
 describe("Infer", () => {

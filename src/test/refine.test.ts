@@ -10,7 +10,7 @@ import {
   never,
   record,
   union,
-} from "validator";
+} from "../index.js";
 
 describe("RefineSchema", () => {
   describe("AnySchema", () => {

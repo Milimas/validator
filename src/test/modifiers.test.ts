@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { string, number, object, array, boolean } from "validator";
+import { string, number, object, array, boolean } from "../index.js";
 
 describe("Schema Modifiers", () => {
   describe("optional()", () => {

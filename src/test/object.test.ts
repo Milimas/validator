@@ -8,7 +8,7 @@ import {
   array,
   enum as enumSchema,
   html,
-} from "validator";
+} from "../index.js";
 
 describe("ObjectSchema", () => {
   describe("Basic validation", () => {
@@ -455,7 +455,14 @@ describe("ObjectSchema", () => {
       const schema = object({
         name: string(),
       });
-      expect(schema.toJSON().type).toBe("object");
+
+      const objectToJson = schema.toJSON();
+      expect(objectToJson.type).toBe("object");
+      expect(objectToJson.required).toBe(true);
+      expect(objectToJson.defaultValue).toBeUndefined();
+      expect(objectToJson.maxLength).toBeUndefined();
+      expect(objectToJson.minLength).toBeUndefined();
+      expect(objectToJson.metadata).toBeUndefined();
     });
 
     it("should include properties in attributes", () => {

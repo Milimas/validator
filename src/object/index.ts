@@ -85,6 +85,7 @@ export class ObjectSchema<
     super();
     this.htmlAttributes = {
       type: "object",
+      required: true,
       properties: Object.fromEntries(
         Object.entries(this.shape).map(
           ([key, schema]: [string, SchemaTypeAny]) => [
@@ -94,8 +95,7 @@ export class ObjectSchema<
         )
       ) as { [K in keyof Shape]: Shape[K]["htmlAttributes"] },
       defaultValue: undefined,
-      required: true,
-    };
+    } as HTMLAttributes<HtmlObjectType<Shape>>;
   }
 
   /**

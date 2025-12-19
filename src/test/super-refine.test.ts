@@ -13,7 +13,7 @@ import {
   unknown,
   email,
   phoneNumber,
-} from "validator";
+} from "../index.js";
 
 describe("superRefine with Schema Types", () => {
   describe("AnySchema", () => {

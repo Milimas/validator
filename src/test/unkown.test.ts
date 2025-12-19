@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { unknown } from "validator";
+import { unknown } from "../index.js";
 
 describe("UnknownSchema", () => {
   describe("Basic validation", () => {

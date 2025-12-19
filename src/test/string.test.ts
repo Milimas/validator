@@ -10,7 +10,7 @@ import {
   hexColor,
   json,
   code,
-} from "validator";
+} from "../index.js";
 
 describe("StringSchema", () => {
   describe("Basic validation", () => {
