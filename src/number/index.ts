@@ -21,20 +21,20 @@ import { HtmlNumberInputAttributes, HTMLAttributes } from "../types.js";
  * @example
  * // Age field with realistic constraints
  * const ageSchema = new NumberSchema()
- *   .min(0, 'Age cannot be negative')
- *   .max(150, 'Age seems unrealistic');
+ *  .min(0, 'Age cannot be negative')
+ *  .max(150, 'Age seems unrealistic');
  *
  * @example
  * // Price field
  * const priceSchema = new NumberSchema()
- *   .min(0.01, 'Price must be greater than 0')
- *   .max(999999.99, 'Price is too high');
+ *  .min(0.01, 'Price must be greater than 0')
+ *  .max(999999.99, 'Price is too high');
  *
  * @example
  * // Rating field (1-5 stars)
  * const ratingSchema = new NumberSchema()
- *   .min(1, 'Rating must be at least 1 star')
- *   .max(5, 'Rating cannot exceed 5 stars');
+ *  .min(1, 'Rating must be at least 1 star')
+ *  .max(5, 'Rating cannot exceed 5 stars');
  */
 export class NumberSchema extends SchemaType<number> {
   public htmlAttributes: HTMLAttributes<HtmlNumberInputAttributes> = {
@@ -103,19 +103,19 @@ export class NumberSchema extends SchemaType<number> {
    *
    * @param {unknown} data - The data to validate (should be a number)
    * @returns {e.ValidationResult<number>} A validation result containing either the validated
-   *          number or detailed error information about type or constraint violations
+   *     number or detailed error information about type or constraint violations
    *
    * @example
    * const schema = new NumberSchema().min(0).max(100);
    *
    * const result = schema.validate(50);
    * if (result.success) {
-   *   console.log(result.data); // 50
+   *  console.log(result.data); // 50
    * }
    *
-   * schema.validate(-5);     // ✗ Error: too small
-   * schema.validate(150);    // ✗ Error: too big
-   * schema.validate('123');  // ✗ Error: invalid type
+   * schema.validate(-5);   // ✗ Error: too small
+   * schema.validate(150);  // ✗ Error: too big
+   * schema.validate('123'); // ✗ Error: invalid type
    */
   protected validate(
     data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
@@ -138,12 +138,12 @@ export class NumberSchema extends SchemaType<number> {
    * @example
    * // Age must be at least 18
    * const ageSchema = new NumberSchema()
-   *   .min(18, 'You must be at least 18 years old');
+   *  .min(18, 'You must be at least 18 years old');
    *
    * @example
    * // Price must be positive
    * const priceSchema = new NumberSchema()
-   *   .min(0.01, 'Price must be greater than $0');
+   *  .min(0.01, 'Price must be greater than $0');
    */
   min(
     value: number,
@@ -168,13 +168,13 @@ export class NumberSchema extends SchemaType<number> {
    * @example
    * // Age cannot exceed 120
    * const ageSchema = new NumberSchema()
-   *   .max(120, 'Age cannot exceed 120 years');
+   *  .max(120, 'Age cannot exceed 120 years');
    *
    * @example
    * // Maximum rating of 5 stars
    * const ratingSchema = new NumberSchema()
-   *   .min(1)
-   *   .max(5, 'Rating cannot exceed 5 stars');
+   *  .min(1)
+   *  .max(5, 'Rating cannot exceed 5 stars');
    */
   max(
     value: number,

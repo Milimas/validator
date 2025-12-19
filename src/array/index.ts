@@ -24,24 +24,24 @@ import { HtmlArrayType, SchemaTypeAny, TypeOf } from "../types.js";
  * // Array of email addresses
  * const emailListSchema = new ArraySchema(new EmailSchema());
  * const result = emailListSchema.safeParse([
- *   'user1@example.com',
- *   'user2@example.com'
+ *  'user1@example.com',
+ *  'user2@example.com'
  * ]);
  *
  * @example
  * // Array of user objects with constraints
  * const userListSchema = new ArraySchema(
- *   new ObjectSchema({
- *     id: new NumberSchema(),
- *     name: new StringSchema().minLength(2),
- *     email: new EmailSchema()
- *   })
+ *  new ObjectSchema({
+ *   id: new NumberSchema(),
+ *   name: new StringSchema().minLength(2),
+ *   email: new EmailSchema()
+ *  })
  * ).minLength(1).maxLength(100);
  *
  * @example
  * // Array of tags with length requirements
  * const tagsSchema = new ArraySchema(
- *   new StringSchema().minLength(2).maxLength(20)
+ *  new StringSchema().minLength(2).maxLength(20)
  * ).minLength(1).maxLength(10);
  */
 export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
@@ -120,19 +120,19 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
    *
    * @param {unknown} data - The data to validate (should be an array)
    * @returns {e.ValidationResult<TypeOf<T>[]>} A validation result containing either
-   *          the validated array with all items validated or detailed error information
-   *          including array indices and item-specific error details
+   *     the validated array with all items validated or detailed error information
+   *     including array indices and item-specific error details
    *
    * @example
    * const schema = new ArraySchema(new StringSchema().minLength(2));
    * const result = schema.validate(['hello', 'world']);
    *
    * if (result.success) {
-   *   console.log(result.data); // ['hello', 'world']
+   *  console.log(result.data); // ['hello', 'world']
    * } else {
-   *   result.errors.forEach(error => {
-   *     console.log(`${error.path.join('.')}: ${error.message}`);
-   *   });
+   *  result.errors.forEach(error => {
+   *   console.log(`${error.path.join('.')}: ${error.message}`);
+   *  });
    * }
    */
   protected validate(
@@ -179,12 +179,12 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
    * @example
    * // At least one item required
    * const tagsSchema = new ArraySchema(new StringSchema())
-   *   .minLength(1, 'At least one tag is required');
+   *  .minLength(1, 'At least one tag is required');
    *
    * @example
    * // Shopping cart must have items
    * const cartSchema = new ArraySchema(new ObjectSchema({...}))
-   *   .minLength(1);
+   *  .minLength(1);
    */
   minLength(
     min: number,
@@ -211,13 +211,13 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
    * @example
    * // Maximum 10 tags per post
    * const tagsSchema = new ArraySchema(new StringSchema())
-   *   .maxLength(10, 'Maximum 10 tags allowed');
+   *  .maxLength(10, 'Maximum 10 tags allowed');
    *
    * @example
    * // Page size limit
    * const itemsSchema = new ArraySchema(new ObjectSchema({...}))
-   *   .minLength(1)
-   *   .maxLength(100);
+   *  .minLength(1)
+   *  .maxLength(100);
    */
   maxLength(
     max: number,

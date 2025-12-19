@@ -8,7 +8,7 @@ import {
   array,
   enum as enumSchema,
   html,
-} from "../src/index.js";
+} from "validator";
 
 describe("ObjectSchema", () => {
   describe("Basic validation", () => {

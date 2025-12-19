@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { never } from "../src/index.js";
+import { never } from "validator";
 
 describe("NeverSchema", () => {
   describe("Basic validation", () => {

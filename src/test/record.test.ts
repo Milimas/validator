@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { record, string, number, object, boolean } from "../src/index.js";
+import { record, string, number, object, boolean } from "validator";
 
 describe("RecordSchema", () => {
   describe("Basic validation", () => {

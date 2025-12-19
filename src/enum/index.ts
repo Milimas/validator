@@ -86,20 +86,20 @@ export class EnumSchema<const T extends readonly string[]> extends SchemaType<
    *
    * @param {unknown} data - The data to validate (should be one of the enum values)
    * @returns {e.ValidationResult<T[number]>} A validation result containing either the validated
-   *          enum value or an error listing the expected allowed values
+   *     enum value or an error listing the expected allowed values
    *
    * @example
    * const schema = new EnumSchema(['active', 'inactive', 'pending'] as const);
    *
-   * schema.validate('active');   // ✓ Success
-   * schema.validate('unknown');  // ✗ Error: invalid enum value
-   * schema.validate(123);        // ✗ Error: invalid type (not string)
+   * schema.validate('active');  // ✓ Success
+   * schema.validate('unknown'); // ✗ Error: invalid enum value
+   * schema.validate(123);    // ✗ Error: invalid type (not string)
    *
    * @example
    * // With form submission
    * const result = schema.safeParse(formData.status);
    * if (!result.success) {
-   *   console.log('Valid statuses are:', ['active', 'inactive', 'pending']);
+   *  console.log('Valid statuses are:', ['active', 'inactive', 'pending']);
    * }
    */
   protected validate(

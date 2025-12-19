@@ -24,17 +24,17 @@ import { SchemaTypeAny, TypeOf, UnionAttributes } from "../types.js";
  *
  * const result1 = schema.validate('hello');
  * if (result1.success) {
- *   console.log(result1.data); // 'hello'
+ *  console.log(result1.data); // 'hello'
  * }
  *
  * const result2 = schema.validate(42);
  * if (result2.success) {
- *   console.log(result2.data); // 42
+ *  console.log(result2.data); // 42
  * }
  *
  * const result3 = schema.validate(true);
  * if (!result3.success) {
- *   console.log(result3.errors); // Detailed errors from both StringSchema and NumberSchema
+ *  console.log(result3.errors); // Detailed errors from both StringSchema and NumberSchema
  * }
  */
 export class UnionSchema<

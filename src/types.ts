@@ -10,10 +10,10 @@ import { SchemaType } from "./schema.js";
  *
  * @example
  * function validateMany(schemas: SchemaTypeAny[], data: unknown[]) {
- *   return schemas.map((schema, i) => schema.safeParse(data[i]));
+ *  return schemas.map((schema, i) => schema.safeParse(data[i]));
  * }
  */
-export type SchemaTypeAny = SchemaType<any>;
+export type SchemaTypeAny = SchemaType<any, any>;
 
 /**
  * Extracts the output type from a schema type.
@@ -26,8 +26,8 @@ export type SchemaTypeAny = SchemaType<any>;
  *
  * @example
  * const userSchema = object({
- *   name: string(),
- *   age: number()
+ *  name: string(),
+ *  age: number()
  * });
  * type User = TypeOf<typeof userSchema>;
  * // User is inferred as { name: string; age: number }
@@ -98,8 +98,8 @@ export type Infer<T extends SchemaTypeAny> = Prettify<TypeOf<T>>;
  *
  * @example
  * const schema = object({
- *   name: string(),
- *   nickname: string().optional()
+ *  name: string(),
+ *  nickname: string().optional()
  * });
  * type Result = ObjectInfer<typeof schema.shape>;
  * // Result is { name: string; nickname?: string | undefined }
@@ -126,9 +126,9 @@ export type ObjectInfer<Shape extends { [key: string]: SchemaTypeAny }> =
  *
  * @example
  * const userShape: ObjectShape = {
- *   username: string().minLength(3),
- *   email: email(),
- *   age: number().min(18)
+ *  username: string().minLength(3),
+ *  email: email(),
+ *  age: number().min(18)
  * };
  * const userSchema = object(userShape);
  */
@@ -147,8 +147,8 @@ export type ObjectShape = { [key: string]: SchemaTypeAny };
  * @example
  * // Require business tax ID only for business accounts
  * const taxIdCondition: Condition = {
- *   field: 'accountType',
- *  condition: /^business$/
+ *  field: 'accountType',
+ * condition: /^business$/
  * };
  */
 export type Condition = {
@@ -174,20 +174,20 @@ export type Condition = {
  * @example
  * // Simple boolean check
  * const check: RefinementCheck = {
- *   type: 'refine',
- *   check: (val) => val.length > 5,
- *   message: 'Must be longer than 5 characters'
+ *  type: 'refine',
+ *  check: (val) => val.length > 5,
+ *  message: 'Must be longer than 5 characters'
  * };
  *
  * @example
  * // Complex check with context access
  * const check: RefinementCheck = {
- *   type: 'superRefine',
- *   check: (val, ctx) => {
- *     if (val.includes('banned')) {
- *       ctx.addError(new ValidationError(ctx.getPath(), 'Contains banned word', 'banned_word'));
- *     }
+ *  type: 'superRefine',
+ *  check: (val, ctx) => {
+ *   if (val.includes('banned')) {
+ *    ctx.addError(new ValidationError(ctx.getPath(), 'Contains banned word', 'banned_word'));
  *   }
+ *  }
  * };
  */
 export type RefinementCheck<
@@ -279,10 +279,10 @@ export type HtmlStringInputType =
  *
  * @example
  * const emailAttrs: HtmlStringAttributes = {
- *   type: 'email',
- *   required: true,
- *   placeholder: 'user@example.com',
- *   maxLength: 254
+ *  type: 'email',
+ *  required: true,
+ *  placeholder: 'user@example.com',
+ *  maxLength: 254
  * };
  */
 export type HtmlStringAttributes = {
@@ -308,9 +308,9 @@ export type HtmlStringAttributes = {
  *
  * @example
  * const codeAttrs: HtmlCodeAttributes = {
- *   type: 'code',
- *   required: true,
- *   placeholder: '// your code here',
+ *  type: 'code',
+ *  required: true,
+ *  placeholder: '// your code here',
  * };
  */
 export type HtmlCodeAttributes = HtmlStringAttributes & {
@@ -333,10 +333,10 @@ export type CodeLanguages = "javascript" | "json" | "xml" | "html";
  *
  * @example
  * const checkboxAttrs: HtmlCheckboxAttributes = {
- *   type: 'checkbox',
- *   checked: false,
- *   defaultValue: false,
- *   required: true
+ *  type: 'checkbox',
+ *  checked: false,
+ *  defaultValue: false,
+ *  required: true
  * };
  */
 export type HtmlCheckboxAttributes = {
@@ -360,12 +360,12 @@ export type HtmlCheckboxAttributes = {
  *
  * @example
  * const ageAttrs: HtmlNumberInputAttributes = {
- *   type: 'number',
- *   required: true,
- *   min: 0,
- *   max: 120,
- *   step: 1,
- *   defaultValue: 18
+ *  type: 'number',
+ *  required: true,
+ *  min: 0,
+ *  max: 120,
+ *  step: 1,
+ *  defaultValue: 18
  * };
  */
 export type HtmlNumberInputAttributes = {
@@ -390,10 +390,10 @@ export type HtmlNumberInputAttributes = {
  *
  * @example
  * const imageUploadAttrs: HtmlFileInputAttributes = {
- *   type: 'file',
- *   required: true,
- *   accept: 'image/png, image/jpeg',
- *   multiple: false
+ *  type: 'file',
+ *  required: true,
+ *  accept: 'image/png, image/jpeg',
+ *  multiple: false
  * };
  */
 export type HtmlFileInputAttributes = {
@@ -418,10 +418,10 @@ export type HtmlFileInputAttributes = {
  *
  * @example
  * const statusSelect: HtmlSelectAttributes<'active' | 'inactive'> = {
- *   type: 'select',
- *   required: true,
- *   options: ['active', 'inactive'],
- *   defaultValue: 'active'
+ *  type: 'select',
+ *  required: true,
+ *  options: ['active', 'inactive'],
+ *  defaultValue: 'active'
  * };
  */
 export type HtmlSelectAttributes<T = string> = {
@@ -448,11 +448,11 @@ export type HtmlSelectAttributes<T = string> = {
  *
  * @example
  * const tagsArray: HtmlArrayType<string> = {
- *   type: 'array',
- *   items: [{ type: 'text', required: true }],
- *   minLength: 1,
- *   maxLength: 10,
- *   required: true
+ *  type: 'array',
+ *  items: [{ type: 'text', required: true }],
+ *  minLength: 1,
+ *  maxLength: 10,
+ *  required: true
  * };
  */
 export type HtmlArrayType<ItemType> = {
@@ -482,13 +482,13 @@ export type HtmlArrayType<ItemType> = {
  *
  * @example
  * const addressObject: HtmlObjectType = {
- *   type: 'object',
- *   required: true,
- *   properties: {
- *     street: { type: 'text', required: true },
- *     city: { type: 'text', required: true },
- *     zipCode: { type: 'text', required: true, pattern: /^\d{5}$/ }
- *   }
+ *  type: 'object',
+ *  required: true,
+ *  properties: {
+ *   street: { type: 'text', required: true },
+ *   city: { type: 'text', required: true },
+ *   zipCode: { type: 'text', required: true, pattern: /^\d{5}$/ }
+ *  }
  * };
  */
 export type HtmlObjectType<
@@ -519,11 +519,11 @@ export type HtmlObjectType<
  *
  * @example
  * function renderContainer(attrs: HtmlContainerAttributes) {
- *   if (attrs.type === 'object') {
- *     return renderObjectFields(attrs.properties);
- *   } else {
- *     return renderArrayField(attrs.items);
- *   }
+ *  if (attrs.type === 'object') {
+ *   return renderObjectFields(attrs.properties);
+ *  } else {
+ *   return renderArrayField(attrs.items);
+ *  }
  * }
  */
 export type HtmlContainerAttributes<
@@ -541,9 +541,9 @@ export type HtmlContainerAttributes<
  *
  * @example
  * const unionAttrs: UnionAttributes = {
- *   type: 'union',
- *   required: true,
- *   anyOf: [{ type: 'text', required: true }, { type: 'number', required: true }]
+ *  type: 'union',
+ *  required: true,
+ *  anyOf: [{ type: 'text', required: true }, { type: 'number', required: true }]
  * };
  */
 export type UnionAttributes<T extends readonly any[] = readonly any[]> = {
@@ -562,10 +562,10 @@ export type UnionAttributes<T extends readonly any[] = readonly any[]> = {
  *
  * @example
  * const recordAttrs: RecordAttributes = {
- *   type: 'record',
- *   keySchema: { type: 'text', pattern: /^[a-z_]+$/, required: true },
- *   valueSchema: { type: 'number', min: 0, max: 100, required: true },
- *   required: true
+ *  type: 'record',
+ *  keySchema: { type: 'text', pattern: /^[a-z_]+$/, required: true },
+ *  valueSchema: { type: 'number', min: 0, max: 100, required: true },
+ *  required: true
  * };
  */
 export type RecordAttributes = {
@@ -626,32 +626,32 @@ export type HtmlUnknownAttributes = {
  * The generic parameter T allows for precise type checking while the default union maintains backward compatibility.
  *
  * @template T - The specific HTML attribute structure (e.g., HtmlStringAttributes, HtmlNumberInputAttributes).
- *              Defaults to a union of all possible attribute types for maximum compatibility.
+ *       Defaults to a union of all possible attribute types for maximum compatibility.
  *
  * @example
  * // Type-safe string attributes
  * const emailField: HTMLAttributes<HtmlStringAttributes> = {
- *   type: 'email',
- *   required: true,
- *   placeholder: 'user@example.com'
+ *  type: 'email',
+ *  required: true,
+ *  placeholder: 'user@example.com'
  * };
  *
  * @example
  * // Generic union (default, backward compatible)
  * const anyField: HTMLAttributes = {
- *   type: 'email',
- *   required: true,
- *   placeholder: 'user@example.com',
- *   'data-validation-group': 'contact-info'
+ *  type: 'email',
+ *  required: true,
+ *  placeholder: 'user@example.com',
+ *  'data-validation-group': 'contact-info'
  * };
  *
  * @example
  * // Number attributes with strong typing
  * const ageField: HTMLAttributes<HtmlNumberInputAttributes> = {
- *   type: 'number',
- *   min: 0,
- *   max: 120,
- *   required: true
+ *  type: 'number',
+ *  min: 0,
+ *  max: 120,
+ *  required: true
  * };
  */
 export type HTMLAttributes<

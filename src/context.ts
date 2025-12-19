@@ -57,8 +57,8 @@ export interface FailedDependency {
  * @example
  * // Creating a parsing context for object validation
  * const context = new ValidationContext(
- *   { user: { name: 'John', role: 'admin' } },
- *   []
+ *  { user: { name: 'John', role: 'admin' } },
+ *  []
  * );
  *
  * @example
@@ -69,7 +69,7 @@ export interface FailedDependency {
  * @example
  * // Checking if a dependency is satisfied
  * const isSatisfied = context.isDependencySatisfied(
- *   { field: 'userType', condition: /^business$/ }
+ *  { field: 'userType', condition: /^business$/ }
  * );
  */
 export class ValidationContext<
@@ -222,8 +222,8 @@ export class ValidationContext<
    * @example
    * // Checking if taxId is required based on accountType
    * const isSatisfied = context.isDependencySatisfied({
-   *   field: 'accountType',
-   *   condition: /^business$/
+   *  field: 'accountType',
+   *  condition: /^business$/
    * });
    */
   isDependencySatisfied(condition: DependencyCondition): boolean {
@@ -269,7 +269,7 @@ export class ValidationContext<
    *
    * @example
    * const conditions = [
-   *   { field: 'userType', condition: /^business$/ }
+   *  { field: 'userType', condition: /^business$/ }
    * ];
    * context.isFieldRequired(conditions); // true or false
    */
@@ -289,9 +289,9 @@ export class ValidationContext<
    *
    * @example
    * const error = new ValidationError(
-   *   context.getPath(),
-   *   'Invalid email format',
-   *   'invalid_email'
+   *  context.getPath(),
+   *  'Invalid email format',
+   *  'invalid_email'
    * );
    * context.addError(error);
    */
@@ -422,8 +422,8 @@ export interface ValidationContextOptions {
  *
  * @example
  * const context = createValidationContext(userData, {
- *   maxErrors: 10,
- *   stopOnFirstError: false
+ *  maxErrors: 10,
+ *  stopOnFirstError: false
  * });
  */
 export function createValidationContext<

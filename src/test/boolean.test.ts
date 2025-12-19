@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { boolean } from "../src/index.js";
+import { boolean } from "validator";
 
 describe("BooleanSchema", () => {
   describe("Basic validation", () => {

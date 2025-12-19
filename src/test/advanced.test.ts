@@ -11,7 +11,7 @@ import {
   url,
   password,
   infer as Infer,
-} from "../src/index.js";
+} from "validator";
 
 describe("Type Inference with Infer", () => {
   describe("Simple types", () => {

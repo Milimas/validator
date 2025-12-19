@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { number, object, ValidationAggregateError } from "../src/index.js";
+import { number, object, ValidationAggregateError } from "validator";
 
 describe("NumberSchema", () => {
   describe("Basic validation", () => {

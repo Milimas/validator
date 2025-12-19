@@ -1,4 +1,4 @@
-import { v } from "../src/index";
+import { v } from "../index";
 import { describe, it, expect } from "vitest";
 
 describe("StringSchema", () => {
