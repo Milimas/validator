@@ -296,7 +296,7 @@ export class ValidationContext<
    * context.addError(error);
    */
   addError(error: ValidationError): void {
-    this.errors.unshift(error);
+    this.errors.push(error);
   }
 
   /**
@@ -441,6 +441,7 @@ export interface IRefinementContext<S extends SchemaTypeAny> {
     expected?: unknown;
     received?: unknown;
     path?: string[] | number[];
+    value?: S["_output"];
   }) => void;
 }
 export class RefinementContext<S extends SchemaTypeAny>
@@ -457,6 +458,7 @@ export class RefinementContext<S extends SchemaTypeAny>
     expected?: unknown;
     received?: unknown;
     path?: string[] | number[];
+    value?: S["_output"];
   }): void {
     this.ctx.addError(
       new ValidationError(
@@ -465,7 +467,7 @@ export class RefinementContext<S extends SchemaTypeAny>
         error.code,
         error.expected,
         error.received,
-        this.ctx.getCurrentValue()
+        error.value || this.ctx.getCurrentValue()
       )
     );
   }

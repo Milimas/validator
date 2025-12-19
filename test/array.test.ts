@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { array, string, number, object } from "../src/index.js";
+import {
+  array,
+  string,
+  number,
+  object,
+  enum as enumSchema,
+} from "../src/index.js";
 
 describe("ArraySchema", () => {
   describe("Basic validation", () => {
@@ -168,7 +174,7 @@ describe("ArraySchema", () => {
   });
 
   describe("Specific edge cases", () => {
-    it("", () => {
+    it("should handle optional array of objects", () => {
       const schema = object({
         headers: array(
           object({
@@ -188,6 +194,41 @@ describe("ArraySchema", () => {
       }
 
       expect(schema.toJSON().properties.headers.items).toBeDefined();
+    });
+    it("", () => {
+      const schema = object({
+        events: array(
+          enumSchema([
+            "messageCreate",
+            "messageUpdate",
+            "messageDelete",
+            "guildMemberAdd",
+            "guildMemberRemove",
+            "interactionCreate",
+            "ready",
+          ])
+        ).default(["messageCreate"]),
+      });
+
+      const json = schema.toJSON();
+      expect(json.properties.events.defaultValue).toEqual(["messageCreate"]);
+      expect(json.properties.events.type).toBe("array");
+      expect(json.properties.events.items).toBeDefined();
+      expect(json.properties.events.items).toEqual([
+        {
+          type: "select",
+          options: [
+            "messageCreate",
+            "messageUpdate",
+            "messageDelete",
+            "guildMemberAdd",
+            "guildMemberRemove",
+            "interactionCreate",
+            "ready",
+          ],
+          required: true,
+        },
+      ]);
     });
   });
 });

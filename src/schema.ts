@@ -95,8 +95,11 @@ export abstract class SchemaType<Output = any, Input = Output> {
         if (!checkPassed) {
           const error = new ValidationError(
             ctx.getPath(),
-            refinement.message() || "Custom validation failed",
-            "custom_validation"
+            refinement.message() || "Refine validation failed",
+            refinement.code || "refine_validation_failed",
+            refinement.expected,
+            refinement.received,
+            result.data
           );
           ctx.addError(error);
           if (refinement.immediate) {
@@ -359,7 +362,7 @@ export abstract class SchemaType<Output = any, Input = Output> {
       type: "refine",
       check,
       immediate: immediate || false,
-      message: () => message || "Custom validation failed",
+      message: () => message || "Refine validation failed",
       code,
       expected,
       received,
@@ -942,7 +945,7 @@ export class NeverSchema extends SchemaType<never> {
   ): e.ValidationResult<never> {
     ctx.addError(
       new ValidationError(
-        [],
+        [...ctx.getPath()],
         "Value is not allowed",
         "never_valid",
         "never",

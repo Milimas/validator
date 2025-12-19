@@ -150,16 +150,6 @@ export class ObjectSchema<
   ): e.ValidationResult<ObjectInfer<Shape>> {
     const result: ObjectInfer<Shape> = {} as ObjectInfer<Shape>;
 
-    // {
-    //     type: "refine",
-    //     check: (data: object) =>
-    //       typeof data === "object" && data !== null && !Array.isArray(data),
-    //     message: () => "Invalid object",
-    //     code: "invalid_type",
-    //     expected: "object",
-    //     received: "non-object",
-    //     immediate: true,
-    //   },
     if (data === null || typeof data !== "object" || Array.isArray(data)) {
       const error = new ValidationError(
         ctx.getPath(),
@@ -169,23 +159,6 @@ export class ObjectSchema<
       ctx.addError(error);
       return e.ValidationResult.fail<ObjectInfer<Shape>>(ctx.getErrors());
     }
-
-    // this.checks.push({
-    //   type: "refine",
-    //   check: (data: object) => {
-    //     for (const key in data as Record<string, unknown>) {
-    //       if (!(key in this.shape)) {
-    //         return false;
-    //       }
-    //     }
-    //     return true;
-    //   },
-    //   message: () => "Unexpected property",
-    //   code: "unexpected_property",
-    //   expected: Object.keys(this.shape),
-    //   received: "unexpected_property",
-    //   immediate: true,
-    // });
 
     for (const key in data as Record<string, unknown>) {
       if (!(key in this.shape)) {

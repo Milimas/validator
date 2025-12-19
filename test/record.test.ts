@@ -74,7 +74,7 @@ describe("RecordSchema", () => {
 
     it("should validate keys with min/max length", () => {
       const schema = record(string().minLength(3).maxLength(10), number());
-      expect(schema.parse({ abc: 1, defgh: 2 })).toEqual({ abc: 1, defgh: 2 });
+      expect(schema.parse({ abc: 1, defs: 2 })).toEqual({ abc: 1, defs: 2 });
       expect(() => schema.parse({ ab: 1 })).toThrow(); // too short
       expect(() => schema.parse({ abcdefghijk: 1 })).toThrow(); // too long
     });

@@ -195,7 +195,7 @@ describe("PasswordSchema", () => {
 
   it("should support length constraints", () => {
     const schema = password().minLength(8);
-    expect(schema.parse("longpassword")).toBe("longpassword");
+    expect(schema.parse("long-password")).toBe("long-password");
     expect(() => schema.parse("short")).toThrow();
   });
 });
@@ -333,7 +333,7 @@ describe("JSONSchema", () => {
       const schema = json().maxLength(20);
       expect(schema.parse('{"x":1}')).toBe('{"x":1}');
       expect(() =>
-        schema.parse('{"verylongkeywithlotsofdata":"andmoredata"}')
+        schema.parse('{"very-long-key-with-lots-of-data":"and-more-data"}')
       ).toThrow();
     });
 
@@ -342,7 +342,7 @@ describe("JSONSchema", () => {
       expect(schema.parse('{"x":1}')).toBe('{"x":1}');
       expect(() => schema.parse("null")).toThrow(); // too short
       expect(() =>
-        schema.parse('{"verylongkeywithlotsofdata":"andmoredata"}')
+        schema.parse('{"very-long-key-with-lots-of-data":"and-more-data"}')
       ).toThrow(); // too long
     });
 
@@ -359,7 +359,7 @@ describe("JSONSchema", () => {
 
       // Too long
       const tooLong = schema.safeParse(
-        '{"verylongkeywithlotsofdata":"andmoredataandevenmoredata"}'
+        '{"very-long-key-with-lots-of-data":"and-more-data-and-even-more-data"}'
       );
       expect(tooLong.success).toBe(false);
     });
@@ -466,7 +466,7 @@ describe("JSONSchema", () => {
       // Too long
       expect(() =>
         schema.parse(
-          '{"verylongkeywithlotsofdata":"andmoredataandevenmoredata"}'
+          '{"very-long-key-with-lots-of-data":"and-more-data-and-even-more-data"}'
         )
       ).toThrow();
 
