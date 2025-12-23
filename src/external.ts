@@ -27,7 +27,12 @@ import {
   XMLSchema,
   ZipCodeSchema,
 } from "./string/index.js";
-import { CodeLanguages, ObjectShape, SchemaTypeAny } from "./types.js";
+import {
+  CodeLanguages,
+  HtmlAnyAttributes,
+  ObjectShape,
+  SchemaTypeAny,
+} from "./types.js";
 import { AnySchema, NeverSchema, SchemaType, UnknownSchema } from "./schema.js";
 
 // export * from "./types";
@@ -711,6 +716,58 @@ function toJSONSchema<R extends ReturnType<SchemaTypeAny["toJSON"]>>(
   schema: SchemaTypeAny
 ): R {
   return schema.toJSON() as R;
+}
+
+export function fromJSONSchema<R extends SchemaTypeAny>(
+  jsonSchema: ReturnType<R["toJSON"]>
+): R {
+  // TODO: Handle additional schema properties like checks, errors, etc.
+  // TODO: Handle Wrapped Schemas like Optional, Nullable, Default, etc.
+  let instance: SchemaTypeAny;
+  switch (jsonSchema.type) {
+    case "text":
+      instance = new StringSchema();
+      instance.htmlAttributes = jsonSchema;
+      break;
+    case "number":
+      instance = new NumberSchema();
+      instance.htmlAttributes = jsonSchema;
+      break;
+    case "checkbox":
+      instance = new BooleanSchema();
+      instance.htmlAttributes = jsonSchema;
+      break;
+    case "select":
+      instance = new EnumSchema(jsonSchema.options as readonly string[]);
+      instance.htmlAttributes = jsonSchema;
+      break;
+    case "object":
+      const shape = Object.fromEntries(
+        Object.entries(jsonSchema.properties).map(([key, value]) => [
+          key,
+          fromJSONSchema(value) as SchemaTypeAny,
+        ])
+      ) as Record<string, SchemaTypeAny>;
+      instance = new ObjectSchema(shape);
+      instance.htmlAttributes = jsonSchema;
+      break;
+    case "array":
+      const itemSchema = fromJSONSchema(jsonSchema.items[0]) as SchemaTypeAny;
+      instance = new ArraySchema(itemSchema);
+      instance.htmlAttributes = jsonSchema;
+      break;
+    case "record":
+      const keySchema = fromJSONSchema(jsonSchema.keySchema) as SchemaTypeAny;
+      const valueSchema = fromJSONSchema(
+        jsonSchema.valueSchema
+      ) as SchemaTypeAny;
+      instance = new RecordSchema(keySchema, valueSchema);
+      instance.htmlAttributes = jsonSchema;
+      break;
+    default:
+      throw new Error(`Unsupported schema type: ${jsonSchema.type}`);
+  }
+  return instance as R;
 }
 
 export type { SchemaTypeAny };
