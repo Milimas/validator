@@ -12,6 +12,7 @@ import {
   RefinementCheck,
   SchemaTypeAny,
   JsonSchemaFormat,
+  HTMLAttributes,
 } from "./types.js";
 
 /**
@@ -37,7 +38,7 @@ export abstract class SchemaType<Output = any, Input = Output> {
    * HTML attributes for rendering the schema as a form input element.
    * Must be implemented by all concrete schema classes.
    */
-  public abstract htmlAttributes: HtmlAnyAttributes;
+  public abstract htmlAttributes: HTMLAttributes;
 
   /**
    * Map of custom error messages for different validation scenarios.

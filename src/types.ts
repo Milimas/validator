@@ -462,7 +462,7 @@ export type HtmlArrayType<ItemType> = {
   minLength?: number;
   maxLength?: number;
   required?: boolean;
-};
+} & HtmlGenericInputAttributes;
 
 /**
  * HTML representation for object/record data structures with nested properties.
@@ -505,7 +505,7 @@ export type HtmlObjectType<
   minLength?: number;
   maxLength?: number;
   required?: boolean;
-};
+} & HtmlGenericInputAttributes;
 
 /**
  * Union type for HTML container attributes (objects and arrays).
@@ -551,7 +551,7 @@ export type UnionAttributes<T extends readonly any[] = readonly any[]> = {
   anyOf?: T;
   defaultValue?: never;
   required: boolean;
-};
+} & HtmlGenericInputAttributes;
 
 /**
  * HTML attributes for record types with dynamic keys and uniform value types.
@@ -574,7 +574,7 @@ export type RecordAttributes = {
   valueSchema: HTMLAttributes;
   defaultValue?: Record<string, any>;
   required: boolean;
-};
+} & HtmlGenericInputAttributes;
 
 /**
  * HTML attributes for inputs that can accept any value type.
@@ -683,6 +683,8 @@ export type HTMLAttributes<
 > = T & {
   metadata?: Record<string, unknown>;
   description?: string;
+} & {
+  [k in `data-${string}`]?: unknown;
 };
 
 export type RefineFunction<T> = (data: T) => boolean | Promise<boolean>;

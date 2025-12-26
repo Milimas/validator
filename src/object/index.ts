@@ -96,7 +96,7 @@ export class ObjectSchema<
         )
       ) as { [K in keyof Shape]: Shape[K]["htmlAttributes"] },
       defaultValue: undefined,
-    } as HTMLAttributes<HtmlObjectType<Shape>;
+    } as HTMLAttributes<HtmlObjectType<Shape>>;
 
     this.description = `Object with properties: ${Object.keys(shape).join(
       ", "
