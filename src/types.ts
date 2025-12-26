@@ -682,10 +682,27 @@ export type HTMLAttributes<
     | HtmlCodeAttributes
 > = T & {
   metadata?: Record<string, unknown>;
-} & {
-  [k in `data-${string}`]?: unknown;
+  description?: string;
 };
 
 export type RefineFunction<T> = (data: T) => boolean | Promise<boolean>;
 
 export type RefineAsyncFunction<T> = (data: T) => Promise<boolean>;
+
+export type JsonSchemaFormat = {
+  type:
+    | "null"
+    | "boolean"
+    | "object"
+    | "array"
+    | "number"
+    | "string"
+    | "integer";
+  properties?: Record<string, unknown>;
+  required?: string[];
+  additionalProperties?: Record<string, unknown> | boolean;
+  description?: string | undefined;
+  [key: string]: unknown;
+} & {
+  __brand?: never;
+};

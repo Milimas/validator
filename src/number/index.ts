@@ -1,7 +1,7 @@
 import { e, ValidationError } from "../error.js";
 import { ValidationContext } from "../index.js";
 import { SchemaType } from "../schema.js";
-import { HtmlNumberInputAttributes, HTMLAttributes } from "../types.js";
+import { HtmlNumberInputAttributes } from "../types.js";
 
 /**
  * Numeric validation schema for integer and floating-point number validation.
@@ -37,7 +37,7 @@ import { HtmlNumberInputAttributes, HTMLAttributes } from "../types.js";
  *  .max(5, 'Rating cannot exceed 5 stars');
  */
 export class NumberSchema extends SchemaType<number> {
-  public htmlAttributes: HTMLAttributes<HtmlNumberInputAttributes> = {
+  public htmlAttributes: HtmlNumberInputAttributes = {
     type: "number",
     defaultValue: undefined,
     required: true,
@@ -87,6 +87,8 @@ export class NumberSchema extends SchemaType<number> {
         immediate: true,
       }
     );
+
+    this.description = "Number";
   }
 
   /**
@@ -151,6 +153,8 @@ export class NumberSchema extends SchemaType<number> {
   ): this {
     this.errorMap.set("min", message);
     this.htmlAttributes = { ...this.htmlAttributes, min: value };
+
+    this.description += ` (min: ${value})`;
     return this;
   }
 
@@ -182,6 +186,8 @@ export class NumberSchema extends SchemaType<number> {
   ): this {
     this.errorMap.set("max", message);
     this.htmlAttributes = { ...this.htmlAttributes, max: value };
+
+    this.description += ` (max: ${value})`;
     return this;
   }
 
@@ -210,6 +216,8 @@ export class NumberSchema extends SchemaType<number> {
       }
       return result;
     };
+
+    this.description += ` (integer only)`;
     return this;
   }
 }

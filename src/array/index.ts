@@ -101,6 +101,8 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
         immediate: false,
       }
     );
+
+    this.description = `Array of ${this.itemSchema.constructor.name}`;
   }
 
   /**
@@ -194,6 +196,8 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
     if (message) {
       this.errorMap.set("minLength", message);
     }
+
+    this.description += ` (min length: ${min})`;
     return this;
   }
 
@@ -227,10 +231,13 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
     if (message) {
       this.errorMap.set("maxLength", message);
     }
+
+    this.description += ` (max length: ${max})`;
     return this;
   }
 
   default(value: T["_input"][]): DefaultSchema<this> {
+    this.description += ` (default: ${JSON.stringify(value)})`;
     return new DefaultSchema(this, value as T["_input"][]);
   }
 }

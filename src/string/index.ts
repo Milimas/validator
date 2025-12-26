@@ -93,6 +93,8 @@ export class StringSchema extends SchemaType<string> {
         immediate: true,
       }
     );
+
+    this.description = "String";
   }
 
   /**
@@ -165,6 +167,7 @@ export class StringSchema extends SchemaType<string> {
   minLength(value: number, message: string = "String is too short"): this {
     this.errorMap.set("minLength", message);
     this.htmlAttributes = { ...this.htmlAttributes, minLength: value };
+    this.description += ` (min length: ${value})`;
     return this;
   }
 
@@ -205,6 +208,7 @@ export class StringSchema extends SchemaType<string> {
   maxLength(value: number, message: string = "String is too long"): this {
     this.errorMap.set("maxLength", message);
     this.htmlAttributes = { ...this.htmlAttributes, maxLength: value };
+    this.description += ` (max length: ${value})`;
     return this;
   }
 
@@ -260,6 +264,8 @@ export class StringSchema extends SchemaType<string> {
       pattern: value.source,
       title,
     };
+
+    this.description += ` (pattern: ${value.source})`;
     return this;
   }
 
@@ -290,6 +296,8 @@ export class StringSchema extends SchemaType<string> {
       list,
       dataList,
     };
+
+    this.description += ` (datalist: ${list})`;
     return this;
   }
 
@@ -357,6 +365,8 @@ export class PasswordSchema extends StringSchema {
     type: "password",
     required: true,
   };
+
+  public description?: string | undefined = "Password string";
 }
 
 /**
@@ -396,6 +406,7 @@ export class UrlSchema extends StringSchema {
     placeholder: "https://example.com",
     required: true,
   };
+  public description?: string | undefined = "URL string";
 }
 
 /**
@@ -427,6 +438,8 @@ export class ZipCodeSchema extends StringSchema {
     placeholder: "12345 or 12345-6789",
     required: true,
   };
+
+  public description?: string | undefined = "ZIP code string";
 }
 
 /**
@@ -458,6 +471,8 @@ export class XMLSchema extends StringSchema {
     placeholder: "<TAG>value</TAG>",
     required: true,
   };
+
+  public description?: string | undefined = "XML string";
 }
 
 /**
@@ -493,6 +508,8 @@ export class UUIDSchema extends StringSchema {
     placeholder: "550e8400-e29b-41d4-a716-446655440000",
     required: true,
   };
+
+  public description?: string | undefined = "UUID string";
 }
 
 /**
@@ -526,6 +543,8 @@ export class StreetAddressSchema extends StringSchema {
     placeholder: "1234 Main St, City, ST 12345",
     required: true,
   };
+
+  public description?: string | undefined = "Street address string";
 }
 
 /**
@@ -561,6 +580,8 @@ export class PhoneNumberSchema extends StringSchema {
     placeholder: "+12345678900",
     required: true,
   };
+
+  public description?: string | undefined = "Phone number string";
 }
 
 /**
@@ -597,6 +618,8 @@ export class StringNumberSchema extends StringSchema {
     placeholder: "12345",
     required: true,
   };
+
+  public description?: string | undefined = "Numeric string";
 }
 
 /**
@@ -629,6 +652,8 @@ export class HexColorSchema extends StringSchema {
     placeholder: "#RRGGBB or #RGB",
     required: true,
   };
+
+  public description?: string | undefined = "Hexadecimal color string";
 }
 
 /**
@@ -663,6 +688,8 @@ export class MacAddressSchema extends StringSchema {
     placeholder: "00:1A:2B:3C:4D:5E",
     required: true,
   };
+
+  public description?: string | undefined = "MAC address string";
 }
 
 /**
@@ -730,6 +757,8 @@ export class IPAddressSchema<
         ? "IP address must be in the format 255.255.255.255"
         : "IP address must be in the format 2001:0db8:85a3:0000:0000:8a2e:0370:7334";
     this.htmlAttributes.pattern = this._pattern?.source;
+    this.description =
+      version === "IPV4" ? "IPv4 address string" : "IPv6 address string";
   }
 }
 
@@ -764,6 +793,8 @@ export class HTMLSchema extends StringSchema {
     placeholder: "<tag>content</tag>",
     required: true,
   };
+
+  public description?: string | undefined = "HTML string";
 }
 
 /**
@@ -797,6 +828,8 @@ export class GUIDSchema extends StringSchema {
     placeholder: "550e8400-e29b-41d4-a716-446655440000",
     required: true,
   };
+
+  public description?: string | undefined = "GUID string";
 }
 
 /**
@@ -831,6 +864,8 @@ export class DateSchema extends StringSchema {
     placeholder: "MM/DD/YYYY",
     required: true,
   };
+
+  public description?: string | undefined = "Date string";
 }
 
 /**
@@ -868,6 +903,8 @@ export class DatetimeLocalSchema extends StringSchema {
     placeholder: "MM/DD/YYYYTHH:MM",
     required: true,
   };
+
+  public description?: string | undefined = "Local datetime string";
 }
 
 /**
@@ -904,6 +941,8 @@ export class ISODateSchema extends StringSchema {
     placeholder: "YYYY-MM-DDTHH:MM:SSZ",
     required: true,
   };
+
+  public description?: string | undefined = "ISO 8601 date string";
 }
 
 /**
@@ -942,6 +981,8 @@ export class EmailSchema extends StringSchema {
     placeholder: "example@example.com",
     required: true,
   };
+
+  public description?: string | undefined = "Email address string";
 }
 
 /**
@@ -969,6 +1010,8 @@ export class JSONSchema extends StringSchema {
     title: "JSON must be valid JSON format",
     required: true,
   };
+
+  public description?: string | undefined = "JSON string";
 
   /**
    * Validates that the input is a string containing valid JSON.
@@ -1022,10 +1065,13 @@ export class CodeSchema extends StringSchema {
     if (language) {
       this.language(language);
     }
+
+    this.description = `Code string ${language ? `for ${language}` : ""}`;
   }
 
   language(language: CodeLanguages): this {
     this.htmlAttributes.language = language;
+    this.description += ` ${language ? `for ${language}` : ""}`;
     return this;
   }
 }

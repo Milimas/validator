@@ -75,6 +75,8 @@ export class EnumSchema<const T extends readonly string[]> extends SchemaType<
       received: "invalid_value",
       immediate: true,
     });
+
+    this.description = `Enum of values: ${values.join(", ")}`;
   }
 
   /**

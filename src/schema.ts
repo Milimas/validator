@@ -5,13 +5,13 @@ import {
 } from "./context.js";
 import { e, ValidationError } from "./error.js";
 import {
-  HTMLAttributes,
   Condition,
   HtmlAnyAttributes,
   HtmlNeverAttributes,
   HtmlUnknownAttributes,
   RefinementCheck,
   SchemaTypeAny,
+  JsonSchemaFormat,
 } from "./types.js";
 
 /**
@@ -37,7 +37,7 @@ export abstract class SchemaType<Output = any, Input = Output> {
    * HTML attributes for rendering the schema as a form input element.
    * Must be implemented by all concrete schema classes.
    */
-  public abstract htmlAttributes: HTMLAttributes;
+  public abstract htmlAttributes: HtmlAnyAttributes;
 
   /**
    * Map of custom error messages for different validation scenarios.
@@ -62,6 +62,11 @@ export abstract class SchemaType<Output = any, Input = Output> {
    * Not available at runtime - used only for compile-time type checking.
    */
   readonly _input!: Input;
+
+  /**
+   * Optional description for the schema, useful for documentation.
+   */
+  public description?: string;
 
   /**
    * Validates the provided data against this schema's rules.
@@ -328,6 +333,25 @@ export abstract class SchemaType<Output = any, Input = Output> {
   }
 
   /**
+   * Marks this schema as read-only with a custom error message.
+   *
+   * Sets the readOnly HTML attribute to true and stores a custom error message
+   * for read-only validation failures. Useful for displaying pre-filled values
+   * that users should not modify.
+   *
+   * @param message - Custom error message for read-only violations
+   * @returns This schema instance for method chaining
+   *
+   * @example
+   * const idField = string().default('AUTO').readOnly('ID cannot be changed');
+   */
+  readOnly(message: string = "String is read-only"): this {
+    this.errorMap.set("readOnly", message);
+    this.htmlAttributes = { ...this.htmlAttributes, readOnly: true };
+    return this;
+  }
+
+  /**
    * Adds a custom validation refinement with a simple boolean check.
    *
    * Use this method to add custom validation logic that returns true if the value
@@ -432,6 +456,50 @@ export abstract class SchemaType<Output = any, Input = Output> {
   toJSON(): this["htmlAttributes"] {
     return this.htmlAttributes;
   }
+
+  /**
+   * Converts the schema's HTML attributes to a JSON-serializable format for langchain.
+   * This method can be overridden by subclasses to customize serialization.
+   * By default, it returns the htmlAttributes property tweaked for langchain.
+   *
+   * @returns JSON-serializable HTML attributes for langchain
+   */
+  toLangchainJSON(): JsonSchemaFormat {
+    const jsonSchemaFormat: JsonSchemaFormat = {
+      type: "string",
+      description: this.description || undefined,
+    };
+
+    switch (this.htmlAttributes.type) {
+      case "number":
+        jsonSchemaFormat.type = "number";
+        break;
+      case "checkbox":
+      case "radio":
+        jsonSchemaFormat.type = "boolean";
+        break;
+      default:
+        jsonSchemaFormat.type = "string";
+    }
+    return jsonSchemaFormat;
+  }
+
+  /**
+   * Sets a description for this schema.
+   *
+   * Adds a description to the HTML attributes for documentation purposes.
+   * Useful for generating form labels or tooltips.
+   * @param description - The description text
+   * @return This schema instance for method chaining
+   * @example
+   * const schema = string().describe('User email address');
+   * console.log(schema.toJSON().description); // 'User email address'
+   */
+  describe(description: string): this {
+    this.description = description;
+    this.htmlAttributes = { ...this.htmlAttributes, description };
+    return this;
+  }
 }
 
 /**
@@ -461,6 +529,9 @@ export class OptionalSchema<T extends SchemaTypeAny> extends SchemaType<
   constructor(private inner: T) {
     super();
     this.htmlAttributes = { ...inner.htmlAttributes, required: false };
+    this.description = `Optional ${
+      inner.description || inner.constructor.name
+    }`;
   }
 
   /**
@@ -554,6 +625,9 @@ export class NullableSchema<T extends SchemaTypeAny> extends SchemaType<
     this.htmlAttributes = {
       ...inner.htmlAttributes,
     };
+    this.description = `Nullable ${
+      inner.description || inner.constructor.name
+    }`;
   }
 
   /**
@@ -655,6 +729,7 @@ export class DefaultSchema<T extends SchemaTypeAny> extends SchemaType<
       ...inner.htmlAttributes,
       defaultValue: defaultValue,
     };
+    this.description = `Default ${inner.description || inner.constructor.name}`;
   }
 
   /**
@@ -709,25 +784,6 @@ export class DefaultSchema<T extends SchemaTypeAny> extends SchemaType<
     }
     return this.inner.safeParse(data, ctx);
   }
-
-  /**
-   * Marks this schema as read-only with a custom error message.
-   *
-   * Sets the readOnly HTML attribute to true and stores a custom error message
-   * for read-only validation failures. Useful for displaying pre-filled values
-   * that users should not modify.
-   *
-   * @param message - Custom error message for read-only violations
-   * @returns This schema instance for method chaining
-   *
-   * @example
-   * const idField = string().default('AUTO').readOnly('ID cannot be changed');
-   */
-  readOnly(message: string = "String is read-only"): this {
-    this.errorMap.set("readOnly", message);
-    this.htmlAttributes = { ...this.htmlAttributes, readOnly: true };
-    return this;
-  }
 }
 
 /**
@@ -771,6 +827,9 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
             : cond.condition.toString(),
       })),
     };
+    this.description = `Conditionally Required ${
+      inner.description || inner.constructor.name
+    }`;
   }
 
   /**
@@ -893,6 +952,8 @@ export class AnySchema extends SchemaType<any> {
     required: true,
   };
 
+  public description?: string | undefined = "Anything";
+
   /**
    * Validates that the input is of any type (always succeeds).
    *
@@ -924,6 +985,8 @@ export class NeverSchema extends SchemaType<never, any> {
     type: "never",
     required: true,
   };
+
+  public description?: string | undefined = "Never Valid";
 
   /**
    * Validates that the input is never valid (always fails).
@@ -968,6 +1031,8 @@ export class UnknownSchema extends SchemaType<unknown> {
     defaultValue: undefined,
     required: true,
   };
+
+  public description?: string | undefined = "Unknown Type";
 
   /**
    * Validates that the input is of unknown type (always succeeds).

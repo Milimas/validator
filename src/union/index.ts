@@ -49,6 +49,10 @@ export class UnionSchema<
       required: true,
       anyOf: schemas.map((s) => s.htmlAttributes),
     };
+
+    this.description =
+      "Union of: " +
+      this.schemas.map((s) => s.description || s.constructor.name).join(", ");
   }
 
   protected validate(

@@ -1,7 +1,14 @@
 import { e, ValidationError } from "../error.js";
 import { ValidationContext } from "../index.js";
 import { SchemaType } from "../schema.js";
-import { HTMLAttributes, SchemaTypeAny, TypeOf } from "../types.js";
+import {
+  HtmlAnyAttributes,
+  HtmlStringAttributes,
+  RecordAttributes,
+  SchemaTypeAny,
+  TypeOf,
+  JsonSchemaFormat,
+} from "../types.js";
 
 /**
  * Record schema for validating objects with dynamic string keys and uniform value types.
@@ -25,16 +32,10 @@ export class RecordSchema<
   TValue extends SchemaTypeAny,
   TKey extends SchemaTypeAny = SchemaType<string>
 > extends SchemaType<Record<string, TypeOf<TValue>>> {
-  public htmlAttributes: HTMLAttributes<{
-    type: "record";
-    keySchema: HTMLAttributes;
-    valueSchema: HTMLAttributes;
-    defaultValue?: Record<string, any>;
-    required: boolean;
-  }> = {
+  public htmlAttributes: RecordAttributes = {
     type: "record" as const,
-    keySchema: {} as HTMLAttributes,
-    valueSchema: {} as HTMLAttributes,
+    keySchema: {} as HtmlStringAttributes,
+    valueSchema: {} as HtmlAnyAttributes,
     required: true,
   };
 
@@ -75,6 +76,8 @@ export class RecordSchema<
       required: true,
       defaultValue: undefined,
     };
+
+    this.description = `Record with string keys and values of type ${valueSchema.constructor.name}`;
   }
 
   protected validate(
@@ -132,6 +135,21 @@ export class RecordSchema<
       keySchema: this.keySchema.toJSON(),
       valueSchema: this.valueSchema.toJSON(),
       required: this.htmlAttributes.required,
+    };
+  }
+
+  /**
+   * Serializes the Record schema to JSON for langchain integration.
+   * Returns a record type with both key and value schemas for frontend validation.
+   */
+  toLangchainJSON(): JsonSchemaFormat {
+    const properties: Record<string, JsonSchemaFormat> = {};
+    this.htmlAttributes.keySchema;
+    return {
+      type: "object",
+      propertyNames: this.keySchema.toLangchainJSON(),
+      additionalProperties: this.valueSchema.toLangchainJSON(),
+      description: this.description,
     };
   }
 }

@@ -4,6 +4,7 @@ import { SchemaType } from "../schema.js";
 import {
   HTMLAttributes,
   HtmlObjectType,
+  JsonSchemaFormat,
   MergeShapes,
   ObjectInfer,
   PrettifyShape,
@@ -95,7 +96,11 @@ export class ObjectSchema<
         )
       ) as { [K in keyof Shape]: Shape[K]["htmlAttributes"] },
       defaultValue: undefined,
-    } as HTMLAttributes<HtmlObjectType<Shape>>;
+    } as HTMLAttributes<HtmlObjectType<Shape>;
+
+    this.description = `Object with properties: ${Object.keys(shape).join(
+      ", "
+    )}`;
   }
 
   /**
@@ -252,6 +257,9 @@ export class ObjectSchema<
       }
     }
 
+    this.description = `Object with properties: ${Object.keys(newShape).join(
+      ", "
+    )}`;
     return new ObjectSchema(newShape) as ReturnObject;
     // return this.merge<ObjectSchema<any>>(...schemas) as ReturnObject;
   }
@@ -292,6 +300,10 @@ export class ObjectSchema<
     for (const key of keys) {
       delete newShape[key];
     }
+
+    this.description = `Object with properties: ${Object.keys(newShape).join(
+      ", "
+    )}`;
     return new ObjectSchema<PrettifyShape<Omit<Shape, K>>>(newShape);
   }
 
@@ -330,6 +342,40 @@ export class ObjectSchema<
     for (const key of keys) {
       newShape[key] = this.shape[key];
     }
+    this.description = `Object with properties: ${Object.keys(newShape).join(
+      ", "
+    )}`;
     return new ObjectSchema<PrettifyShape<Pick<Shape, K>>>(newShape);
+  }
+
+  /**
+   * Converts the ObjectSchema to a JSON Schema format compatible with Langchain.
+   *
+   * This method generates a JSON Schema representation of the ObjectSchema,
+   * which can be used for integration with Langchain or other systems that
+   * utilize JSON Schema for data validation and description.
+   *
+   * @returns {JsonSchemaFormat} A JSON Schema representation of the ObjectSchema.
+   *
+   * @example
+   * const userSchema = new ObjectSchema({
+   *  username: new StringSchema().minLength(3),
+   *  email: new EmailSchema(),
+   *  age: new NumberSchema().min(18),
+   * });
+   *
+   * const jsonSchema = userSchema.toLangchainJSON();
+   * console.log(JSON.stringify(jsonSchema, null, 2));
+   */
+  toLangchainJSON(): JsonSchemaFormat {
+    const properties: Record<string, JsonSchemaFormat> = {};
+    for (const key in this.shape) {
+      properties[key] = this.shape[key].toLangchainJSON();
+    }
+    return {
+      type: "object",
+      properties,
+      description: this.description,
+    };
   }
 }

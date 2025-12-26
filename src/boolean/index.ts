@@ -50,6 +50,8 @@ export class BooleanSchema extends SchemaType<boolean> {
       received: "non-boolean",
       immediate: true,
     });
+
+    this.description = `Boolean value (true/false)`;
   }
 
   protected validate(
@@ -61,6 +63,7 @@ export class BooleanSchema extends SchemaType<boolean> {
 
   default(value: boolean): DefaultSchema<this> {
     this.htmlAttributes.checked = value;
+    this.description += ` (default: ${value})`;
     return new DefaultSchema(this, value);
   }
 }
