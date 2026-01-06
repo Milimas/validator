@@ -29,6 +29,7 @@ import {
 } from "./string/index.js";
 import { CodeLanguages, ObjectShape, SchemaTypeAny } from "./types.js";
 import { AnySchema, NeverSchema, SchemaType, UnknownSchema } from "./schema.js";
+import v from "./index.js";
 
 // export * from "./types";
 
@@ -434,6 +435,12 @@ export function object<Shape extends ObjectShape>(
   shape: Shape
 ): ObjectSchema<Shape> {
   return new ObjectSchema(shape);
+}
+
+export function looseObject<Shape extends ObjectShape>(
+  shape: Shape
+): ObjectSchema<Shape & Record<string, UnknownSchema>> {
+  return new ObjectSchema(shape as Shape & Record<string, UnknownSchema>, true);
 }
 
 ////////////////////////////

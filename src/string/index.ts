@@ -62,6 +62,7 @@ export class StringSchema extends SchemaType<string> {
           (this._pattern && this._pattern.test(data)) || !this._pattern,
         message: () => this.errorMap.get("pattern") || "Invalid format",
         code: "pattern",
+        expected: this._pattern,
         immediate: false,
       },
       {

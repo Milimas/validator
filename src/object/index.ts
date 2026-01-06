@@ -81,7 +81,7 @@ export class ObjectSchema<
    *  age: new NumberSchema().min(18).max(120)
    * });
    */
-  constructor(public shape: Shape) {
+  constructor(public shape: Shape, private _isLoose: boolean = false) {
     super();
     this.htmlAttributes = {
       type: "object",
@@ -147,7 +147,10 @@ export class ObjectSchema<
       const error = new ValidationError(
         ctx.getPath(),
         "Invalid object",
-        "invalid_type"
+        "invalid_type",
+        "object",
+        typeof data,
+        data
       );
       ctx.addError(error);
       return e.ValidationResult.fail<ObjectInfer<Shape>>(ctx.getErrors());
@@ -155,10 +158,19 @@ export class ObjectSchema<
 
     for (const key in data as Record<string, unknown>) {
       if (!(key in this.shape)) {
+        if (this._isLoose) {
+          result[key as keyof ObjectInfer<Shape>] = (
+            data as Record<string, unknown>
+          )[key] as never;
+          continue;
+        }
         const error = new ValidationError(
           ctx.child(key).getPath(),
           "Unexpected property",
-          "unexpected_property"
+          "unexpected_property",
+          undefined,
+          key,
+          data[key as keyof typeof data]
         );
         ctx.addError(error);
       }
