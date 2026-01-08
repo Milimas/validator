@@ -16,5 +16,6 @@ Thumbs.db
 
 # Build
 lib/
+dist/
 build/
 *.log
