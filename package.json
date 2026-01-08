@@ -8,13 +8,13 @@
     "schema",
     "schemas"
   ],
-  "homepage": "https://github.com/Milimas/validator#readme",
+  "homepage": "https://github.com/DIGI-FUSION/validator#readme",
   "bugs": {
-    "url": "https://github.com/Milimas/validator/issues"
+    "url": "https://github.com/DIGI-FUSION/validator/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/Milimas/validator.git"
+    "url": "git+ssh://git@github.com/DIGI-FUSION/validator.git"
   },
   "license": "ISC",
   "author": "Millimas",
