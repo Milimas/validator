@@ -209,59 +209,6 @@ export type RefinementCheck<
     };
 
 /**
- * Base HTML input attributes shared across all input element types.
- *
- * Defines common properties that apply to all HTML form input elements, including
- * accessibility attributes, visibility controls, and interaction settings. These
- * attributes form the foundation for all specialized input type definitions.
- *
- * @property {string} [name] - The name attribute for form submission
- * @property {string} [alt] - Alternative text for accessibility
- * @property {string} [title] - Tooltip text displayed on hover
- * @property {boolean} required - Whether the field is required (must have a value)
- * @property {boolean} [readOnly] - Whether the field is read-only (cannot be edited)
- * @property {number} [tabIndex] - Tab navigation order
- * @property {boolean} [hidden] - Whether the field is hidden from view
- * @property {boolean} [disabled] - Whether the field is disabled (cannot be interacted with)
- * @property {string} [ariaLabel] - ARIA label for screen readers
- */
-export type HtmlGenericInputAttributes = {
-  name?: string;
-  alt?: string;
-  title?: string;
-  required: boolean;
-  readOnly?: boolean;
-  tabIndex?: number;
-  hidden?: boolean;
-  disabled?: boolean;
-  ariaLabel?: string;
-};
-
-/**
- * Union type of all valid HTML5 string-based input types.
- *
- * Enumerates the HTML input types that accept and validate string values.
- * Each type provides specialized browser validation and user interface elements
- * optimized for specific kinds of string data.
- *
- * @example
- * const inputType: HtmlStringInputType = 'email'; // Valid
- * const inputType2: HtmlStringInputType = 'password'; // Valid
- * const inputType3: HtmlStringInputType = 'number'; // Error: not a string input type
- */
-export type HtmlStringInputType =
-  | "text"
-  | "email"
-  | "password"
-  | "url"
-  | "date"
-  | "datetime-local"
-  | "color"
-  | "tel"
-  | "json"
-  | "code";
-
-/**
  * HTML attributes for string-based input elements with validation constraints.
  *
  * Extends generic input attributes with string-specific properties like length
@@ -285,16 +232,15 @@ export type HtmlStringInputType =
  *  maxLength: 254
  * };
  */
-export type HtmlStringAttributes = {
-  type: HtmlStringInputType;
-  defaultValue?: string;
+export interface HtmlStringAttributes
+  extends HtmlGenericInputAttributes<string> {
   placeholder?: string;
   minLength?: number;
   maxLength?: number;
   pattern?: string;
   list?: string;
   dataList?: string[];
-} & HtmlGenericInputAttributes;
+}
 
 /**
  * HTML attributes for code editor input elements.
@@ -313,10 +259,9 @@ export type HtmlStringAttributes = {
  *  placeholder: '// your code here',
  * };
  */
-export type HtmlCodeAttributes = HtmlStringAttributes & {
-  type: "code";
+export interface HtmlCodeAttributes extends HtmlStringAttributes {
   language?: CodeLanguages;
-};
+}
 
 export type CodeLanguages = "javascript" | "json" | "xml" | "html";
 
@@ -339,11 +284,10 @@ export type CodeLanguages = "javascript" | "json" | "xml" | "html";
  *  required: true
  * };
  */
-export type HtmlCheckboxAttributes = {
-  type: "checkbox" | "radio";
+export interface HtmlCheckboxAttributes
+  extends HtmlGenericInputAttributes<boolean> {
   checked: boolean;
-  defaultValue?: boolean;
-} & HtmlGenericInputAttributes;
+}
 
 /**
  * HTML attributes for numeric input elements with value constraints.
@@ -368,13 +312,12 @@ export type HtmlCheckboxAttributes = {
  *  defaultValue: 18
  * };
  */
-export type HtmlNumberInputAttributes = {
-  type: "number";
-  defaultValue?: number;
+export interface HtmlNumberInputAttributes
+  extends HtmlGenericInputAttributes<number> {
   min?: number;
   max?: number;
   step?: number;
-} & HtmlGenericInputAttributes;
+}
 
 /**
  * HTML attributes for file upload input elements.
@@ -396,12 +339,11 @@ export type HtmlNumberInputAttributes = {
  *  multiple: false
  * };
  */
-export type HtmlFileInputAttributes = {
-  type: "file";
-  defaultValue?: Base64URLString | ArrayBufferLike | null;
+export interface HtmlFileInputAttributes
+  extends HtmlGenericInputAttributes<Base64URLString | ArrayBufferLike | null> {
   accept?: string;
   multiple?: boolean;
-} & HtmlGenericInputAttributes;
+}
 
 /**
  * HTML attributes for select dropdown elements with typed options.
@@ -424,11 +366,11 @@ export type HtmlFileInputAttributes = {
  *  defaultValue: 'active'
  * };
  */
-export type HtmlSelectAttributes<T = string> = {
-  type: "select";
-  defaultValue?: T;
+export interface HtmlSelectAttributes<T = string>
+  extends HtmlGenericInputAttributes<T> {
+  // defaultValue?: T;
   options: readonly T[];
-} & HtmlGenericInputAttributes;
+}
 
 /**
  * HTML representation for array/list data structures.
@@ -455,14 +397,14 @@ export type HtmlSelectAttributes<T = string> = {
  *  required: true
  * };
  */
-export type HtmlArrayType<ItemType> = {
-  type: "array";
-  defaultValue?: ItemType[];
+
+export interface HtmlArrayType<ItemType>
+  extends HtmlGenericInputAttributes<ItemType> {
+  // defaultValue?: ItemType[];
   items: ItemType[];
   minLength?: number;
   maxLength?: number;
-  required?: boolean;
-} & HtmlGenericInputAttributes;
+}
 
 /**
  * HTML representation for object/record data structures with nested properties.
@@ -491,47 +433,21 @@ export type HtmlArrayType<ItemType> = {
  *  }
  * };
  */
-export type HtmlObjectType<
+export interface HtmlObjectType<
   Shape extends { [key: string]: SchemaTypeAny },
+  DefaultType extends {
+    [K in keyof Shape]: any; // TODO: change any to inferred type
+  } = { [K in keyof Shape]: any },
   TProperties extends {
     [K in keyof Shape]: Shape[K]["htmlAttributes"];
   } = {
     [K in keyof Shape]: Shape[K]["htmlAttributes"];
   }
-> = {
-  type: "object";
+> extends HtmlGenericInputAttributes<DefaultType> {
   properties: TProperties;
-  defaultValue?: { [x: string]: any };
   minLength?: number;
   maxLength?: number;
-  required?: boolean;
-} & HtmlGenericInputAttributes;
-
-/**
- * Union type for HTML container attributes (objects and arrays).
- *
- * Combines object and array HTML attribute types to represent complex nested
- * data structures. Used when a field can be either an object with properties
- * or an array of items.
- *
- * @template R - The type for object properties (defaults to Record<string, any>)
- * @template I - The type for array items (defaults to any)
- *
- * @example
- * function renderContainer(attrs: HtmlContainerAttributes) {
- *  if (attrs.type === 'object') {
- *   return renderObjectFields(attrs.properties);
- *  } else {
- *   return renderArrayField(attrs.items);
- *  }
- * }
- */
-export type HtmlContainerAttributes<
-  Shape extends { [key: string]: SchemaTypeAny } = {
-    [key: string]: SchemaTypeAny;
-  },
-  I = any
-> = HtmlObjectType<Shape> | HtmlArrayType<I>;
+}
 
 /**
  * HTML attributes for union types.
@@ -546,12 +462,10 @@ export type HtmlContainerAttributes<
  *  anyOf: [{ type: 'text', required: true }, { type: 'number', required: true }]
  * };
  */
-export type UnionAttributes<T extends readonly any[] = readonly any[]> = {
-  type: "union";
+export interface UnionAttributes<T extends readonly any[] = readonly any[]>
+  extends HtmlGenericInputAttributes<T[number]> {
   anyOf?: T;
-  defaultValue?: never;
-  required: boolean;
-} & HtmlGenericInputAttributes;
+}
 
 /**
  * HTML attributes for record types with dynamic keys and uniform value types.
@@ -568,13 +482,11 @@ export type UnionAttributes<T extends readonly any[] = readonly any[]> = {
  *  required: true
  * };
  */
-export type RecordAttributes = {
-  type: "record";
-  keySchema: HTMLAttributes;
-  valueSchema: HTMLAttributes;
-  defaultValue?: Record<string, any>;
-  required: boolean;
-} & HtmlGenericInputAttributes;
+export interface RecordAttributes
+  extends HtmlGenericInputAttributes<Record<string, any>> {
+  keySchema: HtmlStringAttributes;
+  valueSchema: HtmlAnyAttributes;
+}
 
 /**
  * HTML attributes for inputs that can accept any value type.
@@ -585,10 +497,9 @@ export type RecordAttributes = {
  * @property {"any"} type - The input type (always "any")
  * @property {any} [defaultValue] - Default value for the input
  */
-export type HtmlAnyAttributes = {
-  type: "any";
-  defaultValue?: any;
-} & HtmlGenericInputAttributes;
+export interface HtmlAnyAttributes extends HtmlGenericInputAttributes<any> {
+  [key: string]: any;
+}
 
 /**
  * HTML attributes for inputs that should never accept any value.
@@ -599,10 +510,8 @@ export type HtmlAnyAttributes = {
  *
  * @property {"never"} type - The input type (always "never")
  */
-export type HtmlNeverAttributes = {
-  type: "never";
-  defaultValue?: never;
-} & HtmlGenericInputAttributes;
+export interface HtmlNeverAttributes
+  extends HtmlGenericInputAttributes<never> {}
 
 /**
  * HTML attributes for inputs with unknown or dynamic value types.
@@ -614,73 +523,60 @@ export type HtmlNeverAttributes = {
  * @property {"unknown"} type - The input type (always "unknown")
  * @property {unknown} [defaultValue] - Default value for the input
  */
-export type HtmlUnknownAttributes = {
-  type: "unknown";
-  defaultValue?: unknown;
-} & HtmlGenericInputAttributes;
+export interface HtmlUnknownAttributes
+  extends HtmlGenericInputAttributes<unknown> {}
 
 /**
- * Generic HTML attributes type that represents form input field configuration.
+ * Base HTML input attributes shared across all input element types.
  *
- * Provides a flexible, type-safe way to represent HTML form input attributes across all input types.
- * The generic parameter T allows for precise type checking while the default union maintains backward compatibility.
+ * Defines common properties that apply to all HTML form input elements, including
+ * accessibility attributes, visibility controls, and interaction settings. These
+ * attributes form the foundation for all specialized input type definitions.
  *
- * @template T - The specific HTML attribute structure (e.g., HtmlStringAttributes, HtmlNumberInputAttributes).
- *       Defaults to a union of all possible attribute types for maximum compatibility.
- *
- * @example
- * // Type-safe string attributes
- * const emailField: HTMLAttributes<HtmlStringAttributes> = {
- *  type: 'email',
- *  required: true,
- *  placeholder: 'user@example.com'
- * };
- *
- * @example
- * // Generic union (default, backward compatible)
- * const anyField: HTMLAttributes = {
- *  type: 'email',
- *  required: true,
- *  placeholder: 'user@example.com',
- *  'data-validation-group': 'contact-info'
- * };
- *
- * @example
- * // Number attributes with strong typing
- * const ageField: HTMLAttributes<HtmlNumberInputAttributes> = {
- *  type: 'number',
- *  min: 0,
- *  max: 120,
- *  required: true
- * };
+ * @property {string} [name] - The name attribute for form submission
+ * @property {string} [alt] - Alternative text for accessibility
+ * @property {string} [title] - Tooltip text displayed on hover
+ * @property {boolean} required - Whether the field is required (must have a value)
+ * @property {boolean} [readOnly] - Whether the field is read-only (cannot be edited)
+ * @property {number} [tabIndex] - Tab navigation order
+ * @property {boolean} [hidden] - Whether the field is hidden from view
+ * @property {boolean} [disabled] - Whether the field is disabled (cannot be interacted with)
+ * @property {string} [ariaLabel] - ARIA label for screen readers
  */
-export type HTMLAttributes<
-  T extends
-    | HtmlStringAttributes
-    | HtmlCheckboxAttributes
-    | HtmlNumberInputAttributes
-    | HtmlFileInputAttributes
-    | HtmlContainerAttributes
-    | HtmlSelectAttributes
-    | UnionAttributes
-    | RecordAttributes
-    | HtmlAnyAttributes
-    | HtmlNeverAttributes
-    | HtmlUnknownAttributes
-    | HtmlCodeAttributes =
-    | HtmlStringAttributes
-    | HtmlCheckboxAttributes
-    | HtmlNumberInputAttributes
-    | HtmlFileInputAttributes
-    | HtmlContainerAttributes
-    | HtmlSelectAttributes
-    | UnionAttributes
-    | RecordAttributes
-    | HtmlAnyAttributes
-    | HtmlNeverAttributes
-    | HtmlUnknownAttributes
-    | HtmlCodeAttributes
-> = T & {
+export type HtmlGenericInputAttributes<T> = {
+  type:
+    | "text"
+    | "email"
+    | "password"
+    | "url"
+    | "date"
+    | "datetime-local"
+    | "color"
+    | "tel"
+    | "json"
+    | "code"
+    | "checkbox"
+    | "radio"
+    | "number"
+    | "file"
+    | "select"
+    | "array"
+    | "object"
+    | "union"
+    | "record"
+    | "any"
+    | "never"
+    | "unknown";
+  defaultValue?: T;
+  name?: string;
+  alt?: string;
+  title?: string;
+  required: boolean;
+  readOnly?: boolean;
+  tabIndex?: number;
+  hidden?: boolean;
+  disabled?: boolean;
+  ariaLabel?: string;
   metadata?: Record<string, unknown>;
   description?: string;
 } & {

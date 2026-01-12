@@ -2,7 +2,6 @@ import { e, ValidationError } from "../error.js";
 import { createValidationContext, ValidationContext } from "../context.js";
 import { SchemaType } from "../schema.js";
 import {
-  HTMLAttributes,
   HtmlObjectType,
   JsonSchemaFormat,
   MergeShapes,
@@ -61,7 +60,7 @@ import {
 export class ObjectSchema<
   Shape extends { [key: string]: SchemaTypeAny }
 > extends SchemaType<ObjectInfer<Shape>> {
-  public htmlAttributes: HTMLAttributes<HtmlObjectType<Shape>>;
+  public htmlAttributes: HtmlObjectType<Shape>;
 
   /**
    * Initializes the ObjectSchema with a shape definition.
@@ -96,7 +95,7 @@ export class ObjectSchema<
         )
       ) as { [K in keyof Shape]: Shape[K]["htmlAttributes"] },
       defaultValue: undefined,
-    } as HTMLAttributes<HtmlObjectType<Shape>>;
+    } as HtmlObjectType<Shape>;
 
     this.description = `Object with properties: ${Object.keys(shape).join(
       ", "

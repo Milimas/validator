@@ -32,7 +32,8 @@
     "test": "vitest --typecheck",
     "build": "tsc --project tsconfig.json",
     "watch": "tsc --watch --project tsconfig.json",
-    "dev": "npm run watch"
+    "dev": "npm run watch",
+    "prepare": "npm run build"
   },
   "dependencies": {
     "vitest": "^4.0.15"
