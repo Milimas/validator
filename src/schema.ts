@@ -391,7 +391,7 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
     ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): e.ValidationResult<this["_output"]> {
     const isRequired =
-      this.htmlAttributes.required && ctx.isFieldRequired(this._dependsOn);
+      this._def.required && ctx.isFieldRequired(this._dependsOn);
 
     if (!isRequired) {
       // When dependency conditions are not satisfied, skip validation entirely
@@ -420,7 +420,7 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
     ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): this["_output"] {
     const isRequired =
-      this.htmlAttributes.required && ctx.isFieldRequired(this._dependsOn);
+      this._def.required && ctx.isFieldRequired(this._dependsOn);
 
     if (!isRequired) {
       // Not required: ignore value and return undefined
@@ -450,7 +450,7 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
     ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): e.ValidationResult<this["_output"]> {
     const isRequired =
-      this.htmlAttributes.required && ctx.isFieldRequired(this._dependsOn);
+      this._def.required && ctx.isFieldRequired(this._dependsOn);
 
     if (!isRequired) {
       return e.ValidationResult.ok<undefined>(undefined);
