@@ -1,7 +1,7 @@
 import { e, ValidationError } from "../error.js";
 import { ValidationContext } from "../index.js";
 import { SchemaType } from "../schema.js";
-import { HtmlNumberInputAttributes } from "../types.js";
+import { NumberDef } from "../types.js";
 
 /**
  * Numeric validation schema for integer and floating-point number validation.
@@ -37,7 +37,7 @@ import { HtmlNumberInputAttributes } from "../types.js";
  *  .max(5, 'Rating cannot exceed 5 stars');
  */
 export class NumberSchema extends SchemaType<number> {
-  public htmlAttributes: HtmlNumberInputAttributes = {
+  public _def: NumberDef = {
     type: "number",
     defaultValue: undefined,
     required: true,
@@ -58,24 +58,22 @@ export class NumberSchema extends SchemaType<number> {
       {
         type: "refine",
         check: (data: number) =>
-          this.htmlAttributes.min === undefined ||
-          (this.htmlAttributes.min !== undefined &&
-            data >= this.htmlAttributes.min),
+          this._def.min === undefined ||
+          (this._def.min !== undefined && data >= this._def.min),
         message: () =>
           this.errorMap.get("min") ||
-          `Number must be greater than or equal to ${this.htmlAttributes.min}`,
+          `Number must be greater than or equal to ${this._def.min}`,
         code: "too_small",
         immediate: false,
       },
       {
         type: "refine",
         check: (data: number) =>
-          this.htmlAttributes.max == undefined ||
-          (this.htmlAttributes.max !== undefined &&
-            data <= this.htmlAttributes.max),
+          this._def.max == undefined ||
+          (this._def.max !== undefined && data <= this._def.max),
         message: () =>
           this.errorMap.get("max") ||
-          `Number must be less than or equal to ${this.htmlAttributes.max}`,
+          `Number must be less than or equal to ${this._def.max}`,
         code: "too_big",
         immediate: false,
       },
@@ -120,7 +118,7 @@ export class NumberSchema extends SchemaType<number> {
    * schema.validate('123'); // ✗ Error: invalid type
    */
   protected validate(
-    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+    data: this["_input"] | unknown = this._def.defaultValue,
     ctx: ValidationContext
   ): e.ValidationResult<number> {
     return e.ValidationResult.ok<number>(data as number);
@@ -152,7 +150,7 @@ export class NumberSchema extends SchemaType<number> {
     message: string = `Number must be greater than or equal to ${value}`
   ): this {
     this.errorMap.set("min", message);
-    this.htmlAttributes = { ...this.htmlAttributes, min: value };
+    this._def = { ...this._def, min: value };
 
     this.description += ` (min: ${value})`;
     return this;
@@ -185,7 +183,7 @@ export class NumberSchema extends SchemaType<number> {
     message: string = `Number must be less than or equal to ${value}`
   ): this {
     this.errorMap.set("max", message);
-    this.htmlAttributes = { ...this.htmlAttributes, max: value };
+    this._def = { ...this._def, max: value };
 
     this.description += ` (max: ${value})`;
     return this;
@@ -195,7 +193,7 @@ export class NumberSchema extends SchemaType<number> {
     this.errorMap.set("int", "Number must be an integer");
     const originalValidate = this.validate.bind(this);
     this.validate = (
-      data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+      data: this["_input"] | unknown = this._def.defaultValue,
       ctx: ValidationContext<this>
     ): e.ValidationResult<number> => {
       const result = originalValidate(data, ctx);

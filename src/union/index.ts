@@ -1,7 +1,8 @@
 import { ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
-import { SchemaTypeAny, TypeOf, UnionAttributes } from "../types.js";
+import { Infer, SchemaTypeAny, UnionDef } from "../types.js";
+import { TypeOf } from "../util.js";
 
 /**
  * Union schema for validating data against multiple possible schemas.
@@ -39,15 +40,15 @@ import { SchemaTypeAny, TypeOf, UnionAttributes } from "../types.js";
  */
 export class UnionSchema<
   Schemas extends readonly SchemaTypeAny[]
-> extends SchemaType<TypeOf<Schemas[number]>> {
-  public htmlAttributes: UnionAttributes;
+> extends SchemaType<Infer<Schemas[number]>> {
+  public _def: UnionDef;
 
   constructor(private readonly schemas: Schemas) {
     super();
-    this.htmlAttributes = {
+    this._def = {
       type: "union",
       required: true,
-      anyOf: schemas.map((s) => s.htmlAttributes),
+      anyOf: schemas.map((s) => s._def),
     };
 
     this.description =
@@ -56,7 +57,7 @@ export class UnionSchema<
   }
 
   protected validate(
-    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+    data: this["_input"] | unknown = this._def.defaultValue,
 
     ctx: ValidationContext<this>
   ): e.ValidationResult<TypeOf<Schemas[number]>> {
@@ -94,7 +95,7 @@ export class UnionSchema<
   toJSON() {
     return {
       type: "union" as const,
-      required: this.htmlAttributes.required,
+      required: this._def.required,
       anyOf: this.schemas.map((s) => s.toJSON()),
     };
   }

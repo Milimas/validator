@@ -720,6 +720,16 @@ function toJSONSchema<R extends ReturnType<SchemaTypeAny["toJSON"]>>(
   return schema.toJSON() as R;
 }
 
+function fromJSONSchema(
+  schema: ReturnType<SchemaTypeAny["toJSON"]>
+): SchemaTypeAny {
+  switch (schema.type) {
+    case "text":
+      return string();
+  }
+  throw new Error("Not implemented");
+}
+
 export type { SchemaTypeAny };
 export { SchemaType };
 export { toJSONSchema };

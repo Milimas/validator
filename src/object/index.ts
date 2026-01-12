@@ -1,14 +1,8 @@
 import { e, ValidationError } from "../error.js";
 import { createValidationContext, ValidationContext } from "../context.js";
 import { SchemaType } from "../schema.js";
-import {
-  HtmlObjectType,
-  JsonSchemaFormat,
-  MergeShapes,
-  ObjectInfer,
-  PrettifyShape,
-  SchemaTypeAny,
-} from "../types.js";
+import { ObjectDef, JsonSchemaFormat, SchemaTypeAny } from "../types.js";
+import { MergeShapes, ObjectInfer, PrettifyShape } from "../util.js";
 
 /**
  * Composite schema for validating object structures with typed properties.
@@ -60,7 +54,7 @@ import {
 export class ObjectSchema<
   Shape extends { [key: string]: SchemaTypeAny }
 > extends SchemaType<ObjectInfer<Shape>> {
-  public htmlAttributes: HtmlObjectType<Shape>;
+  public _def: ObjectDef<Shape>;
 
   /**
    * Initializes the ObjectSchema with a shape definition.
@@ -83,19 +77,16 @@ export class ObjectSchema<
    */
   constructor(public shape: Shape, private _isLoose: boolean = false) {
     super();
-    this.htmlAttributes = {
+    this._def = {
       type: "object",
       required: true,
       properties: Object.fromEntries(
         Object.entries(this.shape).map(
-          ([key, schema]: [string, SchemaTypeAny]) => [
-            key,
-            schema.htmlAttributes,
-          ]
+          ([key, schema]: [string, SchemaTypeAny]) => [key, schema._def]
         )
-      ) as { [K in keyof Shape]: Shape[K]["htmlAttributes"] },
+      ) as { [K in keyof Shape]: Shape[K]["_def"] },
       defaultValue: undefined,
-    } as HtmlObjectType<Shape>;
+    } as ObjectDef<Shape>;
 
     this.description = `Object with properties: ${Object.keys(shape).join(
       ", "
@@ -139,8 +130,7 @@ export class ObjectSchema<
    * }
    */
   protected validate(
-    data: this["_input"] | unknown = this.htmlAttributes
-      ?.defaultValue as this["_input"],
+    data: this["_input"] | unknown = this._def?.defaultValue as this["_input"],
     ctx: ValidationContext<this> = createValidationContext<this>(
       data as this["_input"]
     )

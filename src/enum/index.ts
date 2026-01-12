@@ -1,7 +1,7 @@
 import { ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
-import { HtmlSelectAttributes } from "../types.js";
+import { SelectDef } from "../types.js";
 
 /**
  * Enumeration schema for validating against a fixed set of allowed values.
@@ -40,7 +40,7 @@ export class EnumSchema<const T extends readonly string[]> extends SchemaType<
   T[number]
 > {
   private valuesSet: Set<string>;
-  public htmlAttributes: HtmlSelectAttributes<T[number]> = {
+  public _def: SelectDef<T[number]> = {
     type: "select",
     options: [],
     required: true,
@@ -65,7 +65,7 @@ export class EnumSchema<const T extends readonly string[]> extends SchemaType<
   constructor(private readonly values: T) {
     super();
     this.valuesSet = new Set(values);
-    this.htmlAttributes.options = values;
+    this._def.options = values;
     this.checks.push({
       type: "refine",
       check: (data: string) => this.valuesSet.has(data),
@@ -105,7 +105,7 @@ export class EnumSchema<const T extends readonly string[]> extends SchemaType<
    * }
    */
   protected validate(
-    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+    data: this["_input"] | unknown = this._def.defaultValue,
     ctx: ValidationContext
   ): e.ValidationResult<T[number]> {
     return e.ValidationResult.ok<T[number]>(data as T[number]);

@@ -1,7 +1,8 @@
 import { createValidationContext, ValidationContext } from "../context.js";
-import { e, ValidationError } from "../error.js";
+import { e } from "../error.js";
 import { DefaultSchema, SchemaType } from "../schema.js";
-import { HtmlArrayType, SchemaTypeAny, TypeOf } from "../types.js";
+import { ArrayDef, SchemaTypeAny } from "../types.js";
+import { TypeOf } from "../util.js";
 
 /**
  * Array schema for validating collections of homogeneous typed items.
@@ -47,7 +48,7 @@ import { HtmlArrayType, SchemaTypeAny, TypeOf } from "../types.js";
 export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
   TypeOf<T>[]
 > {
-  public htmlAttributes: HtmlArrayType<T["htmlAttributes"]>;
+  public _def: ArrayDef<T["_def"]>;
 
   /**
    * Initializes the ArraySchema with an item schema.
@@ -65,9 +66,9 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
    */
   constructor(private itemSchema: T) {
     super();
-    this.htmlAttributes = {
+    this._def = {
       type: "array",
-      items: [this.itemSchema.htmlAttributes],
+      items: [this.itemSchema._def],
       required: true,
     };
     this.checks.push(
@@ -81,22 +82,22 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
       {
         type: "refine",
         check: (data: TypeOf<T>[]) =>
-          this.htmlAttributes.maxLength === undefined ||
-          data.length <= this.htmlAttributes.maxLength,
+          this._def.maxLength === undefined ||
+          data.length <= this._def.maxLength,
         message: () =>
           this.errorMap.get("maxLength") ||
-          `Array must have at most ${this.htmlAttributes.maxLength} items`,
+          `Array must have at most ${this._def.maxLength} items`,
         code: "too_big",
         immediate: false,
       },
       {
         type: "refine",
         check: (data: TypeOf<T>[]) =>
-          this.htmlAttributes.minLength === undefined ||
-          data.length >= this.htmlAttributes.minLength,
+          this._def.minLength === undefined ||
+          data.length >= this._def.minLength,
         message: () =>
           this.errorMap.get("minLength") ||
-          `Array must have at least ${this.htmlAttributes.minLength} items`,
+          `Array must have at least ${this._def.minLength} items`,
         code: "too_small",
         immediate: false,
       }
@@ -138,7 +139,7 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
    * }
    */
   protected validate(
-    data: TypeOf<T>[] | [] = this.htmlAttributes.defaultValue || [],
+    data: TypeOf<T>[] | [] = this._def.defaultValue || [],
     ctx: ValidationContext<this> = createValidationContext<this>(data)
   ): e.ValidationResult<TypeOf<T>[]> {
     const parsedItems: TypeOf<T>[] = [];
@@ -192,7 +193,7 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
     min: number,
     message: string = `Array must have at least ${min} items`
   ): this {
-    this.htmlAttributes.minLength = min;
+    this._def.minLength = min;
     if (message) {
       this.errorMap.set("minLength", message);
     }
@@ -227,7 +228,7 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
     max: number,
     message: string = `Array must have at most ${max} items`
   ): this {
-    this.htmlAttributes.maxLength = max;
+    this._def.maxLength = max;
     if (message) {
       this.errorMap.set("maxLength", message);
     }

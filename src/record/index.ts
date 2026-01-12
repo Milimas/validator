@@ -1,14 +1,7 @@
 import { e, ValidationError } from "../error.js";
 import { ValidationContext } from "../index.js";
 import { SchemaType } from "../schema.js";
-import {
-  HtmlAnyAttributes,
-  HtmlStringAttributes,
-  RecordAttributes,
-  SchemaTypeAny,
-  TypeOf,
-  JsonSchemaFormat,
-} from "../types.js";
+import { RecordDef, SchemaTypeAny, JsonSchemaFormat, Infer } from "../types.js";
 
 /**
  * Record schema for validating objects with dynamic string keys and uniform value types.
@@ -31,24 +24,24 @@ import {
 export class RecordSchema<
   TValue extends SchemaTypeAny,
   TKey extends SchemaTypeAny = SchemaType<string>
-> extends SchemaType<Record<string, TypeOf<TValue>>> {
-  public htmlAttributes: RecordAttributes = {
+> extends SchemaType<Record<string, Infer<TValue>>> {
+  public _def: RecordDef<TKey["_def"]> = {
     type: "record" as const,
-    keySchema: {} as HtmlStringAttributes,
-    valueSchema: {} as HtmlAnyAttributes,
+    keySchema: {} as TValue["_def"],
+    valueSchema: {} as TKey["_def"],
     required: true,
   };
 
   constructor(
     private readonly valueSchema: TValue,
     private readonly keySchema: TKey = new (class extends SchemaType<string> {
-      htmlAttributes = {
+      _def = {
         type: "text" as const,
         required: true,
         defaultValue: undefined,
       };
       protected validate(
-        data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+        data: this["_input"] | unknown = this._def.defaultValue,
 
         ctx: ValidationContext<this>
       ): e.ValidationResult<string> {
@@ -69,7 +62,7 @@ export class RecordSchema<
     })() as unknown as TKey
   ) {
     super();
-    this.htmlAttributes = {
+    this._def = {
       type: "record",
       keySchema: keySchema.toJSON(),
       valueSchema: valueSchema.toJSON(),
@@ -81,10 +74,10 @@ export class RecordSchema<
   }
 
   protected validate(
-    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+    data: this["_input"] | unknown = this._def.defaultValue,
 
     ctx: ValidationContext<this>
-  ): e.ValidationResult<Record<string, TypeOf<TValue>>> {
+  ): e.ValidationResult<Record<string, Infer<TValue>>> {
     if (typeof data !== "object" || data === null || Array.isArray(data)) {
       ctx.addError(
         new ValidationError(
@@ -99,7 +92,7 @@ export class RecordSchema<
       return e.ValidationResult.fail(ctx.getErrors());
     }
 
-    const result: Record<string, TypeOf<TValue>> = {};
+    const result: Record<string, Infer<TValue>> = {};
 
     for (const [key, value] of Object.entries(data)) {
       // Validate key
@@ -114,7 +107,7 @@ export class RecordSchema<
       if (!valueResult.success) {
         ctx.addErrors(valueResult.errors);
       } else {
-        result[key] = valueResult.data as TypeOf<TValue>;
+        result[key] = valueResult.data as Infer<TValue>;
       }
     }
 
@@ -134,7 +127,7 @@ export class RecordSchema<
       type: "record" as const,
       keySchema: this.keySchema.toJSON(),
       valueSchema: this.valueSchema.toJSON(),
-      required: this.htmlAttributes.required,
+      required: this._def.required,
     };
   }
 
@@ -144,7 +137,7 @@ export class RecordSchema<
    */
   toLangchainJSON(): JsonSchemaFormat {
     const properties: Record<string, JsonSchemaFormat> = {};
-    this.htmlAttributes.keySchema;
+    this._def.keySchema;
     return {
       type: "object",
       propertyNames: this.keySchema.toLangchainJSON(),

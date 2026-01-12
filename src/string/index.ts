@@ -1,12 +1,7 @@
 import { ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
-import {
-  CodeLanguages,
-  HtmlCodeAttributes,
-  HtmlStringAttributes,
-  HTMLAttributes,
-} from "../types.js";
+import { CodeLanguages, CodeDef, StringDef } from "../types.js";
 
 /**
  * Generic string validation schema for flexible text input validation.
@@ -29,7 +24,7 @@ import {
  */
 export class StringSchema extends SchemaType<string> {
   protected _pattern: RegExp | undefined = undefined;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "text",
     defaultValue: undefined,
     required: true,
@@ -48,10 +43,8 @@ export class StringSchema extends SchemaType<string> {
       {
         type: "refine",
         check: (data: string) =>
-          !this.htmlAttributes.required ||
-          (this.htmlAttributes.required === true &&
-            data !== null &&
-            data !== undefined),
+          !this._def.required ||
+          (this._def.required === true && data !== null && data !== undefined),
         message: () => this.errorMap.get("required") || "String is required",
         code: "required",
         immediate: true,
@@ -68,9 +61,8 @@ export class StringSchema extends SchemaType<string> {
       {
         type: "refine",
         check: (data: string) =>
-          (this.htmlAttributes.minLength &&
-            data.length >= this.htmlAttributes.minLength) ||
-          this.htmlAttributes.minLength === undefined,
+          (this._def.minLength && data.length >= this._def.minLength) ||
+          this._def.minLength === undefined,
         message: () => this.errorMap.get("minLength") || "String is too short",
         code: "minLength",
         immediate: false,
@@ -78,16 +70,15 @@ export class StringSchema extends SchemaType<string> {
       {
         type: "refine",
         check: (data: string) =>
-          (this.htmlAttributes.maxLength &&
-            data.length <= this.htmlAttributes.maxLength) ||
-          this.htmlAttributes.maxLength === undefined,
+          (this._def.maxLength && data.length <= this._def.maxLength) ||
+          this._def.maxLength === undefined,
         message: () => this.errorMap.get("maxLength") || "String is too long",
         code: "maxLength",
         immediate: false,
       },
       {
         type: "refine",
-        check: (data: string) => !this.htmlAttributes.readOnly,
+        check: (data: string) => !this._def.readOnly,
         message: () => this.errorMap.get("readOnly") || "String is read-only",
         code: "readOnly",
         immediate: true,
@@ -118,7 +109,7 @@ export class StringSchema extends SchemaType<string> {
    * }
    */
   protected validate(
-    data: this["_input"] | unknown = this.htmlAttributes.defaultValue,
+    data: this["_input"] | unknown = this._def.defaultValue,
     ctx: ValidationContext<this>
   ): e.ValidationResult<this["_output"]> {
     return e.ValidationResult.ok<string>(data as string);
@@ -139,7 +130,7 @@ export class StringSchema extends SchemaType<string> {
    *   .placeholder('Enter your first name');
    */
   placeholder(value: string): this {
-    this.htmlAttributes = { ...this.htmlAttributes, placeholder: value };
+    this._def = { ...this._def, placeholder: value };
     return this;
   }
 
@@ -166,7 +157,7 @@ export class StringSchema extends SchemaType<string> {
    */
   minLength(value: number, message: string = "String is too short"): this {
     this.errorMap.set("minLength", message);
-    this.htmlAttributes = { ...this.htmlAttributes, minLength: value };
+    this._def = { ...this._def, minLength: value };
     this.description += ` (min length: ${value})`;
     return this;
   }
@@ -207,7 +198,7 @@ export class StringSchema extends SchemaType<string> {
    */
   maxLength(value: number, message: string = "String is too long"): this {
     this.errorMap.set("maxLength", message);
-    this.htmlAttributes = { ...this.htmlAttributes, maxLength: value };
+    this._def = { ...this._def, maxLength: value };
     this.description += ` (max length: ${value})`;
     return this;
   }
@@ -259,8 +250,8 @@ export class StringSchema extends SchemaType<string> {
   ): this {
     this.errorMap.set("pattern", message);
     this._pattern = value;
-    this.htmlAttributes = {
-      ...this.htmlAttributes,
+    this._def = {
+      ...this._def,
       pattern: value.source,
       title,
     };
@@ -291,8 +282,8 @@ export class StringSchema extends SchemaType<string> {
    *   .datalist('domains', ['gmail.com', 'yahoo.com', 'outlook.com']);
    */
   datalist(list: string, dataList: string[]): this {
-    this.htmlAttributes = {
-      ...this.htmlAttributes,
+    this._def = {
+      ...this._def,
       list,
       dataList,
     };
@@ -332,7 +323,7 @@ export class StringSchema extends SchemaType<string> {
     message: string = "String is required"
   ): this {
     this.errorMap.set("required", message);
-    this.htmlAttributes = { ...this.htmlAttributes, required };
+    this._def = { ...this._def, required };
     return this;
   }
 }
@@ -361,7 +352,7 @@ export class StringSchema extends SchemaType<string> {
  *   .pattern(/[0-9]/, 'Password must contain at least one number');
  */
 export class PasswordSchema extends StringSchema {
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "password",
     required: true,
   };
@@ -398,7 +389,7 @@ export class PasswordSchema extends StringSchema {
 export class UrlSchema extends StringSchema {
   protected _pattern: RegExp | undefined =
     /^(?<Scheme>[a-z][a-z0-9\+\-\.]*):(?<HierPart>\/\/(?<Authority>((?<UserInfo>(\%[0-9a-f][0-9a-f]|[a-z0-9\-\.\_\~]|[\!\$\&\'\(\)\*\+\,\;\=]|\:)*)\@)?(?<Host>\[((?<IPv6>((?<IPv6_1_R_H16>[0-9a-f]{1,4})\:){6,6}(?<IPV6_1_R_LS32>((?<IPV6_1_R_LS32_IPV4_DEC_OCTET>[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3,3}(?<IPV6_1_R_LS32_IPV4_DEC_OCTET_>[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|(?<IPV6_1_R_LS32_H16_1>[0-9a-f]{1,4})\:(?<IPV6_1_R_LS32_H16_2>[0-9a-f]{1,4}))|\:\:((?<IPV6_2_R_H16>[0-9a-f]{1,4})\:){5,5}(?<IPV6_2_R_LS32>((?<IPV6_2_R_LS32_IPV4_DEC_OCTET>[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3,3}(?<IPV6_2_R_LS32_IPV4_DEC_OCTET_>[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|(?<IPV6_2_R_LS32_H16_1>[0-9a-f]{1,4})\:(?<IPV6_2_R_LS32_H16_2>[0-9a-f]{1,4}))|(?<IPV6_3_L_H16>[0-9a-f]{1,4})?\:\:((?<IPV6_3_R_H16>[0-9a-f]{1,4})\:){4,4}(?<IPV6_3_R_LS32>((?<IPV6_3_R_LS32_IPV4_DEC_OCTET>[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3,3}(?<IPV6_3_R_LS32_IPV4_DEC_OCTET_>[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|(?<IPV6_3_R_LS32_H16_1>[0-9a-f]{1,4})\:(?<IPV6_3_R_LS32_H16_2>[0-9a-f]{1,4}))|(((?<IPV6_4_L_H16_REPEAT>[0-9a-f]{1,4})\:)?(?<IPV6_4_L_H16>[0-9a-f]{1,4}))?\:\:((?<IPV6_4_R_H16>[0-9a-f]{1,4})\:){3,3}(?<IPV6_4_R_LS32>((?<IPV6_4_R_LS32_IPV4_DEC_OCTET>[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3,3}(?<IPV6_4_R_LS32_IPV4_DEC_OCTET_>[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|(?<IPV6_4_R_LS32_H16_1>[0-9a-f]{1,4})\:(?<IPV6_4_R_LS32_H16_2>[0-9a-f]{1,4}))|(((?<IPV6_5_L_H16_REPEAT>[0-9a-f]{1,4})\:){0,2}(?<IPV6_5_L_H16>[0-9a-f]{1,4}))?\:\:((?<IPV6_5_R_H16>[0-9a-f]{1,4})\:){2,2}(?<IPV6_5_R_LS32>((?<IPV6_5_R_LS32_IPV4_DEC_OCTET>[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3,3}(?<IPV6_5_R_LS32_IPV4_DEC_OCTET_>[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|(?<IPV6_5_R_LS32_H16_1>[0-9a-f]{1,4})\:(?<IPV6_5_R_LS32_H16_2>[0-9a-f]{1,4}))|(((?<IPV6_6_L_H16_REPEAT>[0-9a-f]{1,4})\:){0,3}(?<IPV6_6_L_H16>[0-9a-f]{1,4}))?\:\:(?<IPV6_6_R_H16>[0-9a-f]{1,4})\:(?<IPV6_6_R_LS32>((?<IPV6_6_R_LS32_IPV4_DEC_OCTET>[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3,3}(?<IPV6_6_R_LS32_IPV4_DEC_OCTET_>[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|(?<IPV6_6_R_LS32_H16_1>[0-9a-f]{1,4})\:(?<IPV6_6_R_LS32_H16_2>[0-9a-f]{1,4}))|(((?<IPV6_7_L_H16_REPEAT>[0-9a-f]{1,4})\:){0,4}(?<IPV6_7_L_H16>[0-9a-f]{1,4}))?\:\:(?<IPV6_7_R_LS32>((?<IPV6_7_R_LS32_IPV4_DEC_OCTET>[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3,3}(?<IPV6_7_R_LS32_IPV4_DEC_OCTET_>[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|(?<IPV6_7_R_LS32_H16_1>[0-9a-f]{1,4})\:(?<IPV6_7_R_LS32_H16_2>[0-9a-f]{1,4}))|(((?<IPV6_8_L_H16_REPEAT>[0-9a-f]{1,4})\:){0,5}(?<IPV6_8_L_H16>[0-9a-f]{1,4}))?\:\:(?<IPV6_8_R_H16>[0-9a-f]{1,4})|(((?<IPV6_9_L_H16_REPEAT>[0-9a-f]{1,4})\:){0,6}(?<IPV6_9_L_H16>[0-9a-f]{1,4}))?\:\:)|v[a-f0-9]+\.([a-z0-9\-\.\_\~]|[\!\$\&\'\(\)\*\+\,\;\=]|\:)+)\]|(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3,3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])|([a-z0-9\-\.\_\~]|\%[0-9a-f][0-9a-f]|[\!\$\&\'\(\)\*\+\,\;\=])*)(:(?<Port>[0-9]+))?)(?<Path>(\/([a-z0-9\-\.\_\~\!\$\&\'\(\)\*\+\,\;\=\:\@]|(%[a-f0-9]{2,2}))*)*))(?<Query>\?([a-z0-9\-\.\_\~\!\$\&\'\(\)\*\+\,\;\=\:\@\/\?]|(%[a-f0-9]{2,2}))*)?(?<Fragment>#([a-z0-9\-\.\_\~\!\$\&\'\(\)\*\+\,\;\=\:\@\/\?]|(%[a-f0-9]{2,2}))*)?$/;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "url",
     defaultValue: "",
     pattern: this._pattern?.source,
@@ -431,7 +422,7 @@ export class UrlSchema extends StringSchema {
  */
 export class ZipCodeSchema extends StringSchema {
   protected _pattern: RegExp | undefined = /^[0-9]{5}(?:-[0-9]{4})?$/;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "text",
     pattern: this._pattern?.source,
     title: "Zip code must be in the format 12345 or 12345-6789",
@@ -464,7 +455,7 @@ export class ZipCodeSchema extends StringSchema {
  */
 export class XMLSchema extends StringSchema {
   protected _pattern: RegExp | undefined = /(?<=<TAG.*?>)(.*?)(?=<\/TAG>)/g;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "text",
     pattern: this._pattern?.source,
     title: "XML content must be enclosed within <TAG>value</TAG>",
@@ -501,7 +492,7 @@ export class XMLSchema extends StringSchema {
 export class UUIDSchema extends StringSchema {
   protected _pattern: RegExp | undefined =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "text",
     pattern: this._pattern?.source,
     title: "UUID must be in the format 550e8400-e29b-41d4-a716-446655440000",
@@ -535,7 +526,7 @@ export class UUIDSchema extends StringSchema {
 export class StreetAddressSchema extends StringSchema {
   protected _pattern: RegExp | undefined =
     /^(\d{1,}) [a-zA-Z0-9\s]+(\,)? [a-zA-Z]+(\,)? [A-Z]{2} [0-9]{5,6}$/;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "text",
     pattern: this._pattern?.source,
     title:
@@ -573,7 +564,7 @@ export class StreetAddressSchema extends StringSchema {
 export class PhoneNumberSchema extends StringSchema {
   protected _pattern: RegExp | undefined =
     /^\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "tel",
     pattern: this._pattern?.source,
     title: "Phone number must be in a valid international format",
@@ -611,7 +602,7 @@ export class PhoneNumberSchema extends StringSchema {
 export class StringNumberSchema extends StringSchema {
   protected _pattern: RegExp | undefined =
     /^(?:-(?:[1-9](?:\d{0,2}(?:,\d{3})+|\d*))|(?:0|(?:[1-9](?:\d{0,2}(?:,\d{3})+|\d*))))(?:.\d+|)$/;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "text",
     pattern: this._pattern?.source,
     title: "String number must be a valid numeric format",
@@ -645,7 +636,7 @@ export class StringNumberSchema extends StringSchema {
  */
 export class HexColorSchema extends StringSchema {
   protected _pattern: RegExp | undefined = /^#([a-fA-F0-9]{6}|[a-fA-F0-9]{3})$/;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "color",
     pattern: this._pattern?.source,
     title: "Hex color must be in the format #RRGGBB or #RGB",
@@ -681,7 +672,7 @@ export class HexColorSchema extends StringSchema {
 export class MacAddressSchema extends StringSchema {
   protected _pattern: RegExp | undefined =
     /^(?:[0-9A-Fa-f]{2}[:-]){5}(?:[0-9A-Fa-f]{2})$/;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "text",
     pattern: this._pattern?.source,
     title: "MAC address must be in the format 00:1A:2B:3C:4D:5E",
@@ -727,7 +718,7 @@ export class IPAddressSchema<
     IPV4: /^(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
     IPV6: /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/,
   } as Record<V, RegExp>;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "text",
     placeholder: "255.255.255.255",
     required: true,
@@ -748,15 +739,15 @@ export class IPAddressSchema<
   constructor(private version: V) {
     super();
     this._pattern = this.patterns[version];
-    this.htmlAttributes.placeholder =
+    this._def.placeholder =
       version === "IPV4"
         ? "255.255.255.255"
         : "2001:0db8:85a3:0000:0000:8a2e:0370:7334";
-    this.htmlAttributes.title =
+    this._def.title =
       version === "IPV4"
         ? "IP address must be in the format 255.255.255.255"
         : "IP address must be in the format 2001:0db8:85a3:0000:0000:8a2e:0370:7334";
-    this.htmlAttributes.pattern = this._pattern?.source;
+    this._def.pattern = this._pattern?.source;
     this.description =
       version === "IPV4" ? "IPv4 address string" : "IPv6 address string";
   }
@@ -786,7 +777,7 @@ export class IPAddressSchema<
 export class HTMLSchema extends StringSchema {
   protected _pattern: RegExp | undefined =
     /<(?:"[^"]*"['"]*|'[^']*'['"]*|[^'">])+>/g;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "text",
     pattern: this._pattern?.source,
     title: "HTML content must be valid HTML tags",
@@ -821,7 +812,7 @@ export class HTMLSchema extends StringSchema {
 export class GUIDSchema extends StringSchema {
   protected _pattern: RegExp | undefined =
     /^(?:\{{0,1}(?:[0-9a-fA-F]){8}-(?:[0-9a-fA-F]){4}-(?:[0-9a-fA-F]){4}-(?:[0-9a-fA-F]){4}-(?:[0-9a-fA-F]){12}\}{0,1})$/;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "text",
     pattern: this._pattern?.source,
     title: "GUID must be in the format 550e8400-e29b-41d4-a716-446655440000",
@@ -857,7 +848,7 @@ export class GUIDSchema extends StringSchema {
 export class DateSchema extends StringSchema {
   protected _pattern: RegExp | undefined =
     /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/(19|20)\d\d$/;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "date",
     pattern: this._pattern?.source,
     title: "Date must be in the format MM/DD/YYYY",
@@ -896,7 +887,7 @@ export class DateSchema extends StringSchema {
 export class DatetimeLocalSchema extends StringSchema {
   protected _pattern: RegExp | undefined =
     /(?:19|20)[0-9]{2}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1[0-9]|2[0-9])|(?:(?!02)(?:0[1-9]|1[0-2])-(?:30))|(?:(?:0[13578]|1[02])-31))T(?:[01][0-9]|2[0-3]):[0-5][0-9]$/;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "datetime-local",
     pattern: this._pattern?.source,
     title: "Datetime must be in the format MM/DD/YYYYTHH:MM",
@@ -934,7 +925,7 @@ export class DatetimeLocalSchema extends StringSchema {
 export class ISODateSchema extends StringSchema {
   protected _pattern: RegExp | undefined =
     /^(?:\d{4})-(?:\d{2})-(?:\d{2})T(?:\d{2}):(?:\d{2}):(?:\d{2}(?:\.\d*)?)(?:(?:-(?:\d{2}):(?:\d{2})|Z)?)$/;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "text",
     pattern: this._pattern?.source,
     title: "ISO date must be in the format YYYY-MM-DDTHH:MM:SSZ",
@@ -974,7 +965,7 @@ export class ISODateSchema extends StringSchema {
 export class EmailSchema extends StringSchema {
   protected _pattern: RegExp | undefined =
     /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/;
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "email",
     pattern: this._pattern?.source,
     title: "Email must be a valid email address e.g., example@example.com",
@@ -1004,7 +995,7 @@ export class EmailSchema extends StringSchema {
  *   .required(true, 'JSON configuration is required');
  */
 export class JSONSchema extends StringSchema {
-  public htmlAttributes: HTMLAttributes<HtmlStringAttributes> = {
+  public _def: StringDef = {
     type: "json",
     placeholder: '{"key":"value"}',
     title: "JSON must be valid JSON format",
@@ -1055,7 +1046,7 @@ export class JSONSchema extends StringSchema {
 }
 
 export class CodeSchema extends StringSchema {
-  public htmlAttributes: HTMLAttributes<HtmlCodeAttributes> = {
+  public _def: CodeDef = {
     type: "code",
     placeholder: "<your code here>",
     required: true,
@@ -1070,7 +1061,7 @@ export class CodeSchema extends StringSchema {
   }
 
   language(language: CodeLanguages): this {
-    this.htmlAttributes.language = language;
+    this._def.language = language;
     this.description += ` ${language ? `for ${language}` : ""}`;
     return this;
   }
