@@ -52,7 +52,7 @@ import { MergeShapes, ObjectInfer, PrettifyShape } from "../util.js";
  * });
  */
 export class ObjectSchema<
-  Shape extends { [key: string]: SchemaTypeAny }
+  Shape extends { [key: string]: SchemaTypeAny },
 > extends SchemaType<ObjectInfer<Shape>> {
   public _def: ObjectDef<Shape>;
 
@@ -75,21 +75,24 @@ export class ObjectSchema<
    *  age: new NumberSchema().min(18).max(120)
    * });
    */
-  constructor(public shape: Shape, private _isLoose: boolean = false) {
+  constructor(
+    public shape: Shape,
+    private _isLoose: boolean = false,
+  ) {
     super();
     this._def = {
       type: "object",
       required: true,
       properties: Object.fromEntries(
         Object.entries(this.shape).map(
-          ([key, schema]: [string, SchemaTypeAny]) => [key, schema._def]
-        )
+          ([key, schema]: [string, SchemaTypeAny]) => [key, schema._def],
+        ),
       ) as { [K in keyof Shape]: Shape[K]["_def"] },
       defaultValue: undefined,
     } as ObjectDef<Shape>;
 
     this.description = `Object with properties: ${Object.keys(shape).join(
-      ", "
+      ", ",
     )}`;
   }
 
@@ -132,8 +135,8 @@ export class ObjectSchema<
   protected validate(
     data: this["_input"] | unknown = this._def?.defaultValue as this["_input"],
     ctx: ValidationContext<this> = createValidationContext<this>(
-      data as this["_input"]
-    )
+      data as this["_input"],
+    ),
   ): e.ValidationResult<ObjectInfer<Shape>> {
     const result: ObjectInfer<Shape> = {} as ObjectInfer<Shape>;
 
@@ -144,7 +147,7 @@ export class ObjectSchema<
         "invalid_type",
         "object",
         typeof data,
-        data
+        data,
       );
       ctx.addError(error);
       return e.ValidationResult.fail<ObjectInfer<Shape>>(ctx.getErrors());
@@ -164,7 +167,7 @@ export class ObjectSchema<
           "unexpected_property",
           undefined,
           key,
-          data[key as keyof typeof data]
+          data[key as keyof typeof data],
         );
         ctx.addError(error);
       }
@@ -237,7 +240,7 @@ export class ObjectSchema<
             [K in keyof S]: S[K] extends ObjectSchema<infer U> ? U : never;
           }>
       >
-    >
+    >,
   >(...schemas: S): ReturnObject {
     const newShape: any = { ...this.shape };
     for (const sch of schemas) {
@@ -247,9 +250,9 @@ export class ObjectSchema<
     }
 
     this.description = `Object with properties: ${Object.keys(newShape).join(
-      ", "
+      ", ",
     )}`;
-    return new ObjectSchema(newShape) as ReturnObject;
+    return new ObjectSchema(newShape, this._isLoose) as ReturnObject;
     // return this.merge<ObjectSchema<any>>(...schemas) as ReturnObject;
   }
 
@@ -291,9 +294,12 @@ export class ObjectSchema<
     }
 
     this.description = `Object with properties: ${Object.keys(newShape).join(
-      ", "
+      ", ",
     )}`;
-    return new ObjectSchema<PrettifyShape<Omit<Shape, K>>>(newShape);
+    return new ObjectSchema<PrettifyShape<Omit<Shape, K>>>(
+      newShape,
+      this._isLoose,
+    );
   }
 
   /**
@@ -332,9 +338,12 @@ export class ObjectSchema<
       newShape[key] = this.shape[key];
     }
     this.description = `Object with properties: ${Object.keys(newShape).join(
-      ", "
+      ", ",
     )}`;
-    return new ObjectSchema<PrettifyShape<Pick<Shape, K>>>(newShape);
+    return new ObjectSchema<PrettifyShape<Pick<Shape, K>>>(
+      newShape,
+      this._isLoose,
+    );
   }
 
   /**

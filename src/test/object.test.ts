@@ -8,6 +8,7 @@ import {
   array,
   enum as enumSchema,
   html,
+  looseObject,
 } from "../index.js";
 
 describe("ObjectSchema", () => {
@@ -49,13 +50,13 @@ describe("ObjectSchema", () => {
       expect(() =>
         schema.parse({
           name: "John",
-        })
+        }),
       ).toThrow();
 
       expect(() =>
         schema.parse({
           age: 30,
-        })
+        }),
       ).toThrow();
     });
 
@@ -68,7 +69,7 @@ describe("ObjectSchema", () => {
         schema.parse({
           name: "John",
           extra: "not allowed",
-        })
+        }),
       ).toThrow();
     });
 
@@ -124,7 +125,7 @@ describe("ObjectSchema", () => {
                 "optional",
                 "resource",
               ] as const).default("required"),
-            })
+            }),
           ).optional(),
           isAllDay: boolean().optional().default(false),
           sensitivity: enumSchema([
@@ -195,14 +196,14 @@ describe("ObjectSchema", () => {
         schema.parse({
           name: 123,
           age: 30,
-        })
+        }),
       ).toThrow();
 
       expect(() =>
         schema.parse({
           name: "John",
           age: "30",
-        })
+        }),
       ).toThrow();
     });
 
@@ -341,13 +342,13 @@ describe("ObjectSchema", () => {
       expect(() =>
         schema.parse({
           name: "John",
-        })
+        }),
       ).toThrow();
 
       expect(() =>
         schema.parse({
           age: 30,
-        })
+        }),
       ).toThrow();
     });
 
@@ -364,7 +365,7 @@ describe("ObjectSchema", () => {
           user: {
             name: "John",
           },
-        })
+        }),
       ).toThrow();
 
       expect(() =>
@@ -372,7 +373,7 @@ describe("ObjectSchema", () => {
           user: {
             age: 30,
           },
-        })
+        }),
       ).toThrow();
     });
   });
@@ -388,23 +389,23 @@ describe("ObjectSchema", () => {
         schema.parse({
           username: "ab",
           age: 25,
-        })
+        }),
       ).toThrow();
 
       expect(() =>
         schema.parse({
-          username: "validuser",
+          username: "valid-user",
           age: 15,
-        })
+        }),
       ).toThrow();
 
       expect(
         schema.parse({
-          username: "validuser",
+          username: "valid-user",
           age: 25,
-        })
+        }),
       ).toEqual({
-        username: "validuser",
+        username: "valid-user",
         age: 25,
       });
     });
@@ -420,7 +421,7 @@ describe("ObjectSchema", () => {
       expect(
         schema.parse({
           name: "John",
-        })
+        }),
       ).toEqual({
         name: "John",
       });
@@ -429,7 +430,7 @@ describe("ObjectSchema", () => {
         schema.parse({
           name: "John",
           nickname: "Johnny",
-        })
+        }),
       ).toEqual({
         name: "John",
         nickname: "Johnny",
@@ -591,7 +592,7 @@ describe("ObjectSchema", () => {
           lastName: "Doe",
           age: -5, // min(0) constraint
           email: "john@example.com",
-        })
+        }),
       ).toThrow();
 
       expect(() =>
@@ -600,7 +601,7 @@ describe("ObjectSchema", () => {
           lastName: "Doe",
           age: 30,
           email: "invalid", // email validation
-        })
+        }),
       ).toThrow();
     });
 
@@ -689,7 +690,7 @@ describe("ObjectSchema", () => {
         expect(paths).toContain("address.zip");
         // Ensure there is at least one error under tags (size or item)
         expect(paths.some((p) => p === "tags" || p.startsWith("tags"))).toBe(
-          true
+          true,
         );
       }
 
@@ -722,7 +723,7 @@ describe("ObjectSchema", () => {
 
       // Valid without settings
       expect(
-        withoutSettings.parse({ profile: { name: "Jo", bio: "short bio" } })
+        withoutSettings.parse({ profile: { name: "Jo", bio: "short bio" } }),
       ).toEqual({ profile: { name: "Jo", bio: "short bio" } });
 
       // Provided omitted key becomes unexpected (and not validated)
@@ -735,7 +736,7 @@ describe("ObjectSchema", () => {
         // Ensure error is unexpected_property on settings rather than theme length
         const hasUnexpectedSettings = res.errors.some(
           (e) =>
-            e.path.join(".") === "settings" && e.code === "unexpected_property"
+            e.path.join(".") === "settings" && e.code === "unexpected_property",
         );
         expect(hasUnexpectedSettings).toBe(true);
       }
@@ -759,7 +760,7 @@ describe("ObjectSchema", () => {
           user: { username: "john", email: "john@example.com" },
           tags: ["dev"],
           meta: { createdAt: "2024-01-01" },
-        } as any)
+        } as any),
       ).toThrow();
 
       // Inner checks still apply
@@ -773,7 +774,7 @@ describe("ObjectSchema", () => {
         expect(paths).toContain("user.username");
         // Could be tags (length) or tags.0 (item), accept either
         expect(paths.some((p) => p === "tags" || p.startsWith("tags."))).toBe(
-          true
+          true,
         );
       }
     });
@@ -796,7 +797,7 @@ describe("ObjectSchema", () => {
           id: 1,
           profile: { name: "Al" },
           flags: ["x", "y"],
-        })
+        }),
       ).toEqual({ id: 1, profile: { name: "Al" }, flags: ["x", "y"] });
 
       // Invalid due to int(), minLength(2), and maxLength(2)
@@ -812,6 +813,61 @@ describe("ObjectSchema", () => {
         expect(paths).toContain("profile.name");
         expect(paths).toContain("flags");
       }
+    });
+  });
+
+  describe("Loose object validation", () => {
+    it("should allow extra properties when in loose mode", () => {
+      const schema = looseObject({
+        name: string(),
+      });
+
+      const result = schema.parse({
+        name: "John",
+        extraProp: 42,
+        anotherOne: "hello",
+      });
+
+      expect(result.name).toBe("John");
+      expect(result.extraProp).toBe(42);
+      expect(result.anotherOne).toBe("hello");
+    });
+
+    it("should still validate defined properties in loose mode", () => {
+      const schema = looseObject({
+        name: string(),
+        age: number(),
+      });
+
+      expect(() =>
+        schema.parse({
+          name: "John",
+          age: "not a number",
+          extraProp: true,
+        }),
+      ).toThrow();
+    });
+
+    it("should allow extra properties when omitted in loose mode", () => {
+      const schema = looseObject({
+        title: string().minLength(5),
+        name: string(),
+      }).omit("name");
+
+      const result = schema.parse({
+        title: "Hello World",
+        extra: 123,
+      });
+
+      expect(result.title).toBe("Hello World");
+      expect(result.extra).toBe(123);
+
+      expect(() => {
+        schema.parse({
+          title: "Shrt",
+          extra: 123,
+        });
+      }).toThrow();
     });
   });
 });
