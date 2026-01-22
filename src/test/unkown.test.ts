@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { unknown } from "../index.js";
+import v, { object, unknown } from "../index.js";
 
 describe("UnknownSchema", () => {
   describe("Basic validation", () => {
@@ -24,6 +24,33 @@ describe("UnknownSchema", () => {
           expect(result.data).toBe(value);
         }
       });
+    });
+
+    it("should work with unknown optional dependsOn", () => {
+      const schema = object({
+        options: v
+          .enum(["option a", "option b", "option c"] as const)
+          .default("option a"),
+        dependsOnOptions: unknown()
+          .optional()
+          .dependsOn([
+            {
+              field: "options",
+              condition: "option b",
+            },
+          ]),
+      });
+      const result1 = schema.parse({
+        options: "option a",
+        dependsOnOptions: "any value",
+      });
+      expect(result1).toEqual({ options: "option a" });
+
+      const result2 = schema.parse({
+        options: "option b",
+        dependsOnOptions: 123,
+      });
+      expect(result2).toEqual({ options: "option b", dependsOnOptions: 123 });
     });
   });
 });

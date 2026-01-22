@@ -37,3 +37,28 @@ export type ObjectInfer<Shape extends { [key: string]: SchemaTypeAny }> =
         : K]-?: TypeOf<Shape[K]>;
     }
   >;
+
+export type RemoveIndexSignature<T> = {
+  [K in keyof T as string extends K
+    ? never
+    : number extends K
+      ? never
+      : K]: T[K];
+};
+
+type S = RemoveIndexSignature<{
+  [x: string]: unknown;
+  id: string;
+  name: string;
+  name2: string;
+}>;
+
+export type WithIndex<T> = string extends keyof T
+  ? { [key: string]: unknown }
+  : {};
+
+export type LooseOmit<T, K extends PropertyKey> = Omit<
+  RemoveIndexSignature<T>,
+  K
+> &
+  WithIndex<T>;

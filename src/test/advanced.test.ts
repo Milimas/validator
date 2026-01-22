@@ -168,9 +168,9 @@ describe("Type Inference with Infer", () => {
                   name: string(),
                   email: email(),
                   id: uuid(),
-                })
+                }),
               ),
-            })
+            }),
           ),
         }),
       });
@@ -211,7 +211,7 @@ describe("Type Inference with Infer", () => {
           }),
           tags: array(string()),
           published: boolean(),
-        })
+        }),
       );
 
       type InferredType = Infer<typeof schema>;
@@ -344,7 +344,7 @@ describe("Complex Nested Structures", () => {
             created: string(),
             tags: array(string()),
           }),
-        })
+        }),
       );
 
       const data = [
@@ -379,8 +379,8 @@ describe("Complex Nested Structures", () => {
           object({
             x: number(),
             y: number(),
-          })
-        )
+          }),
+        ),
       );
 
       const data = [
@@ -415,9 +415,9 @@ describe("Complex Nested Structures", () => {
                   description: string(),
                   price: number(),
                 }),
-              })
+              }),
             ),
-          })
+          }),
         ),
       });
 
@@ -467,7 +467,7 @@ describe("Complex Nested Structures", () => {
           object({
             platform: enumSchema(["twitter", "linkedin", "github"] as const),
             url: url(),
-          })
+          }),
         ),
         addresses: array(
           object({
@@ -477,7 +477,7 @@ describe("Complex Nested Structures", () => {
             zipCode: string(),
             country: string(),
             isDefault: boolean(),
-          })
+          }),
         ),
       });
 
@@ -544,7 +544,7 @@ describe("Complex Nested Structures", () => {
                 size: enumSchema(["XS", "S", "M", "L", "XL", "XXL"] as const),
                 color: string(),
                 stock: number(),
-              })
+              }),
             ),
             reviews: array(
               object({
@@ -553,7 +553,7 @@ describe("Complex Nested Structures", () => {
                 rating: number().min(1).max(5),
                 comment: string().optional(),
                 verified: boolean(),
-              })
+              }),
             ),
             images: array(
               object({
@@ -561,9 +561,9 @@ describe("Complex Nested Structures", () => {
                 url: url(),
                 alt: string(),
                 isPrimary: boolean(),
-              })
+              }),
             ),
-          })
+          }),
         ),
       });
 
@@ -765,7 +765,7 @@ describe("Complex Schema Chains", () => {
           object({
             category: enumSchema(["email", "push", "sms"] as const),
             enabled: boolean(),
-          })
+          }),
         ),
       });
 
@@ -824,7 +824,7 @@ describe("Complex Schema Chains", () => {
           name: string().minLength(2).maxLength(50),
           email: email(),
           score: number().min(0).max(100).default(0),
-        })
+        }),
       )
         .minLength(1)
         .maxLength(100);
@@ -894,9 +894,9 @@ describe("Real-world Complex Schemas", () => {
                 email: email(),
                 content: string(),
                 createdAt: string(),
-              })
+              }),
             ),
-          })
+          }),
         ),
         pagination: object({
           page: number().min(1),
@@ -931,14 +931,14 @@ describe("Real-world Complex Schemas", () => {
                 id: uuid(),
                 name: string(),
               }),
-            })
+            }),
           ).optional(),
           followers: array(
             object({
               id: uuid(),
               name: string(),
               email: email(),
-            })
+            }),
           ),
         }).optional(),
         errors: array(
@@ -950,12 +950,65 @@ describe("Real-world Complex Schemas", () => {
                 status: number(),
               }).optional(),
             }).optional(),
-          })
+          }),
         ).optional(),
       }),
     });
 
     expect(schema).toBeDefined();
     expect(schema.toJSON().type).toBe("object");
+  });
+
+  describe("should parse optional dependsOn with various schemas", () => {
+    it("string dependsOn", () => {
+      const schema = object({
+        status: enumSchema(["active", "inactive"] as const).default("inactive"),
+        activationCode: string()
+          .optional()
+          .dependsOn([
+            {
+              field: "status",
+              condition: "active",
+            },
+          ]),
+      });
+
+      const result1 = schema.parse({
+        status: "inactive",
+        activationCode: "ANYCODE",
+      });
+      expect(result1).toEqual({ status: "inactive" });
+
+      const result2 = schema.parse({
+        status: "active",
+        activationCode: "ACT123",
+      });
+      expect(result2).toEqual({ status: "active", activationCode: "ACT123" });
+    });
+
+    it("number dependsOn", () => {
+      const schema = object({
+        level: number().default(1),
+        bonusPoints: number()
+          .optional()
+          .dependsOn([
+            {
+              field: "level",
+              condition: "5",
+            },
+          ]),
+      });
+
+      const result1 = schema.parse({
+        level: 1,
+        bonusPoints: 100,
+      });
+      expect(result1).toEqual({ level: 1 });
+      const result2 = schema.parse({
+        level: 5,
+        bonusPoints: 200,
+      });
+      expect(result2).toEqual({ level: 5, bonusPoints: 200 });
+    });
   });
 });

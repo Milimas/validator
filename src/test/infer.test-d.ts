@@ -63,7 +63,7 @@ describe("Infer", () => {
         v.object({
           id: v.string(),
           value: v.number(),
-        })
+        }),
       );
       type Inferred = Infer<typeof schema>;
 

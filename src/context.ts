@@ -74,7 +74,7 @@ export interface FailedDependency {
  */
 export class ValidationContext<
   S extends SchemaTypeAny = SchemaTypeAny,
-  Input extends S["_input"] = S["_input"]
+  Input extends S["_input"] = S["_input"],
 > {
   /**
    * Accumulated validation errors collected during parsing.
@@ -93,7 +93,10 @@ export class ValidationContext<
    * @param data - The complete root data being validated
    * @param path - The current path in the data structure (empty for root)
    */
-  constructor(private data: Input, private path: FieldPath = []) {}
+  constructor(
+    private data: Input,
+    private path: FieldPath = [],
+  ) {}
 
   /**
    * Gets the current field path.
@@ -227,24 +230,18 @@ export class ValidationContext<
    * });
    */
   isDependencySatisfied(condition: DependencyCondition): boolean {
+    let isSatisfied = false;
+
     const fieldValue = this.getSiblingValue(condition.field);
     if (fieldValue === null || fieldValue === undefined) {
       return false;
     }
 
-    if (typeof condition.condition === "string") {
-      const isSatisfied = String(fieldValue) === condition.condition;
-      if (!isSatisfied) {
-        this.failedDependencies.push({
-          condition,
-          actualValue: fieldValue,
-          isRequired: true,
-        });
-      }
-      return isSatisfied;
-    }
     const stringValue = String(fieldValue);
-    const isSatisfied = condition.condition.test(stringValue);
+
+    if (typeof condition.condition === "string")
+      isSatisfied = stringValue === condition.condition;
+    else isSatisfied = condition.condition.test(stringValue);
 
     // Track failed dependencies for error reporting
     if (!isSatisfied) {
@@ -275,7 +272,7 @@ export class ValidationContext<
    */
   isFieldRequired(conditions: DependencyCondition[]): boolean {
     return conditions.some((condition) =>
-      this.isDependencySatisfied(condition)
+      this.isDependencySatisfied(condition),
     );
   }
 
@@ -428,7 +425,7 @@ export interface ValidationContextOptions {
  */
 export function createValidationContext<
   S extends SchemaTypeAny = SchemaTypeAny,
-  T extends S["_input"] = S["_input"]
+  T extends S["_input"] = S["_input"],
 >(data: T, options?: ValidationContextOptions): ValidationContext<S, T> {
   return new ValidationContext(data);
 }
@@ -444,9 +441,9 @@ export interface IRefinementContext<S extends SchemaTypeAny> {
     value?: S["_output"];
   }) => void;
 }
-export class RefinementContext<S extends SchemaTypeAny>
-  implements IRefinementContext<S>
-{
+export class RefinementContext<
+  S extends SchemaTypeAny,
+> implements IRefinementContext<S> {
   constructor(private ctx: ValidationContext<S>) {}
 
   get data(): S["_output"] {
@@ -467,8 +464,8 @@ export class RefinementContext<S extends SchemaTypeAny>
         error.code,
         error.expected,
         error.received,
-        error.value || this.ctx.getCurrentValue()
-      )
+        error.value || this.ctx.getCurrentValue(),
+      ),
     );
   }
 }

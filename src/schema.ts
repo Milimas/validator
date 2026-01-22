@@ -29,12 +29,12 @@ export abstract class SchemaType<Output = any, Input = Output> {
 
   protected abstract validate(
     data: this["_input"] | unknown,
-    ctx: ValidationContext
+    ctx: ValidationContext,
   ): e.ValidationResult<Output>;
 
   #validateWithRefinements(
     data: this["_input"] | unknown,
-    ctx: ValidationContext
+    ctx: ValidationContext,
   ): e.ValidationResult<Output> {
     const result = this.validate(data, ctx);
 
@@ -53,7 +53,7 @@ export abstract class SchemaType<Output = any, Input = Output> {
             refinement.code || "refine_validation_failed",
             refinement.expected,
             refinement.received,
-            result.data
+            result.data,
           );
           ctx.addError(error);
           if (refinement.immediate) {
@@ -77,8 +77,8 @@ export abstract class SchemaType<Output = any, Input = Output> {
   parse(
     data: this["_input"] | unknown = this._def.defaultValue,
     ctx: ValidationContext<this> = createValidationContext<this>(
-      data as this["_input"]
-    )
+      data as this["_input"],
+    ),
   ): Output {
     const result = this.#validateWithRefinements(data, ctx);
     if (!result.success) {
@@ -91,8 +91,8 @@ export abstract class SchemaType<Output = any, Input = Output> {
   safeParse(
     data: this["_input"] | unknown = this._def.defaultValue,
     ctx: ValidationContext<this> = createValidationContext<this>(
-      data as this["_input"]
-    )
+      data as this["_input"],
+    ),
   ): e.ValidationResult<Output> {
     // Run base validation first
     const result = this.#validateWithRefinements(data, ctx);
@@ -129,7 +129,7 @@ export abstract class SchemaType<Output = any, Input = Output> {
 
   required(
     required: boolean = true,
-    message: string = "This field is required"
+    message: string = "This field is required",
   ): this {
     this.errorMap.set("required", message);
     this._def = { ...this._def, required };
@@ -155,7 +155,7 @@ export abstract class SchemaType<Output = any, Input = Output> {
       expected?: unknown;
       received?: unknown;
       immediate?: boolean;
-    }
+    },
   ): this {
     const { message, code, expected, received, immediate } = params;
     this.checks.push({
@@ -171,7 +171,7 @@ export abstract class SchemaType<Output = any, Input = Output> {
   }
 
   superRefine(
-    check: (value: Output, ctx: RefinementContext<this>) => void
+    check: (value: Output, ctx: RefinementContext<this>) => void,
   ): this {
     this.checks.push({
       type: "superRefine",
@@ -227,7 +227,7 @@ export class OptionalSchema<T extends SchemaTypeAny> extends SchemaType<
 
   protected validate(
     data: this["_input"] | unknown = this._def.defaultValue,
-    ctx: ValidationContext<this> = createValidationContext<this>(data)
+    ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): e.ValidationResult<T["_output"] | undefined> {
     if (data === undefined || data === null) {
       return e.ValidationResult.ok<undefined>(data as undefined);
@@ -238,7 +238,7 @@ export class OptionalSchema<T extends SchemaTypeAny> extends SchemaType<
   parse(
     data: this["_input"] | unknown = this._def.defaultValue,
 
-    ctx: ValidationContext<this> = createValidationContext<this>(data)
+    ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): T["_output"] | undefined {
     if (data === undefined || data === null) {
       if (this._def.defaultValue !== undefined)
@@ -251,7 +251,7 @@ export class OptionalSchema<T extends SchemaTypeAny> extends SchemaType<
   safeParse(
     data: this["_input"] | unknown = this._def.defaultValue,
 
-    ctx: ValidationContext<this> = createValidationContext<this>(data)
+    ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): e.ValidationResult<T["_output"] | undefined> {
     if (data === undefined || data === null) {
       return e.ValidationResult.ok<undefined>(data as undefined);
@@ -279,7 +279,7 @@ export class NullableSchema<T extends SchemaTypeAny> extends SchemaType<
   protected validate(
     data: this["_input"] | unknown = this._def.defaultValue,
 
-    ctx: ValidationContext<this> = createValidationContext<this>(data)
+    ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): e.ValidationResult<T["_output"] | null> {
     if (data === null) {
       return e.ValidationResult.ok<null>(null);
@@ -290,7 +290,7 @@ export class NullableSchema<T extends SchemaTypeAny> extends SchemaType<
   parse(
     data: this["_input"] | unknown = this._def.defaultValue,
 
-    ctx: ValidationContext<this> = createValidationContext<this>(data)
+    ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): T["_output"] | null {
     if (data === null) {
       return null as T["_output"] | null;
@@ -301,7 +301,7 @@ export class NullableSchema<T extends SchemaTypeAny> extends SchemaType<
   safeParse(
     data: this["_input"] | unknown = this._def.defaultValue,
 
-    ctx: ValidationContext<this> = createValidationContext<this>(data)
+    ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): e.ValidationResult<T["_output"] | null> {
     if (data === null) {
       return e.ValidationResult.ok<null>(null);
@@ -318,7 +318,7 @@ export class DefaultSchema<T extends SchemaTypeAny> extends SchemaType<
 
   constructor(
     private inner: T,
-    private defaultValue: T["_def"]["defaultValue"]
+    private defaultValue: T["_def"]["defaultValue"],
   ) {
     super();
     this._def = {
@@ -331,7 +331,7 @@ export class DefaultSchema<T extends SchemaTypeAny> extends SchemaType<
   protected validate(
     data: this["_input"] | unknown = this.defaultValue,
 
-    ctx: ValidationContext<this> = createValidationContext<this>(data)
+    ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): e.ValidationResult<T["_output"]> {
     if (data === undefined || data === null) {
       data = this.defaultValue;
@@ -341,7 +341,7 @@ export class DefaultSchema<T extends SchemaTypeAny> extends SchemaType<
 
   parse(
     data: this["_input"] | unknown = this.defaultValue,
-    ctx: ValidationContext<this> = createValidationContext<this>(data)
+    ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): T["_output"] {
     if (data === undefined || data === null) {
       data = this.defaultValue;
@@ -351,7 +351,7 @@ export class DefaultSchema<T extends SchemaTypeAny> extends SchemaType<
 
   safeParse(
     data: this["_input"] | unknown = this.defaultValue,
-    ctx: ValidationContext<this> = createValidationContext<this>(data)
+    ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): e.ValidationResult<T["_output"]> {
     if (data === undefined || data === null) {
       data = this.defaultValue;
@@ -366,7 +366,7 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
 > {
   constructor(
     private inner: T,
-    public _dependsOn: [Condition, ...Condition[]]
+    public _dependsOn: [Condition, ...Condition[]],
   ) {
     super();
     this._def = {
@@ -388,12 +388,15 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
 
   protected validate(
     data: this["_input"] | unknown = this._def.defaultValue,
-    ctx: ValidationContext<this> = createValidationContext<this>(data)
+    ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): e.ValidationResult<this["_output"]> {
-    const isRequired =
-      this._def.required && ctx.isFieldRequired(this._dependsOn);
+    if (!data && !this._def.required) {
+      // Not required and no data: skip validation and return undefined
+      return e.ValidationResult.ok<undefined>(undefined);
+    }
+    const isFieldRequired = ctx.isFieldRequired(this._dependsOn);
 
-    if (!isRequired) {
+    if (!isFieldRequired) {
       // When dependency conditions are not satisfied, skip validation entirely
       // and treat the field as not applicable.
       return e.ValidationResult.ok<undefined>(undefined);
@@ -405,8 +408,8 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
         new ValidationError(
           ctx.getPath(),
           this.errorMap.get("required") || "This field is required",
-          "required"
-        )
+          "required",
+        ),
       );
       return e.ValidationResult.fail<this["_output"]>(ctx.getErrors());
     }
@@ -416,13 +419,16 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
 
   parse(
     data: this["_input"] | unknown = this._def.defaultValue,
-
-    ctx: ValidationContext<this> = createValidationContext<this>(data)
+    ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): this["_output"] {
-    const isRequired =
-      this._def.required && ctx.isFieldRequired(this._dependsOn);
+    if (!data && !this._def.required) {
+      // Not required and no data: skip validation and return undefined
+      return undefined as this["_output"];
+    }
 
-    if (!isRequired) {
+    const isFieldRequired = ctx.isFieldRequired(this._dependsOn);
+
+    if (!isFieldRequired) {
       // Not required: ignore value and return undefined
       return undefined;
     }
@@ -433,11 +439,11 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
         new ValidationError(
           ctx.getPath(),
           this.errorMap.get("required") || "This field is required",
-          "required"
-        )
+          "required",
+        ),
       );
       throw e.ValidationResult.fail<this["_output"]>(
-        ctx.getErrors()
+        ctx.getErrors(),
       ).intoError();
     }
 
@@ -447,12 +453,15 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
   safeParse(
     data: this["_input"] | unknown = this._def.defaultValue,
 
-    ctx: ValidationContext<this> = createValidationContext<this>(data)
+    ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): e.ValidationResult<this["_output"]> {
-    const isRequired =
-      this._def.required && ctx.isFieldRequired(this._dependsOn);
+    if (!data && !this._def.required) {
+      // Not required and no data: skip validation and return undefined
+      return e.ValidationResult.ok<undefined>(undefined);
+    }
+    const isFieldRequired = ctx.isFieldRequired(this._dependsOn);
 
-    if (!isRequired) {
+    if (!isFieldRequired) {
       return e.ValidationResult.ok<undefined>(undefined);
     }
 
@@ -462,8 +471,8 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
         new ValidationError(
           ctx.getPath(),
           this.errorMap.get("required") || "This field is required",
-          "required"
-        )
+          "required",
+        ),
       );
       return e.ValidationResult.fail<this["_output"]>(ctx.getErrors());
     }
@@ -484,7 +493,7 @@ export class AnySchema extends SchemaType<any> {
   protected validate(
     data: this["_input"] | unknown = this._def.defaultValue,
 
-    ctx: ValidationContext<this> = createValidationContext<this>(data)
+    ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): e.ValidationResult<any> {
     return e.ValidationResult.ok<any>(data);
   }
@@ -501,8 +510,8 @@ export class NeverSchema extends SchemaType<never, any> {
   protected validate(
     data: this["_input"] | unknown = this._def.defaultValue,
     ctx: ValidationContext<this> = createValidationContext<this>(
-      data as this["_input"]
-    )
+      data as this["_input"],
+    ),
   ): e.ValidationResult<never> {
     ctx.addError(
       new ValidationError(
@@ -511,8 +520,8 @@ export class NeverSchema extends SchemaType<never, any> {
         "never_valid",
         "never",
         typeof data,
-        data
-      )
+        data,
+      ),
     );
     return e.ValidationResult.fail<never>(ctx.getErrors());
   }
@@ -530,7 +539,7 @@ export class UnknownSchema extends SchemaType<unknown> {
   protected validate(
     data: this["_input"] | unknown = this._def.defaultValue,
 
-    ctx: ValidationContext<this> = createValidationContext<this>(data)
+    ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): e.ValidationResult<unknown> {
     return e.ValidationResult.ok<unknown>(data);
   }

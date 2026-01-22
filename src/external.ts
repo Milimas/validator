@@ -432,15 +432,18 @@ export function boolean(): BooleanSchema {
  * const result = userSchema.safeParse({ name: 'John', email: 'john@example.com', age: 25 });
  */
 export function object<Shape extends ObjectShape>(
-  shape: Shape
+  shape: Shape,
 ): ObjectSchema<Shape> {
   return new ObjectSchema(shape);
 }
 
 export function looseObject<Shape extends ObjectShape>(
-  shape: Shape
-): ObjectSchema<Shape & Record<string, UnknownSchema>> {
-  return new ObjectSchema(shape as Shape & Record<string, UnknownSchema>, true);
+  shape: Shape,
+): ObjectSchema<Shape & { [key: string]: UnknownSchema }> {
+  return new ObjectSchema(
+    shape as Shape & { [key: string]: UnknownSchema },
+    true,
+  );
 }
 
 ////////////////////////////
@@ -570,7 +573,7 @@ function _enum<const T extends readonly string[]>(values: T): EnumSchema<T> {
  * schema.parse(42); // 42
  */
 export function union<S extends readonly SchemaTypeAny[]>(
-  schemas: S
+  schemas: S,
 ): UnionSchema<S> {
   return new UnionSchema(schemas);
 }
@@ -599,7 +602,7 @@ export function union<S extends readonly SchemaTypeAny[]>(
  * });
  */
 export function record<TValue extends SchemaTypeAny>(
-  valueSchema: TValue
+  valueSchema: TValue,
 ): RecordSchema<TValue>;
 
 /**
@@ -626,7 +629,7 @@ export function record<TValue extends SchemaTypeAny>(
  */
 export function record<
   TKey extends SchemaType<String>,
-  TValue extends SchemaTypeAny
+  TValue extends SchemaTypeAny,
 >(keySchema: TKey, valueSchema: TValue): RecordSchema<TValue, TKey>;
 
 /**
@@ -661,10 +664,10 @@ export function record<
  */
 export function record<
   TKey extends SchemaType<String>,
-  TValue extends SchemaTypeAny
+  TValue extends SchemaTypeAny,
 >(
   keySchemaOrValue: TKey | TValue,
-  valueSchemaMaybe?: TValue
+  valueSchemaMaybe?: TValue,
 ): RecordSchema<TValue, SchemaTypeAny> {
   if (valueSchemaMaybe === undefined) {
     return new RecordSchema(keySchemaOrValue as TValue);
@@ -715,13 +718,13 @@ export function code(language?: CodeLanguages): CodeSchema {
  * const jsonSchema = toJSONSchema(schema);
  */
 function toJSONSchema<R extends ReturnType<SchemaTypeAny["toJSON"]>>(
-  schema: SchemaTypeAny
+  schema: SchemaTypeAny,
 ): R {
   return schema.toJSON() as R;
 }
 
 function fromJSONSchema(
-  schema: ReturnType<SchemaTypeAny["toJSON"]>
+  schema: ReturnType<SchemaTypeAny["toJSON"]>,
 ): SchemaTypeAny {
   switch (schema.type) {
     case "text":

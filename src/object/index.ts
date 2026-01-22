@@ -2,7 +2,7 @@ import { e, ValidationError } from "../error.js";
 import { createValidationContext, ValidationContext } from "../context.js";
 import { SchemaType } from "../schema.js";
 import { ObjectDef, JsonSchemaFormat, SchemaTypeAny } from "../types.js";
-import { MergeShapes, ObjectInfer, PrettifyShape } from "../util.js";
+import { LooseOmit, MergeShapes, ObjectInfer, PrettifyShape } from "../util.js";
 
 /**
  * Composite schema for validating object structures with typed properties.
@@ -233,14 +233,13 @@ export class ObjectSchema<
    */
   extend<
     S extends readonly ObjectSchema<any>[],
-    ReturnObject extends ObjectSchema<
-      PrettifyShape<
-        Shape &
-          MergeShapes<{
-            [K in keyof S]: S[K] extends ObjectSchema<infer U> ? U : never;
-          }>
-      >
+    MergedShape extends PrettifyShape<
+      Shape &
+        MergeShapes<{
+          [K in keyof S]: S[K] extends ObjectSchema<infer U> ? U : never;
+        }>
     >,
+    ReturnObject extends ObjectSchema<MergedShape>,
   >(...schemas: S): ReturnObject {
     const newShape: any = { ...this.shape };
     for (const sch of schemas) {
@@ -252,7 +251,10 @@ export class ObjectSchema<
     this.description = `Object with properties: ${Object.keys(newShape).join(
       ", ",
     )}`;
-    return new ObjectSchema(newShape, this._isLoose) as ReturnObject;
+    return new ObjectSchema(
+      newShape as MergedShape,
+      this._isLoose,
+    ) as ReturnObject;
     // return this.merge<ObjectSchema<any>>(...schemas) as ReturnObject;
   }
 
@@ -285,9 +287,9 @@ export class ObjectSchema<
    * //  username: string (minLength 3)
    * // }
    */
-  omit<K extends keyof Shape>(
+  omit<K extends keyof Shape, NewShape extends LooseOmit<Shape, K>>(
     ...keys: K[]
-  ): ObjectSchema<PrettifyShape<Omit<Shape, K>>> {
+  ): ObjectSchema<NewShape> {
     const newShape: any = { ...this.shape };
     for (const key of keys) {
       delete newShape[key];
@@ -296,10 +298,7 @@ export class ObjectSchema<
     this.description = `Object with properties: ${Object.keys(newShape).join(
       ", ",
     )}`;
-    return new ObjectSchema<PrettifyShape<Omit<Shape, K>>>(
-      newShape,
-      this._isLoose,
-    );
+    return new ObjectSchema<NewShape>(newShape, this._isLoose);
   }
 
   /**
@@ -330,9 +329,9 @@ export class ObjectSchema<
    * //  username: string (minLength 3)
    * // }
    */
-  pick<K extends keyof Shape>(
+  pick<K extends keyof Shape, NewShape extends Pick<Shape, K>>(
     ...keys: K[]
-  ): ObjectSchema<PrettifyShape<Pick<Shape, K>>> {
+  ): ObjectSchema<NewShape> {
     const newShape: any = {};
     for (const key of keys) {
       newShape[key] = this.shape[key];
@@ -340,10 +339,7 @@ export class ObjectSchema<
     this.description = `Object with properties: ${Object.keys(newShape).join(
       ", ",
     )}`;
-    return new ObjectSchema<PrettifyShape<Pick<Shape, K>>>(
-      newShape,
-      this._isLoose,
-    );
+    return new ObjectSchema<NewShape>(newShape, this._isLoose);
   }
 
   /**
