@@ -968,14 +968,14 @@ describe("Real-world Complex Schemas", () => {
           .dependsOn([
             {
               field: "status",
-              condition: "active",
+              condition: "^active$",
             },
           ]),
       });
 
       const result1 = schema.parse({
         status: "inactive",
-        activationCode: "ANYCODE",
+        activationCode: "ANY CODE",
       });
       expect(result1).toEqual({ status: "inactive" });
 
@@ -994,7 +994,7 @@ describe("Real-world Complex Schemas", () => {
           .dependsOn([
             {
               field: "level",
-              condition: "5",
+              condition: "^5$",
             },
           ]),
       });

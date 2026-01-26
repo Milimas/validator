@@ -36,7 +36,7 @@ describe("UnknownSchema", () => {
           .dependsOn([
             {
               field: "options",
-              condition: "option b",
+              condition: "^option b$",
             },
           ]),
       });

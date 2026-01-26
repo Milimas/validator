@@ -240,7 +240,7 @@ export class ValidationContext<
     const stringValue = String(fieldValue);
 
     if (typeof condition.condition === "string")
-      isSatisfied = stringValue === condition.condition;
+      isSatisfied = RegExp(condition.condition).test(stringValue);
     else isSatisfied = condition.condition.test(stringValue);
 
     // Track failed dependencies for error reporting
