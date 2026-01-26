@@ -43,8 +43,7 @@ export class StringSchema extends SchemaType<string> {
       {
         type: "refine",
         check: (data: string) =>
-          !this._def.required ||
-          (this._def.required === true && data !== null && data !== undefined),
+          !this._def.required || (this._def.required === true && !!data),
         message: () => this.errorMap.get("required") || "String is required",
         code: "required",
         immediate: true,
@@ -82,7 +81,7 @@ export class StringSchema extends SchemaType<string> {
         message: () => this.errorMap.get("readOnly") || "String is read-only",
         code: "readOnly",
         immediate: true,
-      }
+      },
     );
 
     this.description = "String";
@@ -110,7 +109,7 @@ export class StringSchema extends SchemaType<string> {
    */
   protected validate(
     data: this["_input"] | unknown = this._def.defaultValue,
-    ctx: ValidationContext<this>
+    ctx: ValidationContext<this>,
   ): e.ValidationResult<this["_output"]> {
     return e.ValidationResult.ok<string>(data as string);
   }
@@ -246,7 +245,7 @@ export class StringSchema extends SchemaType<string> {
   pattern(
     value: RegExp,
     message: string = `String does not match pattern ${value.source}`,
-    title: string = `Pattern: ${value.source}`
+    title: string = `Pattern: ${value.source}`,
   ): this {
     this.errorMap.set("pattern", message);
     this._pattern = value;
@@ -320,7 +319,7 @@ export class StringSchema extends SchemaType<string> {
    */
   required(
     required: boolean = true,
-    message: string = "String is required"
+    message: string = "String is required",
   ): this {
     this.errorMap.set("required", message);
     this._def = { ...this._def, required };
@@ -712,7 +711,7 @@ export class MacAddressSchema extends StringSchema {
  * const result2 = ipv6Schema.safeParse('2001:0db8:85a3::8a2e:0370:7334');
  */
 export class IPAddressSchema<
-  V extends "IPV4" | "IPV6" = "IPV4" | "IPV6"
+  V extends "IPV4" | "IPV6" = "IPV4" | "IPV6",
 > extends StringSchema {
   private patterns: Record<V, RegExp> = {
     IPV4: /^(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
@@ -974,75 +973,6 @@ export class EmailSchema extends StringSchema {
   };
 
   public description?: string | undefined = "Email address string";
-}
-
-/**
- * JSON string validation schema with strict JSON format validation.
- *
- * Validates that input is a valid JSON string. Automatically parses the string
- * to ensure it contains well-formed JSON. Useful for form fields that accept
- * JSON data, configuration objects, or nested data structures.
- *
- * @example
- * // Basic JSON validation
- * const jsonSchema = new JSONSchema();
- * const result = jsonSchema.safeParse('{"name":"John","age":30}');
- *
- * @example
- * // With additional constraints
- * const configSchema = new JSONSchema()
- *   .maxLength(5000)
- *   .required(true, 'JSON configuration is required');
- */
-export class JSONSchema extends StringSchema {
-  public _def: StringDef = {
-    type: "json",
-    placeholder: '{"key":"value"}',
-    title: "JSON must be valid JSON format",
-    required: true,
-  };
-
-  public description?: string | undefined = "JSON string";
-
-  /**
-   * Validates that the input is a string containing valid JSON.
-   *
-   * First validates using the parent StringSchema validation, then attempts
-   * to parse the string as JSON to ensure it's well-formed.
-   *
-   * @param {unknown} data - The data to validate
-   * @returns {e.ValidationResult<string>} Validation result with JSON parse validation
-   */
-  protected validate(
-    data: this["_input"] | unknown,
-    ctx: ValidationContext<this>
-  ): e.ValidationResult<string> {
-    // First validate as string
-    const stringResult = super.validate(data as this["_input"], ctx);
-    if (!stringResult.success) {
-      return stringResult;
-    }
-
-    // Then validate as valid JSON
-    try {
-      JSON.parse(stringResult.data as string);
-      if (stringResult.success && stringResult.data)
-        super.validate(stringResult.data, ctx);
-      return stringResult;
-    } catch (error) {
-      ctx.addError(
-        new ValidationError(
-          ctx.getPath(),
-          this.errorMap.get("pattern") || "Invalid JSON format",
-          "invalid_json",
-          "valid JSON",
-          stringResult.data,
-          stringResult.data
-        )
-      );
-      return e.ValidationResult.fail<string>(ctx.getErrors());
-    }
-  }
 }
 
 export class CodeSchema extends StringSchema {

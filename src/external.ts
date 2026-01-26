@@ -15,7 +15,6 @@ import {
   HTMLSchema,
   IPAddressSchema,
   ISODateSchema,
-  JSONSchema,
   MacAddressSchema,
   PasswordSchema,
   PhoneNumberSchema,
@@ -29,9 +28,7 @@ import {
 } from "./string/index.js";
 import { CodeLanguages, ObjectShape, SchemaTypeAny } from "./types.js";
 import { AnySchema, NeverSchema, SchemaType, UnknownSchema } from "./schema.js";
-import v from "./index.js";
-
-// export * from "./types";
+import { JSONSchema } from "./json/index.js";
 
 export { Infer as infer } from "./types";
 

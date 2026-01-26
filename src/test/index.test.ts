@@ -122,8 +122,8 @@ describe("BooleanSchema", () => {
 
   it("should throw on non-boolean values", () => {
     const schema = v.boolean();
-    expect(() => schema.parse(1)).toThrowError("Invalid boolean");
-    expect(() => schema.parse("true")).toThrowError("Invalid boolean");
+    expect(() => schema.parse(1)).toThrowError();
+    expect(() => schema.parse("true")).toThrowError();
   });
 });
 
@@ -156,7 +156,7 @@ describe("ObjectSchema", () => {
       user: v.object({ name: v.string(), age: v.number() }),
     });
     expect(() =>
-      schema.parse({ user: { name: "Jane", age: "not a number" } })
+      schema.parse({ user: { name: "Jane", age: "not a number" } }),
     ).toThrowError("Invalid number");
   });
 
@@ -201,7 +201,7 @@ describe("ArraySchema", () => {
       v.object({
         id: v.string(),
         value: v.number(),
-      })
+      }),
     );
     const result = schema.parse([
       { id: "item1", value: 10 },

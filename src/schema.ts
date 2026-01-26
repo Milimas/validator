@@ -37,6 +37,7 @@ export abstract class SchemaType<Output = any, Input = Output> {
     ctx: ValidationContext,
   ): e.ValidationResult<Output> {
     const result = this.validate(data, ctx);
+    console.log("validateWithRefinements result:", result, this._def.type);
 
     // If base validation fails, skip refinements and return immediately
     if (!result.success) {
@@ -403,7 +404,7 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
     }
 
     // When dependency is satisfied, check if value is missing and add required error
-    if (data === undefined || data === null || data === "") {
+    if (!data) {
       ctx.addError(
         new ValidationError(
           ctx.getPath(),
@@ -434,7 +435,7 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
     }
 
     // When dependency is satisfied, check if value is missing and throw required error
-    if (data === undefined || data === null || data === "") {
+    if (!data) {
       ctx.addError(
         new ValidationError(
           ctx.getPath(),
@@ -466,7 +467,7 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
     }
 
     // When dependency is satisfied, check if value is missing and add required error
-    if (data === undefined || data === null || data === "") {
+    if (!data) {
       ctx.addError(
         new ValidationError(
           ctx.getPath(),

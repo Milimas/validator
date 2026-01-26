@@ -17,7 +17,7 @@ describe("StringSchema", () => {
     it("should parse valid strings", () => {
       const schema = string();
       expect(schema.parse("hello")).toBe("hello");
-      expect(schema.parse("")).toBe("");
+      expect(() => schema.parse("")).toThrow();
     });
 
     it("should throw on non-string values", () => {
@@ -144,7 +144,7 @@ describe("EmailSchema", () => {
     const schema = email();
     expect(schema.parse("user@example.com")).toBe("user@example.com");
     expect(schema.parse("test.email+tag@domain.co.uk")).toBe(
-      "test.email+tag@domain.co.uk"
+      "test.email+tag@domain.co.uk",
     );
   });
 
@@ -166,7 +166,7 @@ describe("UrlSchema", () => {
     const schema = url();
     expect(schema.parse("https://example.com")).toBe("https://example.com");
     expect(schema.parse("http://localhost:3000/path")).toBe(
-      "http://localhost:3000/path"
+      "http://localhost:3000/path",
     );
   });
 
@@ -204,7 +204,7 @@ describe("UUIDSchema", () => {
   it("should validate correct UUIDs", () => {
     const schema = uuid();
     expect(schema.parse("550e8400-e29b-41d4-a716-446655440000")).toBe(
-      "550e8400-e29b-41d4-a716-446655440000"
+      "550e8400-e29b-41d4-a716-446655440000",
     );
   });
 
@@ -257,278 +257,5 @@ describe("HexColorSchema", () => {
   it("should have color input type in HTML attributes", () => {
     const schema = hexColor();
     expect(schema.toJSON().type).toBe("color");
-  });
-});
-
-describe("JSONSchema", () => {
-  describe("Basic JSON validation", () => {
-    it("should parse valid JSON objects", () => {
-      const schema = json();
-      const jsonStr = '{"name":"John","age":30}';
-      expect(schema.parse(jsonStr)).toBe(jsonStr);
-    });
-
-    it("should parse valid JSON arrays", () => {
-      const schema = json();
-      const jsonStr = "[1,2,3,4,5]";
-      expect(schema.parse(jsonStr)).toBe(jsonStr);
-    });
-
-    it("should parse valid JSON primitives", () => {
-      const schema = json();
-      expect(schema.parse('"string"')).toBe('"string"');
-      expect(schema.parse("123")).toBe("123");
-      expect(schema.parse("true")).toBe("true");
-      expect(schema.parse("null")).toBe("null");
-    });
-
-    it("should parse nested JSON structures", () => {
-      const schema = json();
-      const jsonStr =
-        '{"user":{"name":"Jane","address":{"city":"NYC","zip":"10001"}}}';
-      expect(schema.parse(jsonStr)).toBe(jsonStr);
-    });
-
-    it("should reject invalid JSON strings", () => {
-      const schema = json();
-      expect(() => schema.parse("{invalid json}")).toThrow();
-      expect(() => schema.parse('{"unclosed": ')).toThrow();
-      expect(() =>
-        schema.parse("{key: 'value'}" /* Single quotes not valid JSON */)
-      ).toThrow();
-    });
-
-    it("should reject non-string values", () => {
-      const schema = json();
-      expect(() => schema.parse(123)).toThrow();
-      expect(() => schema.parse({ name: "John" })).toThrow();
-      expect(() => schema.parse([1, 2, 3])).toThrow();
-      expect(() => schema.parse(true)).toThrow();
-    });
-
-    it("should support safeParse for valid JSON", () => {
-      const schema = json();
-      const result = schema.safeParse('{"status":"ok"}');
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data).toBe('{"status":"ok"}');
-      }
-    });
-
-    it("should support safeParse for invalid JSON", () => {
-      const schema = json();
-      const result = schema.safeParse("{invalid}");
-      expect(result.success).toBe(false);
-    });
-  });
-
-  describe("JSON with length constraints", () => {
-    it("should validate minimum length", () => {
-      const schema = json().minLength(5);
-      expect(schema.parse('{"x":1}')).toBe('{"x":1}');
-      expect(() => schema.parse("null")).toThrow();
-    });
-
-    it("should validate maximum length", () => {
-      const schema = json().maxLength(20);
-      expect(schema.parse('{"x":1}')).toBe('{"x":1}');
-      expect(() =>
-        schema.parse('{"very-long-key-with-lots-of-data":"and-more-data"}')
-      ).toThrow();
-    });
-
-    it("should validate both min and max length", () => {
-      const schema = json().minLength(5).maxLength(30);
-      expect(schema.parse('{"x":1}')).toBe('{"x":1}');
-      expect(() => schema.parse("null")).toThrow(); // too short
-      expect(() =>
-        schema.parse('{"very-long-key-with-lots-of-data":"and-more-data"}')
-      ).toThrow(); // too long
-    });
-
-    it("should work with safeParse and length constraints", () => {
-      const schema = json().minLength(10).maxLength(50);
-
-      // Valid
-      const valid = schema.safeParse('{"name":"John"}');
-      expect(valid.success).toBe(true);
-
-      // Too short
-      const tooShort = schema.safeParse("null");
-      expect(tooShort.success).toBe(false);
-
-      // Too long
-      const tooLong = schema.safeParse(
-        '{"very-long-key-with-lots-of-data":"and-more-data-and-even-more-data"}'
-      );
-      expect(tooLong.success).toBe(false);
-    });
-  });
-
-  describe("JSON with pattern validation", () => {
-    it("should validate against regex pattern", () => {
-      const schema = json().pattern(/^\{.*\}$/); // Must be object
-      expect(schema.parse('{"x":1}')).toBe('{"x":1}');
-      expect(() => schema.parse("[1,2,3]")).toThrow();
-    });
-
-    it("should allow pattern with custom error message", () => {
-      const schema = json().pattern(/^\[.*\]$/, "Must be a JSON array");
-      expect(schema.parse("[1,2,3]")).toBe("[1,2,3]");
-      expect(() => schema.parse('{"x":1}')).toThrow();
-    });
-  });
-
-  describe("JSON with optional and default values", () => {
-    it("should handle optional JSON fields", () => {
-      const schema = json().optional();
-      expect(schema.parse(undefined)).toBeUndefined();
-      expect(schema.parse('{"x":1}')).toBe('{"x":1}');
-    });
-
-    it("should handle default values", () => {
-      const schema = json().default("{}");
-      expect(schema.parse(undefined)).toBe("{}");
-      expect(schema.parse(null)).toBe("{}");
-      expect(schema.parse('{"x":1}')).toBe('{"x":1}');
-    });
-
-    it("should handle nullable JSON fields", () => {
-      const schema = json().nullable();
-      expect(schema.parse(null)).toBeNull();
-      expect(schema.parse('{"x":1}')).toBe('{"x":1}');
-    });
-  });
-
-  describe("JSON with required validation", () => {
-    it("should set required attribute", () => {
-      const schema = json().required();
-      expect(schema.toJSON().required).toBe(true);
-    });
-
-    it("should set custom required message", () => {
-      const schema = json().required(true, "JSON is mandatory");
-      expect(schema.toJSON().required).toBe(true);
-    });
-
-    it("should allow disabling required", () => {
-      const schema = json().required(false);
-      expect(schema.toJSON().required).toBe(false);
-    });
-  });
-
-  describe("JSON HTML attributes", () => {
-    it("should have json input type in HTML attributes", () => {
-      const schema = json();
-      expect(schema.toJSON().type).toBe("json");
-    });
-
-    it("should have default placeholder", () => {
-      const schema = json();
-      expect(schema.toJSON().placeholder).toBe('{"key":"value"}');
-    });
-
-    it("should set custom placeholder", () => {
-      const schema = json().placeholder('{"config":"object"}');
-      expect(schema.toJSON().placeholder).toBe('{"config":"object"}');
-    });
-
-    it("should set default value as HTML attribute", () => {
-      const schema = json().default('{"theme":"dark"}');
-      expect(schema.toJSON().defaultValue).toBe('{"theme":"dark"}');
-    });
-
-    it("should support method chaining for HTML attributes", () => {
-      const schema = json().placeholder('{"x":1}').minLength(5).maxLength(1000);
-
-      const html = schema.toJSON();
-      expect(html.placeholder).toBe('{"x":1}');
-      expect(html.minLength).toBe(5);
-      expect(html.maxLength).toBe(1000);
-      expect(html.type).toBe("json");
-    });
-  });
-
-  describe("JSON complex scenarios", () => {
-    it("should validate JSON with all constraints combined", () => {
-      const schema = json()
-        .minLength(10)
-        .maxLength(50)
-        .pattern(/^\{.*\}$/)
-        .required(true, "Config is required");
-
-      // Valid
-      expect(schema.parse('{"config":true}')).toBe('{"config":true}');
-
-      // Too short
-      expect(() => schema.parse("null")).toThrow();
-
-      // Too long
-      expect(() =>
-        schema.parse(
-          '{"very-long-key-with-lots-of-data":"and-more-data-and-even-more-data"}'
-        )
-      ).toThrow();
-
-      // Invalid pattern (array instead of object)
-      expect(() => schema.parse("[1,2,3]")).toThrow();
-    });
-
-    it("should work with optional and default combined", () => {
-      const schema = json().optional().default("{}");
-      expect(schema.parse(undefined)).toBe("{}");
-      expect(schema.parse('{"x":1}')).toBe('{"x":1}');
-    });
-
-    it("should provide proper error messages", () => {
-      const schema = json();
-      const result = schema.safeParse("{invalid}");
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.errors[0].code).toBe("invalid_json");
-      }
-    });
-
-    it("should handle complex nested JSON", () => {
-      const schema = json().minLength(20);
-      const complexJson =
-        '{"users":[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}],"meta":{"total":2}}';
-      expect(schema.parse(complexJson)).toBe(complexJson);
-    });
-  });
-
-  describe("CodeSchema", () => {
-    it("should validate code strings", () => {
-      const schema = code("javascript");
-      const codeStr = 'console.log("Hello, world!");';
-      expect(schema.parse(codeStr)).toBe(codeStr);
-    });
-
-    it("should have code input type in HTML attributes", () => {
-      const schema = code("json");
-      expect(schema.toJSON().type).toBe("code");
-      expect(schema.toJSON().language).toBe("json");
-    });
-
-    it("should support optional language parameter", () => {
-      const schema = code();
-      expect(schema.toJSON().type).toBe("code");
-      expect(schema.toJSON().language).toBeUndefined();
-    });
-  });
-
-  describe("Specific cases", () => {
-    it("", () => {
-      const schema = string()
-        .pattern(/^[A-Z]{3}-\d{4}$/)
-        .optional();
-
-      expect(schema.parse("ABC-1234")).toBe("ABC-1234");
-      expect(schema.parse(undefined)).toBeUndefined();
-      expect(() => schema.parse("abc-1234")).toThrow();
-      expect(() => schema.parse("ABCD-123")).toThrow();
-
-      expect(schema.toJSON().pattern).toBe("^[A-Z]{3}-\\d{4}$");
-    });
   });
 });

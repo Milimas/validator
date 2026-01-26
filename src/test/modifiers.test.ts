@@ -102,8 +102,8 @@ describe("Schema Modifiers", () => {
 
     it("should work with empty string as default", () => {
       const schema = string().default("");
-      expect(schema.parse(undefined)).toBe("");
-      expect(schema.parse(null)).toBe("");
+      expect(() => schema.parse(undefined)).toThrow();
+      expect(() => schema.parse(null)).toThrow();
     });
   });
 

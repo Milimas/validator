@@ -1,5 +1,5 @@
 import { createValidationContext, ValidationContext } from "../context.js";
-import { e } from "../error.js";
+import { e, ValidationError } from "../error.js";
 import { DefaultSchema, SchemaType } from "../schema.js";
 import { ArrayDef, SchemaTypeAny } from "../types.js";
 import { TypeOf } from "../util.js";
@@ -69,6 +69,7 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
     this._def = {
       type: "array",
       items: [this.itemSchema._def],
+      defaultValue: undefined,
       required: true,
     };
     this.checks.push(
@@ -100,7 +101,7 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
           `Array must have at least ${this._def.minLength} items`,
         code: "too_small",
         immediate: false,
-      }
+      },
     );
 
     this.description = `Array of ${this.itemSchema.constructor.name}`;
@@ -139,9 +140,21 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
    * }
    */
   protected validate(
-    data: TypeOf<T>[] | [] = this._def.defaultValue || [],
-    ctx: ValidationContext<this> = createValidationContext<this>(data)
+    data: TypeOf<T>[] | undefined = this._def.defaultValue,
+    ctx: ValidationContext<this> = createValidationContext<this>(data!),
   ): e.ValidationResult<TypeOf<T>[]> {
+    if (!Array.isArray(data)) {
+      return e.ValidationResult.fail<TypeOf<T>[]>([
+        new ValidationError(
+          ctx.getPath(),
+          "Expected an array",
+          "invalid_type",
+          "array",
+          typeof data,
+          data,
+        ),
+      ]);
+    }
     const parsedItems: TypeOf<T>[] = [];
 
     for (let i = 0; i < data.length; i++) {
@@ -191,7 +204,7 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
    */
   minLength(
     min: number,
-    message: string = `Array must have at least ${min} items`
+    message: string = `Array must have at least ${min} items`,
   ): this {
     this._def.minLength = min;
     if (message) {
@@ -226,7 +239,7 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
    */
   maxLength(
     max: number,
-    message: string = `Array must have at most ${max} items`
+    message: string = `Array must have at most ${max} items`,
   ): this {
     this._def.maxLength = max;
     if (message) {

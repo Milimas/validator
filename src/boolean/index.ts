@@ -33,14 +33,23 @@ import { CheckboxDef } from "../types.js";
 export class BooleanSchema extends SchemaType<boolean> {
   public _def: CheckboxDef = {
     type: "checkbox",
-    defaultValue: false,
+    defaultValue: undefined,
     checked: false,
-    required: false,
+    required: true,
   };
 
   constructor() {
     super();
 
+    this.checks.push({
+      type: "refine",
+      check: (data: boolean) => data === true || data === false,
+      message: () => "Value must be a boolean",
+      code: "invalid_type",
+      expected: "boolean",
+      received: "non-boolean",
+      immediate: true,
+    });
     this.checks.push({
       type: "refine",
       check: (data: boolean) => typeof data === "boolean",
@@ -56,7 +65,7 @@ export class BooleanSchema extends SchemaType<boolean> {
 
   protected validate(
     data: boolean | unknown = this._def.defaultValue,
-    ctx: ValidationContext
+    ctx: ValidationContext,
   ): e.ValidationResult<boolean> {
     return e.ValidationResult.ok(data as boolean);
   }
