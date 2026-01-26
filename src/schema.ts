@@ -376,7 +376,7 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
         condition:
           typeof cond.condition === "string"
             ? cond.condition
-            : cond.condition.toString(),
+            : cond.condition.source,
       })),
     };
     this.description = `Conditionally Required ${
