@@ -80,15 +80,31 @@ export class ObjectSchema<
     private _isLoose: boolean = false,
   ) {
     super();
+    const defaultObject = Object.fromEntries(
+      Object.entries(this.shape)
+        .filter(
+          ([, schema]: [string, SchemaTypeAny]) =>
+            schema._def.defaultValue !== undefined,
+        )
+        .map(([key, schema]: [string, SchemaTypeAny]) => [
+          key,
+          schema._def.defaultValue,
+        ]),
+    ) as { [K in keyof Shape]: Shape[K]["_def"]["defaultValue"] };
+    const requiredProperties = Object.keys(this.shape).every(
+      (key) => this.shape[key]._def.required,
+    );
     this._def = {
       type: "object",
       required: true,
+      requiredProperties,
       properties: Object.fromEntries(
         Object.entries(this.shape).map(
           ([key, schema]: [string, SchemaTypeAny]) => [key, schema._def],
         ),
       ) as { [K in keyof Shape]: Shape[K]["_def"] },
-      defaultValue: undefined,
+      defaultValue:
+        Object.keys(defaultObject).length > 0 ? defaultObject : undefined,
     } as ObjectDef<Shape>;
 
     this.description = `Object with properties: ${Object.keys(shape).join(

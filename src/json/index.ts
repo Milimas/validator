@@ -1,10 +1,10 @@
-import { ArraySchema } from "../array";
-import { BooleanSchema } from "../boolean";
-import { NumberSchema } from "../number";
-import { RecordSchema } from "../record";
-import { UnknownSchema } from "../schema";
-import { StringSchema } from "../string";
-import { UnionSchema } from "../union";
+import { ArraySchema } from "../array/index.js";
+import { BooleanSchema } from "../boolean/index.js";
+import { NumberSchema } from "../number/index.js";
+import { RecordSchema } from "../record/index.js";
+import { UnknownSchema } from "../schema.js";
+import { StringSchema } from "../string/index.js";
+import { UnionSchema } from "../union/index.js";
 
 export class JSONSchema extends UnionSchema<
   [

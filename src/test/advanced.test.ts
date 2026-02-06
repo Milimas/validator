@@ -1011,4 +1011,50 @@ describe("Real-world Complex Schemas", () => {
       expect(result2).toEqual({ level: 5, bonusPoints: 200 });
     });
   });
+
+  describe("should parse dependsOn with default values", () => {
+    it("with default value", () => {
+      const schema = object({
+        role: enumSchema(["user", "admin"] as const).default("user"),
+        adminCode: string()
+          .default("DEFAULT_CODE")
+          .dependsOn([
+            {
+              field: "role",
+              condition: "^admin$",
+            },
+          ]),
+      });
+
+      const result1 = schema.parse({});
+      expect(result1).toEqual({ role: "user" });
+
+      const result2 = schema.parse({
+        role: "admin",
+      });
+      expect(result2).toEqual({ role: "admin", adminCode: "DEFAULT_CODE" });
+    });
+    it("with required field as default", () => {
+      const schema = object({
+        role: enumSchema(["user", "admin"] as const).default("admin"),
+        adminCode: string()
+          .required()
+          .dependsOn([
+            {
+              field: "role",
+              condition: "^admin$",
+            },
+          ])
+          .default("REQUIRED_CODE"),
+      });
+
+      const result1 = schema.parse(undefined);
+      expect(result1).toEqual({ role: "admin", adminCode: "REQUIRED_CODE" });
+
+      const result2 = schema.parse({
+        role: "admin",
+      });
+      expect(result2).toEqual({ role: "admin", adminCode: "REQUIRED_CODE" });
+    });
+  });
 });

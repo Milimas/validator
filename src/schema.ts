@@ -37,7 +37,6 @@ export abstract class SchemaType<Output = any, Input = Output> {
     ctx: ValidationContext,
   ): e.ValidationResult<Output> {
     const result = this.validate(data, ctx);
-    console.log("validateWithRefinements result:", result, this._def.type);
 
     // If base validation fails, skip refinements and return immediately
     if (!result.success) {
