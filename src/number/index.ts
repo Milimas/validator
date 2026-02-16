@@ -227,9 +227,9 @@ export class NumberSchema extends SchemaType<number> {
     const jsonSchemaFormat: JsonSchemaFormat = {
       type: "number",
       description: this.description || undefined,
-      minimum: this._def.min,
-      maximum: this._def.max,
     };
+    if (this._def.min !== undefined) jsonSchemaFormat.minimum = this._def.min;
+    if (this._def.max !== undefined) jsonSchemaFormat.maximum = this._def.max;
     return jsonSchemaFormat;
   }
 }

@@ -157,21 +157,26 @@ export type RefineFunction<T> = (data: T) => boolean | Promise<boolean>;
 
 export type RefineAsyncFunction<T> = (data: T) => Promise<boolean>;
 
-export type JsonSchemaFormat = {
-  type:
-    | "union"
-    | "null"
-    | "boolean"
-    | "object"
-    | "array"
-    | "number"
-    | "string"
-    | "integer";
-  properties?: Record<string, unknown>;
-  required?: string[];
-  additionalProperties?: Record<string, unknown> | boolean;
-  description?: string | undefined;
-  [key: string]: unknown;
-} & {
+export type JsonSchemaFormat = (
+  | {
+      type:
+        | "null"
+        | "boolean"
+        | "object"
+        | "array"
+        | "number"
+        | "string"
+        | "integer";
+      properties?: Record<string, unknown>;
+      required?: string[];
+      additionalProperties?: Record<string, unknown> | boolean;
+      description?: string | undefined;
+      [key: string]: unknown;
+    }
+  | {
+      anyOf: JsonSchemaFormat[];
+      description?: string | undefined;
+    }
+) & {
   __brand?: never;
 };

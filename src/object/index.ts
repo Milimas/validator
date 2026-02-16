@@ -105,6 +105,7 @@ export class ObjectSchema<
       ) as { [K in keyof Shape]: Shape[K]["_def"] },
       defaultValue:
         Object.keys(defaultObject).length > 0 ? defaultObject : undefined,
+      description: `Object with properties: ${Object.keys(this.shape).join(", ")}`,
     } as ObjectDef<Shape>;
 
     this.description = `Object with properties: ${Object.keys(shape).join(
@@ -391,6 +392,7 @@ export class ObjectSchema<
       properties,
       required,
       description: this.description,
+      additionalProperties: this._isLoose,
     };
   }
 

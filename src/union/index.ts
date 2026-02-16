@@ -102,9 +102,8 @@ export class UnionSchema<
 
   toLangchainJSON(): JsonSchemaFormat {
     const jsonSchemaFormat: JsonSchemaFormat = {
-      type: "union",
-      description: this.description || undefined,
       anyOf: this.schemas.map((s) => s.toLangchainJSON()),
+      description: this.description || undefined,
     };
     return jsonSchemaFormat;
   }
