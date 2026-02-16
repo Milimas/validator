@@ -1,7 +1,7 @@
 import { ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
-import { Infer, SchemaTypeAny, UnionDef } from "../types.js";
+import { Infer, JsonSchemaFormat, SchemaTypeAny, UnionDef } from "../types.js";
 import { TypeOf } from "../util.js";
 
 /**
@@ -98,5 +98,14 @@ export class UnionSchema<
       required: this._def.required,
       anyOf: this.schemas.map((s) => s.toJSON()),
     };
+  }
+
+  toLangchainJSON(): JsonSchemaFormat {
+    const jsonSchemaFormat: JsonSchemaFormat = {
+      type: "union",
+      description: this.description || undefined,
+      anyOf: this.schemas.map((s) => s.toLangchainJSON()),
+    };
+    return jsonSchemaFormat;
   }
 }

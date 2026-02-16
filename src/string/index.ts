@@ -1,7 +1,12 @@
 import { ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
-import { CodeLanguages, CodeDef, StringDef } from "../types.js";
+import {
+  CodeLanguages,
+  CodeDef,
+  StringDef,
+  JsonSchemaFormat,
+} from "../types.js";
 
 /**
  * Generic string validation schema for flexible text input validation.
@@ -324,6 +329,23 @@ export class StringSchema extends SchemaType<string> {
     this.errorMap.set("required", message);
     this._def = { ...this._def, required };
     return this;
+  }
+
+  toJSON() {
+    return this._def;
+  }
+
+  toLangchainJSON(): JsonSchemaFormat {
+    const jsonSchemaFormat: JsonSchemaFormat = {
+      type: "string",
+      description: this.description || undefined,
+    };
+
+    if (this._pattern) {
+      jsonSchemaFormat.pattern = this._pattern.source;
+    }
+
+    return jsonSchemaFormat;
   }
 }
 

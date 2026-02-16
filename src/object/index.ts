@@ -379,13 +379,24 @@ export class ObjectSchema<
    */
   toLangchainJSON(): JsonSchemaFormat {
     const properties: Record<string, JsonSchemaFormat> = {};
+    const required: string[] = [];
     for (const key in this.shape) {
       properties[key] = this.shape[key].toLangchainJSON();
+      if (this.shape[key]._def.required) {
+        required.push(key);
+      }
     }
     return {
       type: "object",
       properties,
+      required,
       description: this.description,
+    };
+  }
+
+  toJSON() {
+    return {
+      ...this._def,
     };
   }
 }

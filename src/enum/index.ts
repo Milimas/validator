@@ -1,7 +1,7 @@
 import { ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
 import { SchemaType } from "../schema.js";
-import { SelectDef } from "../types.js";
+import { JsonSchemaFormat, SelectDef } from "../types.js";
 
 /**
  * Enumeration schema for validating against a fixed set of allowed values.
@@ -106,8 +106,21 @@ export class EnumSchema<const T extends readonly string[]> extends SchemaType<
    */
   protected validate(
     data: this["_input"] | unknown = this._def.defaultValue,
-    ctx: ValidationContext
+    ctx: ValidationContext,
   ): e.ValidationResult<T[number]> {
     return e.ValidationResult.ok<T[number]>(data as T[number]);
+  }
+
+  toJSON() {
+    return this._def;
+  }
+
+  toLangchainJSON(): JsonSchemaFormat {
+    const jsonSchemaFormat: JsonSchemaFormat = {
+      type: "string",
+      enum: this.values,
+      description: this.description || undefined,
+    };
+    return jsonSchemaFormat;
   }
 }

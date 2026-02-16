@@ -1,7 +1,7 @@
 import { createValidationContext, ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
 import { DefaultSchema, SchemaType } from "../schema.js";
-import { ArrayDef, SchemaTypeAny } from "../types.js";
+import { ArrayDef, JsonSchemaFormat, SchemaTypeAny } from "../types.js";
 import { TypeOf } from "../util.js";
 
 /**
@@ -48,7 +48,7 @@ import { TypeOf } from "../util.js";
 export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
   TypeOf<T>[]
 > {
-  public _def: ArrayDef<T>;
+  public _def: ArrayDef<T["_def"]>;
 
   /**
    * Initializes the ArraySchema with an item schema.
@@ -68,7 +68,7 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
     super();
     this._def = {
       type: "array",
-      items: [this.itemSchema],
+      items: [this.itemSchema._def],
       defaultValue: undefined,
       required: true,
     };
@@ -253,5 +253,18 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
   default(value: T["_input"][]): DefaultSchema<this> {
     this.description += ` (default: ${JSON.stringify(value)})`;
     return new DefaultSchema(this, value as T["_input"][]);
+  }
+
+  toLangchainJSON(): JsonSchemaFormat {
+    const jsonSchemaFormat: JsonSchemaFormat = {
+      type: "array",
+      description: this.description || undefined,
+      items: this.itemSchema.toLangchainJSON(),
+    };
+    return jsonSchemaFormat;
+  }
+
+  toJSON() {
+    return this._def;
   }
 }

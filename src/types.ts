@@ -70,9 +70,7 @@ export interface SelectDef<T = string> extends BaseDef<T> {
   options: readonly T[];
 }
 
-export interface ArrayDef<ItemType extends SchemaTypeAny> extends BaseDef<
-  ItemType["_def"][]
-> {
+export interface ArrayDef<ItemType extends AnyDef> extends BaseDef<ItemType[]> {
   // defaultValue?: ItemType[];
   items: ItemType[];
   minLength?: number;
@@ -161,6 +159,7 @@ export type RefineAsyncFunction<T> = (data: T) => Promise<boolean>;
 
 export type JsonSchemaFormat = {
   type:
+    | "union"
     | "null"
     | "boolean"
     | "object"

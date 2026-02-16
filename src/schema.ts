@@ -4,6 +4,7 @@ import {
   ValidationContext,
 } from "./context.js";
 import { e, ValidationError } from "./error.js";
+import { ObjectSchema } from "./object/index.js";
 import {
   Condition,
   AnyDef,
@@ -13,6 +14,7 @@ import {
   SchemaTypeAny,
   JsonSchemaFormat,
 } from "./types.js";
+import { DeepReplace } from "./util.js";
 
 export abstract class SchemaType<Output = any, Input = Output> {
   public abstract _def: AnyDef;
@@ -180,53 +182,50 @@ export abstract class SchemaType<Output = any, Input = Output> {
     return this;
   }
 
-  toJSON(): this["_def"] {
-    return this._def;
-  }
+  abstract toJSON(): this["_def"];
+  abstract toLangchainJSON(): JsonSchemaFormat;
 
-  toLangchainJSON(): JsonSchemaFormat {
-    const jsonSchemaFormat: JsonSchemaFormat = {
-      type: "string",
-      description: this.description || undefined,
-    };
+  // toLangchainJSON(): JsonSchemaFormat {
+  //   const jsonSchemaFormat: JsonSchemaFormat = {
+  //     type: "string",
+  //     description: this.description || undefined,
+  //   };
 
-    if (this._def.properties) {
-      jsonSchemaFormat.properties ??= {};
-      for (const [key, value] of Object.entries(this._def.properties) as [
-        string,
-        SchemaTypeAny,
-      ][]) {
-        jsonSchemaFormat.properties[key] = value.toLangchainJSON();
-      }
-    }
+  //   if (this.toLangchainJSON) return this.toLangchainJSON();
 
-    if (Array.isArray(this._def.items) && this._def.items.length > 0) {
-      jsonSchemaFormat.items = [this._def.items[0].toLangchainJSON()];
-    }
+  //   if (this._def.properties) {
+  //     jsonSchemaFormat.properties ??= {};
+  //     for (const [key, value] of Object.entries(this._def.properties) as [
+  //       string,
+  //       SchemaTypeAny,
+  //     ][]) {
+  //       jsonSchemaFormat.properties[key] = value.toLangchainJSON();
+  //     }
+  //   }
 
-    switch (this._def.type) {
-      case "number":
-        jsonSchemaFormat.type = "number";
-        break;
-      case "checkbox":
-      case "radio":
-        jsonSchemaFormat.type = "boolean";
-        break;
-      case "select":
-        jsonSchemaFormat.type = "string";
-        break;
-      case "array":
-        jsonSchemaFormat.type = "array";
-        break;
-      case "object":
-      case "record":
-        jsonSchemaFormat.type = "object";
-        break;
-      default:
-        jsonSchemaFormat.type = "string";
-    }
-    return jsonSchemaFormat;
-  }
+  //   switch (this._def.type) {
+  //     case "number":
+  //       jsonSchemaFormat.type = "number";
+  //       break;
+  //     case "checkbox":
+  //     case "radio":
+  //       jsonSchemaFormat.type = "boolean";
+  //       break;
+  //     case "select":
+  //       jsonSchemaFormat.type = "string";
+  //       break;
+  //     case "array":
+  //       jsonSchemaFormat.type = "array";
+  //       break;
+  //     case "object":
+  //     case "record":
+  //       jsonSchemaFormat.type = "object";
+  //       break;
+  //     default:
+  //       jsonSchemaFormat.type = "string";
+  //   }
+  //   return jsonSchemaFormat;
+  // }
 
   describe(description: string): this {
     this.description = description;
@@ -290,6 +289,10 @@ export class OptionalSchema<T extends SchemaTypeAny> extends SchemaType<
       description: this.description || baseFormat.description,
     };
   }
+
+  toJSON() {
+    return this.inner.toJSON();
+  }
 }
 
 export class NullableSchema<T extends SchemaTypeAny> extends SchemaType<
@@ -301,6 +304,7 @@ export class NullableSchema<T extends SchemaTypeAny> extends SchemaType<
     this._def = {
       ...inner._def,
     };
+    this.inner._def = this._def; // Ensure inner schema's _def is consistent with nullable wrapper
     this.description = `Nullable ${
       inner.description || inner.constructor.name
     }`;
@@ -340,6 +344,18 @@ export class NullableSchema<T extends SchemaTypeAny> extends SchemaType<
     }
     return this.inner.safeParse(data, ctx);
   }
+
+  toJSON(): ReturnType<typeof this.inner.toJSON> {
+    return this.inner.toJSON();
+  }
+
+  toLangchainJSON(): JsonSchemaFormat {
+    const baseFormat = this.inner.toLangchainJSON();
+    return {
+      ...baseFormat,
+      description: this.description || baseFormat.description,
+    };
+  }
 }
 
 export class DefaultSchema<T extends SchemaTypeAny> extends SchemaType<
@@ -357,6 +373,7 @@ export class DefaultSchema<T extends SchemaTypeAny> extends SchemaType<
       ...inner._def,
       defaultValue: defaultValue,
     };
+    this.inner._def = this._def; // Ensure inner schema's _def is updated with the default value
     this.description = `Default ${inner.description || inner.constructor.name}`;
   }
 
@@ -390,6 +407,18 @@ export class DefaultSchema<T extends SchemaTypeAny> extends SchemaType<
     }
     return this.inner.safeParse(data, ctx);
   }
+
+  toJSON(): ReturnType<typeof this.inner.toJSON> {
+    return this.inner.toJSON();
+  }
+
+  toLangchainJSON(): JsonSchemaFormat {
+    const baseFormat = this.inner.toLangchainJSON();
+    return {
+      ...baseFormat,
+      description: this.description || baseFormat.description,
+    };
+  }
 }
 
 export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
@@ -411,6 +440,7 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
             : cond.condition.source,
       })),
     };
+    this.inner._def = this._def; // Ensure inner schema's _def is consistent with dependsOn wrapper
     this.description = `Conditionally Required ${
       inner.description || inner.constructor.name
     }`;
@@ -511,6 +541,18 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
 
     return this.inner.safeParse(data, ctx);
   }
+
+  toJSON(): ReturnType<typeof this.inner.toJSON> {
+    return this.inner.toJSON();
+  }
+
+  toLangchainJSON(): JsonSchemaFormat {
+    const baseFormat = this.inner.toLangchainJSON();
+    return {
+      ...baseFormat,
+      description: this.description || baseFormat.description,
+    };
+  }
 }
 
 export class AnySchema extends SchemaType<any> {
@@ -528,6 +570,18 @@ export class AnySchema extends SchemaType<any> {
     ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): e.ValidationResult<any> {
     return e.ValidationResult.ok<any>(data);
+  }
+
+  toJSON() {
+    return this._def;
+  }
+
+  toLangchainJSON(): JsonSchemaFormat {
+    const jsonSchemaFormat: JsonSchemaFormat = {
+      type: "string",
+      description: this.description || undefined,
+    };
+    return jsonSchemaFormat;
   }
 }
 
@@ -557,6 +611,18 @@ export class NeverSchema extends SchemaType<never, any> {
     );
     return e.ValidationResult.fail<never>(ctx.getErrors());
   }
+
+  toJSON() {
+    return this._def;
+  }
+
+  toLangchainJSON(): JsonSchemaFormat {
+    const jsonSchemaFormat: JsonSchemaFormat = {
+      type: "string",
+      description: this.description || undefined,
+    };
+    return jsonSchemaFormat;
+  }
 }
 
 export class UnknownSchema extends SchemaType<unknown> {
@@ -574,5 +640,17 @@ export class UnknownSchema extends SchemaType<unknown> {
     ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): e.ValidationResult<unknown> {
     return e.ValidationResult.ok<unknown>(data);
+  }
+
+  toJSON() {
+    return this._def;
+  }
+
+  toLangchainJSON(): JsonSchemaFormat {
+    const jsonSchemaFormat: JsonSchemaFormat = {
+      type: "string",
+      description: this.description || undefined,
+    };
+    return jsonSchemaFormat;
   }
 }

@@ -62,3 +62,11 @@ export type LooseOmit<T, K extends PropertyKey> = Omit<
   K
 > &
   WithIndex<T>;
+
+export type DeepReplace<T, From, To> = T extends From
+  ? To
+  : T extends readonly (infer U)[]
+    ? readonly DeepReplace<U, From, To>[]
+    : T extends object
+      ? { [K in keyof T]: DeepReplace<T[K], From, To> }
+      : T;

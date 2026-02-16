@@ -26,4 +26,8 @@ export class JSONSchema extends UnionSchema<
     this._def.type = "json";
     this.description = "JSON value (string, number, boolean, object, or array)";
   }
+
+  toJSON() {
+    return this._def;
+  }
 }

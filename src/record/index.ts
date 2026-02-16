@@ -1,7 +1,14 @@
 import { e, ValidationError } from "../error.js";
 import { ValidationContext } from "../index.js";
-import { SchemaType } from "../schema.js";
-import { RecordDef, SchemaTypeAny, JsonSchemaFormat, Infer } from "../types.js";
+import { SchemaType, UnknownSchema } from "../schema.js";
+import { StringSchema } from "../string/index.js";
+import {
+  RecordDef,
+  SchemaTypeAny,
+  JsonSchemaFormat,
+  Infer,
+  StringDef,
+} from "../types.js";
 
 /**
  * Record schema for validating objects with dynamic string keys and uniform value types.
@@ -22,50 +29,25 @@ import { RecordDef, SchemaTypeAny, JsonSchemaFormat, Infer } from "../types.js";
  * configSchema.parse({ theme: "dark", lang: "en" }); // Valid
  */
 export class RecordSchema<
-  TValue extends SchemaTypeAny,
-  TKey extends SchemaTypeAny = SchemaType<string>,
+  TValue extends SchemaTypeAny = SchemaTypeAny,
+  TKey extends StringSchema = StringSchema,
 > extends SchemaType<Record<string, Infer<TValue>>> {
-  public _def: RecordDef<TKey["_def"]> = {
+  public _def: RecordDef<TValue["_def"]> = {
     type: "record" as const,
-    keySchema: {} as TValue["_def"],
-    valueSchema: {} as TKey["_def"],
+    keySchema: {} as TKey["_def"],
+    valueSchema: {} as TValue["_def"],
     required: true,
   };
 
   constructor(
     private readonly valueSchema: TValue,
-    private readonly keySchema: TKey = new (class extends SchemaType<string> {
-      _def = {
-        type: "text" as const,
-        required: true,
-        defaultValue: undefined,
-      };
-      protected validate(
-        data: this["_input"] | unknown = this._def.defaultValue,
-
-        ctx: ValidationContext<this>,
-      ): e.ValidationResult<string> {
-        if (typeof data !== "string") {
-          return e.ValidationResult.fail([
-            new ValidationError(
-              [],
-              "Key must be a string",
-              "invalid_type",
-              "string",
-              typeof data,
-              data,
-            ),
-          ]);
-        }
-        return e.ValidationResult.ok(data);
-      }
-    })() as unknown as TKey,
+    private readonly keySchema: TKey,
   ) {
     super();
     this._def = {
       type: "record",
       keySchema: keySchema.toJSON(),
-      valueSchema: valueSchema.toJSON(),
+      valueSchema: valueSchema.toJSON() as TValue["_def"],
       required: true,
       defaultValue: undefined,
     };
@@ -122,7 +104,7 @@ export class RecordSchema<
    * Serializes the record schema to JSON for form rendering.
    * Returns a record type with both key and value schemas for frontend validation.
    */
-  toJSON(): this["_def"] {
+  toJSON() {
     return {
       type: "record" as const,
       keySchema: this.keySchema.toJSON(),

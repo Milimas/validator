@@ -1,7 +1,7 @@
 import { ValidationContext } from "../context.js";
 import { e, ValidationError } from "../error.js";
 import { DefaultSchema, SchemaType } from "../schema.js";
-import { CheckboxDef } from "../types.js";
+import { CheckboxDef, JsonSchemaFormat } from "../types.js";
 
 /**
  * Boolean schema for validating true/false values and checkbox inputs.
@@ -74,5 +74,17 @@ export class BooleanSchema extends SchemaType<boolean> {
     this._def.checked = value;
     this.description += ` (default: ${value})`;
     return new DefaultSchema(this, value);
+  }
+
+  toJSON() {
+    return this._def;
+  }
+
+  toLangchainJSON(): JsonSchemaFormat {
+    const jsonSchemaFormat: JsonSchemaFormat = {
+      type: "boolean",
+      description: this.description || undefined,
+    };
+    return jsonSchemaFormat;
   }
 }

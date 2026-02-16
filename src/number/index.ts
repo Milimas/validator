@@ -1,7 +1,7 @@
 import { e, ValidationError } from "../error.js";
 import { ValidationContext } from "../index.js";
 import { SchemaType } from "../schema.js";
-import { NumberDef } from "../types.js";
+import { JsonSchemaFormat, NumberDef } from "../types.js";
 
 /**
  * Numeric validation schema for integer and floating-point number validation.
@@ -83,7 +83,7 @@ export class NumberSchema extends SchemaType<number> {
         message: () => "Number must be finite",
         code: "not_finite",
         immediate: true,
-      }
+      },
     );
 
     this.description = "Number";
@@ -119,7 +119,7 @@ export class NumberSchema extends SchemaType<number> {
    */
   protected validate(
     data: this["_input"] | unknown = this._def.defaultValue,
-    ctx: ValidationContext
+    ctx: ValidationContext,
   ): e.ValidationResult<number> {
     return e.ValidationResult.ok<number>(data as number);
   }
@@ -147,7 +147,7 @@ export class NumberSchema extends SchemaType<number> {
    */
   min(
     value: number,
-    message: string = `Number must be greater than or equal to ${value}`
+    message: string = `Number must be greater than or equal to ${value}`,
   ): this {
     this.errorMap.set("min", message);
     this._def = { ...this._def, min: value };
@@ -180,7 +180,7 @@ export class NumberSchema extends SchemaType<number> {
    */
   max(
     value: number,
-    message: string = `Number must be less than or equal to ${value}`
+    message: string = `Number must be less than or equal to ${value}`,
   ): this {
     this.errorMap.set("max", message);
     this._def = { ...this._def, max: value };
@@ -194,7 +194,7 @@ export class NumberSchema extends SchemaType<number> {
     const originalValidate = this.validate.bind(this);
     this.validate = (
       data: this["_input"] | unknown = this._def.defaultValue,
-      ctx: ValidationContext<this>
+      ctx: ValidationContext<this>,
     ): e.ValidationResult<number> => {
       const result = originalValidate(data, ctx);
       if (!result.success) {
@@ -208,7 +208,7 @@ export class NumberSchema extends SchemaType<number> {
             "not_integer",
             "number",
             "number",
-            result.data
+            result.data,
           ),
         ]);
       }
@@ -217,5 +217,19 @@ export class NumberSchema extends SchemaType<number> {
 
     this.description += ` (integer only)`;
     return this;
+  }
+
+  toJSON() {
+    return this._def;
+  }
+
+  toLangchainJSON(): JsonSchemaFormat {
+    const jsonSchemaFormat: JsonSchemaFormat = {
+      type: "number",
+      description: this.description || undefined,
+      minimum: this._def.min,
+      maximum: this._def.max,
+    };
+    return jsonSchemaFormat;
   }
 }
