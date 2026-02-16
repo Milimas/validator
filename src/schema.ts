@@ -198,6 +198,16 @@ export abstract class SchemaType<Output = any, Input = Output> {
       case "radio":
         jsonSchemaFormat.type = "boolean";
         break;
+      case "select":
+        jsonSchemaFormat.type = "string";
+        break;
+      case "array":
+        jsonSchemaFormat.type = "array";
+        break;
+      case "object":
+      case "record":
+        jsonSchemaFormat.type = "object";
+        break;
       default:
         jsonSchemaFormat.type = "string";
     }
