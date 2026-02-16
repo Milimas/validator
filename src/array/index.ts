@@ -48,7 +48,7 @@ import { TypeOf } from "../util.js";
 export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
   TypeOf<T>[]
 > {
-  public _def: ArrayDef<T["_def"]>;
+  public _def: ArrayDef<T>;
 
   /**
    * Initializes the ArraySchema with an item schema.
@@ -68,7 +68,7 @@ export class ArraySchema<T extends SchemaTypeAny> extends SchemaType<
     super();
     this._def = {
       type: "array",
-      items: [this.itemSchema._def],
+      items: [this.itemSchema],
       defaultValue: undefined,
       required: true,
     };

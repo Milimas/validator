@@ -190,6 +190,20 @@ export abstract class SchemaType<Output = any, Input = Output> {
       description: this.description || undefined,
     };
 
+    if (this._def.properties) {
+      jsonSchemaFormat.properties ??= {};
+      for (const [key, value] of Object.entries(this._def.properties) as [
+        string,
+        SchemaTypeAny,
+      ][]) {
+        jsonSchemaFormat.properties[key] = value.toLangchainJSON();
+      }
+    }
+
+    if (Array.isArray(this._def.items) && this._def.items.length > 0) {
+      jsonSchemaFormat.items = [this._def.items[0].toLangchainJSON()];
+    }
+
     switch (this._def.type) {
       case "number":
         jsonSchemaFormat.type = "number";
@@ -267,6 +281,14 @@ export class OptionalSchema<T extends SchemaTypeAny> extends SchemaType<
       return e.ValidationResult.ok<undefined>(data as undefined);
     }
     return this.inner.safeParse(data, ctx);
+  }
+
+  toLangchainJSON(): JsonSchemaFormat {
+    const baseFormat = this.inner.toLangchainJSON();
+    return {
+      ...baseFormat,
+      description: this.description || baseFormat.description,
+    };
   }
 }
 

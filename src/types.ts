@@ -18,7 +18,7 @@ export type Condition = {
 
 export type RefinementCheck<
   S extends SchemaTypeAny = SchemaTypeAny,
-  Output = S["_output"]
+  Output = S["_output"],
 > =
   | {
       type: "refine";
@@ -58,8 +58,9 @@ export interface NumberDef extends BaseDef<number> {
   step?: number;
 }
 
-export interface FileDef
-  extends BaseDef<Base64URLString | ArrayBufferLike | null> {
+export interface FileDef extends BaseDef<
+  Base64URLString | ArrayBufferLike | null
+> {
   accept?: string;
   multiple?: boolean;
 }
@@ -69,7 +70,9 @@ export interface SelectDef<T = string> extends BaseDef<T> {
   options: readonly T[];
 }
 
-export interface ArrayDef<ItemType> extends BaseDef<ItemType[]> {
+export interface ArrayDef<ItemType extends SchemaTypeAny> extends BaseDef<
+  ItemType["_def"][]
+> {
   // defaultValue?: ItemType[];
   items: ItemType[];
   minLength?: number;
@@ -85,20 +88,22 @@ export interface ObjectDef<
     [K in keyof Shape]: Shape[K]["_def"];
   } = {
     [K in keyof Shape]: Shape[K]["_def"];
-  }
+  },
 > extends BaseDef<DefaultType> {
   properties: TProperties;
   minLength?: number;
   maxLength?: number;
 }
 
-export interface UnionDef<T extends readonly any[] = readonly any[]>
-  extends BaseDef<T[number]> {
+export interface UnionDef<
+  T extends readonly any[] = readonly any[],
+> extends BaseDef<T[number]> {
   anyOf?: T;
 }
 
-export interface RecordDef<D extends BaseDef<any>>
-  extends BaseDef<Record<string, D>> {
+export interface RecordDef<D extends BaseDef<any>> extends BaseDef<
+  Record<string, D>
+> {
   keySchema: StringDef;
   valueSchema: D;
 }
