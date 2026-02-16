@@ -624,10 +624,10 @@ export function record<TValue extends SchemaTypeAny>(
  *   '456': false
  * });
  */
-export function record<
-  TKey extends SchemaType<String>,
-  TValue extends SchemaTypeAny,
->(keySchema: TKey, valueSchema: TValue): RecordSchema<TValue, TKey>;
+export function record<TKey extends StringSchema, TValue extends SchemaTypeAny>(
+  keySchema: TKey,
+  valueSchema: TValue,
+): RecordSchema<TValue, TKey>;
 
 /**
  * Factory function overload implementation for creating RecordSchema instances.
@@ -659,15 +659,15 @@ export function record<
  *   '456': false
  * });
  */
-export function record<
-  TKey extends SchemaType<String>,
-  TValue extends SchemaTypeAny,
->(
+export function record<TKey extends StringSchema, TValue extends SchemaTypeAny>(
   keySchemaOrValue: TKey | TValue,
   valueSchemaMaybe?: TValue,
-): RecordSchema<TValue, SchemaTypeAny> {
+): RecordSchema<TValue, TKey> {
   if (valueSchemaMaybe === undefined) {
-    return new RecordSchema(keySchemaOrValue as TValue);
+    return new RecordSchema(
+      keySchemaOrValue as TValue,
+      new StringSchema() as TKey,
+    );
   }
 
   return new RecordSchema(valueSchemaMaybe, keySchemaOrValue as TKey);
@@ -720,15 +720,15 @@ function toJSONSchema<R extends ReturnType<SchemaTypeAny["toJSON"]>>(
   return schema.toJSON() as R;
 }
 
-function fromJSONSchema(
-  schema: ReturnType<SchemaTypeAny["toJSON"]>,
-): SchemaTypeAny {
-  switch (schema.type) {
-    case "text":
-      return string();
-  }
-  throw new Error("Not implemented");
-}
+// function fromJSONSchema(
+//   schema: ReturnType<SchemaTypeAny["toJSON"]>,
+// ): SchemaTypeAny {
+//   switch (schema.type) {
+//     case "text":
+//       return string();
+//   }
+//   throw new Error("Not implemented");
+// }
 
 export type { SchemaTypeAny };
 export { SchemaType };

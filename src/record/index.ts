@@ -23,7 +23,7 @@ import { RecordDef, SchemaTypeAny, JsonSchemaFormat, Infer } from "../types.js";
  */
 export class RecordSchema<
   TValue extends SchemaTypeAny,
-  TKey extends SchemaTypeAny = SchemaType<string>
+  TKey extends SchemaTypeAny = SchemaType<string>,
 > extends SchemaType<Record<string, Infer<TValue>>> {
   public _def: RecordDef<TKey["_def"]> = {
     type: "record" as const,
@@ -43,7 +43,7 @@ export class RecordSchema<
       protected validate(
         data: this["_input"] | unknown = this._def.defaultValue,
 
-        ctx: ValidationContext<this>
+        ctx: ValidationContext<this>,
       ): e.ValidationResult<string> {
         if (typeof data !== "string") {
           return e.ValidationResult.fail([
@@ -53,13 +53,13 @@ export class RecordSchema<
               "invalid_type",
               "string",
               typeof data,
-              data
+              data,
             ),
           ]);
         }
         return e.ValidationResult.ok(data);
       }
-    })() as unknown as TKey
+    })() as unknown as TKey,
   ) {
     super();
     this._def = {
@@ -76,7 +76,7 @@ export class RecordSchema<
   protected validate(
     data: this["_input"] | unknown = this._def.defaultValue,
 
-    ctx: ValidationContext<this>
+    ctx: ValidationContext<this>,
   ): e.ValidationResult<Record<string, Infer<TValue>>> {
     if (typeof data !== "object" || data === null || Array.isArray(data)) {
       ctx.addError(
@@ -86,8 +86,8 @@ export class RecordSchema<
           "invalid_type",
           "object",
           typeof data,
-          data
-        )
+          data,
+        ),
       );
       return e.ValidationResult.fail(ctx.getErrors());
     }
@@ -122,7 +122,7 @@ export class RecordSchema<
    * Serializes the record schema to JSON for form rendering.
    * Returns a record type with both key and value schemas for frontend validation.
    */
-  toJSON() {
+  toJSON(): this["_def"] {
     return {
       type: "record" as const,
       keySchema: this.keySchema.toJSON(),

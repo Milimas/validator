@@ -39,7 +39,7 @@ import { TypeOf } from "../util.js";
  * }
  */
 export class UnionSchema<
-  Schemas extends readonly SchemaTypeAny[]
+  Schemas extends readonly SchemaTypeAny[],
 > extends SchemaType<Infer<Schemas[number]>> {
   public _def: UnionDef;
 
@@ -59,7 +59,7 @@ export class UnionSchema<
   protected validate(
     data: this["_input"] | unknown = this._def.defaultValue,
 
-    ctx: ValidationContext<this>
+    ctx: ValidationContext<this>,
   ): e.ValidationResult<TypeOf<Schemas[number]>> {
     const branchErrors: ValidationError[] = [];
 
@@ -82,8 +82,8 @@ export class UnionSchema<
           "invalid_union",
           undefined,
           data,
-          data
-        )
+          data,
+        ),
       );
     } else {
       ctx.addErrors(branchErrors);
@@ -92,7 +92,7 @@ export class UnionSchema<
     return e.ValidationResult.fail(ctx.getErrors());
   }
 
-  toJSON() {
+  toJSON(): this["_def"] {
     return {
       type: "union" as const,
       required: this._def.required,
