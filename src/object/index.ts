@@ -170,28 +170,28 @@ export class ObjectSchema<
       return e.ValidationResult.fail<ObjectInfer<Shape>>(ctx.getErrors());
     }
 
-    for (const key in data as Record<string, unknown>) {
-      if (!(key in this.shape)) {
-        if (this._isLoose) {
-          result[key as keyof ObjectInfer<Shape>] = (
-            data as Record<string, unknown>
-          )[key] as never;
-          continue;
-        }
-        const error = new ValidationError(
-          ctx.child(key).getPath(),
-          "Unexpected property",
-          "unexpected_property",
-          undefined,
-          key,
-          data[key as keyof typeof data],
-        );
-        ctx.addError(error);
-      }
-    }
-    if (ctx.hasErrors()) {
-      return e.ValidationResult.fail<ObjectInfer<Shape>>(ctx.getErrors());
-    }
+    // for (const key in data as Record<string, unknown>) {
+    //   if (!(key in this.shape)) {
+    //     if (this._isLoose) {
+    //       result[key as keyof ObjectInfer<Shape>] = (
+    //         data as Record<string, unknown>
+    //       )[key] as never;
+    //       continue;
+    //     }
+    //     const error = new ValidationError(
+    //       ctx.child(key).getPath(),
+    //       "Unexpected property",
+    //       "unexpected_property",
+    //       undefined,
+    //       key,
+    //       data[key as keyof typeof data],
+    //     );
+    //     ctx.addError(error);
+    //   }
+    // }
+    // if (ctx.hasErrors()) {
+    //   return e.ValidationResult.fail<ObjectInfer<Shape>>(ctx.getErrors());
+    // }
 
     for (const key in this.shape) {
       const schema = this.shape[key];
@@ -252,9 +252,9 @@ export class ObjectSchema<
     S extends readonly ObjectSchema<any>[],
     MergedShape extends PrettifyShape<
       Shape &
-        MergeShapes<{
-          [K in keyof S]: S[K] extends ObjectSchema<infer U> ? U : never;
-        }>
+      MergeShapes<{
+        [K in keyof S]: S[K] extends ObjectSchema<infer U> ? U : never;
+      }>
     >,
     ReturnObject extends ObjectSchema<MergedShape>,
   >(...schemas: S): ReturnObject {
