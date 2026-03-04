@@ -170,14 +170,14 @@ export class ObjectSchema<
       return e.ValidationResult.fail<ObjectInfer<Shape>>(ctx.getErrors());
     }
 
-    // for (const key in data as Record<string, unknown>) {
-    //   if (!(key in this.shape)) {
-    //     if (this._isLoose) {
-    //       result[key as keyof ObjectInfer<Shape>] = (
-    //         data as Record<string, unknown>
-    //       )[key] as never;
-    //       continue;
-    //     }
+    for (const key in data as Record<string, unknown>) {
+      if (!(key in this.shape)) {
+        if (this._isLoose) {
+          result[key as keyof ObjectInfer<Shape>] = (
+            data as Record<string, unknown>
+          )[key] as never;
+          continue;
+        }
     //     const error = new ValidationError(
     //       ctx.child(key).getPath(),
     //       "Unexpected property",
@@ -187,8 +187,8 @@ export class ObjectSchema<
     //       data[key as keyof typeof data],
     //     );
     //     ctx.addError(error);
-    //   }
-    // }
+      }
+    }
     // if (ctx.hasErrors()) {
     //   return e.ValidationResult.fail<ObjectInfer<Shape>>(ctx.getErrors());
     // }
