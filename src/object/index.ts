@@ -378,14 +378,20 @@ export class ObjectSchema<
    * const jsonSchema = userSchema.toLangchainJSON();
    * console.log(JSON.stringify(jsonSchema, null, 2));
    */
+  /**
+   * NOTE: All keys are always included in `required`, as mandated by OpenAI and Anthropic
+   * strict mode. Optional fields express their optionality via `anyOf: [T, {type:"null"}]`
+   * in their individual property schema (see OptionalSchema.toLangchainJSON).
+   *
+   * WARNING: Loose objects emit `additionalProperties: true`, which is valid for Gemini
+   * but will be rejected by OpenAI and Anthropic strict mode schemas.
+   */
   toLangchainJSON(): JsonSchemaFormat {
     const properties: Record<string, JsonSchemaFormat> = {};
     const required: string[] = [];
     for (const key in this.shape) {
       properties[key] = this.shape[key].toLangchainJSON();
-      if (this.shape[key]._def.required) {
-        required.push(key);
-      }
+      required.push(key);
     }
     return {
       type: "object",

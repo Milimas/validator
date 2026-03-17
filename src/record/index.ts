@@ -115,16 +115,17 @@ export class RecordSchema<
 
   /**
    * Serializes the Record schema to JSON for langchain integration.
-   * Returns a record type with both key and value schemas for frontend validation.
+   *
+   * NOTE: `propertyNames` is omitted — it is not supported by OpenAI, Anthropic, or Mistral.
+   * `additionalProperties` carries the value schema for Gemini compatibility.
+   * OpenAI and Anthropic strict mode do not support dynamic-key objects; treat this field
+   * as opaque `object` in those contexts.
    */
   toLangchainJSON(): JsonSchemaFormat {
-    const properties: Record<string, JsonSchemaFormat> = {};
-    this._def.keySchema;
     return {
       type: "object",
-      propertyNames: this.keySchema.toLangchainJSON(),
       additionalProperties: this.valueSchema.toLangchainJSON(),
-      description: this.description,
+      description: `(object with dynamic string keys) ${this.description ?? ""}`.trim(),
     };
   }
 }

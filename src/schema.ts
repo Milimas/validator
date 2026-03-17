@@ -284,7 +284,7 @@ export class OptionalSchema<T extends SchemaTypeAny> extends SchemaType<
   toLangchainJSON(): JsonSchemaFormat {
     const baseFormat = this.inner.toLangchainJSON();
     return {
-      ...baseFormat,
+      anyOf: [baseFormat, { type: "null" }],
       description: this.description || baseFormat.description,
     };
   }
@@ -351,7 +351,7 @@ export class NullableSchema<T extends SchemaTypeAny> extends SchemaType<
   toLangchainJSON(): JsonSchemaFormat {
     const baseFormat = this.inner.toLangchainJSON();
     return {
-      ...baseFormat,
+      anyOf: [baseFormat, { type: "null" }],
       description: this.description || baseFormat.description,
     };
   }
@@ -576,11 +576,17 @@ export class AnySchema extends SchemaType<any> {
   }
 
   toLangchainJSON(): JsonSchemaFormat {
-    const jsonSchemaFormat: JsonSchemaFormat = {
-      type: "string",
+    return {
+      anyOf: [
+        { type: "string" },
+        { type: "number" },
+        { type: "boolean" },
+        { type: "object" },
+        { type: "array" },
+        { type: "null" },
+      ],
       description: this.description || undefined,
     };
-    return jsonSchemaFormat;
   }
 }
 
@@ -616,11 +622,11 @@ export class NeverSchema extends SchemaType<never, any> {
   }
 
   toLangchainJSON(): JsonSchemaFormat {
-    const jsonSchemaFormat: JsonSchemaFormat = {
+    return {
       type: "string",
+      enum: [],
       description: this.description || undefined,
     };
-    return jsonSchemaFormat;
   }
 }
 
@@ -646,10 +652,16 @@ export class UnknownSchema extends SchemaType<unknown> {
   }
 
   toLangchainJSON(): JsonSchemaFormat {
-    const jsonSchemaFormat: JsonSchemaFormat = {
-      type: "string",
+    return {
+      anyOf: [
+        { type: "string" },
+        { type: "number" },
+        { type: "boolean" },
+        { type: "object" },
+        { type: "array" },
+        { type: "null" },
+      ],
       description: this.description || undefined,
     };
-    return jsonSchemaFormat;
   }
 }
