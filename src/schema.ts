@@ -4,7 +4,6 @@ import {
   ValidationContext,
 } from "./context.js";
 import { e, ValidationError } from "./error.js";
-import { ObjectSchema } from "./object/index.js";
 import {
   Condition,
   AnyDef,
@@ -452,7 +451,7 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
     data: this["_input"] | unknown = this._def.defaultValue,
     ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): e.ValidationResult<this["_output"]> {
-    if (!data && !this._def.required) {
+    if ((data === undefined || data === null) && !this._def.required) {
       // Not required and no data: skip validation and return undefined
       return e.ValidationResult.ok<undefined>(undefined);
     }
@@ -465,7 +464,7 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
     }
 
     // When dependency is satisfied, check if value is missing and add required error
-    if (!data) {
+    if (data === undefined || data === null) {
       ctx.addError(
         new ValidationError(
           ctx.getPath(),
@@ -483,7 +482,7 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
     data: this["_input"] | unknown = this._def.defaultValue,
     ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): this["_output"] {
-    if (!data && !this._def.required) {
+    if ((data === undefined || data === null) && !this._def.required) {
       // Not required and no data: skip validation and return undefined
       return undefined as this["_output"];
     }
@@ -496,7 +495,7 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
     }
 
     // When dependency is satisfied, check if value is missing and throw required error
-    if (!data) {
+    if (data === undefined || data === null) {
       ctx.addError(
         new ValidationError(
           ctx.getPath(),
@@ -517,7 +516,7 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
 
     ctx: ValidationContext<this> = createValidationContext<this>(data),
   ): e.ValidationResult<this["_output"]> {
-    if (!data && !this._def.required) {
+    if ((data === undefined || data === null) && !this._def.required) {
       // Not required and no data: skip validation and return undefined
       return e.ValidationResult.ok<undefined>(undefined);
     }
@@ -528,7 +527,7 @@ export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
     }
 
     // When dependency is satisfied, check if value is missing and add required error
-    if (!data) {
+    if (data === undefined || data === null) {
       ctx.addError(
         new ValidationError(
           ctx.getPath(),
