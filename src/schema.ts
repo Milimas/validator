@@ -15,6 +15,15 @@ import {
 } from "./types.js";
 import { DeepReplace } from "./util.js";
 
+const ANY_OF_ALL_TYPES: JsonSchemaFormat[] = [
+  { type: "string" },
+  { type: "number" },
+  { type: "boolean" },
+  { type: "object" },
+  { type: "array" },
+  { type: "null" },
+];
+
 export abstract class SchemaType<Output = any, Input = Output> {
   public abstract _def: AnyDef;
 
@@ -577,14 +586,7 @@ export class AnySchema extends SchemaType<any> {
 
   toLangchainJSON(): JsonSchemaFormat {
     return {
-      anyOf: [
-        { type: "string" },
-        { type: "number" },
-        { type: "boolean" },
-        { type: "object" },
-        { type: "array" },
-        { type: "null" },
-      ],
+      anyOf: ANY_OF_ALL_TYPES,
       description: this.description || undefined,
     };
   }
@@ -653,14 +655,7 @@ export class UnknownSchema extends SchemaType<unknown> {
 
   toLangchainJSON(): JsonSchemaFormat {
     return {
-      anyOf: [
-        { type: "string" },
-        { type: "number" },
-        { type: "boolean" },
-        { type: "object" },
-        { type: "array" },
-        { type: "null" },
-      ],
+      anyOf: ANY_OF_ALL_TYPES,
       description: this.description || undefined,
     };
   }

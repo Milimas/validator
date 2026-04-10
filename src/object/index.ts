@@ -178,15 +178,15 @@ export class ObjectSchema<
           )[key] as never;
           continue;
         }
-    //     const error = new ValidationError(
-    //       ctx.child(key).getPath(),
-    //       "Unexpected property",
-    //       "unexpected_property",
-    //       undefined,
-    //       key,
-    //       data[key as keyof typeof data],
-    //     );
-    //     ctx.addError(error);
+        //     const error = new ValidationError(
+        //       ctx.child(key).getPath(),
+        //       "Unexpected property",
+        //       "unexpected_property",
+        //       undefined,
+        //       key,
+        //       data[key as keyof typeof data],
+        //     );
+        //     ctx.addError(error);
       }
     }
     // if (ctx.hasErrors()) {
@@ -252,9 +252,9 @@ export class ObjectSchema<
     S extends readonly ObjectSchema<any>[],
     MergedShape extends PrettifyShape<
       Shape &
-      MergeShapes<{
-        [K in keyof S]: S[K] extends ObjectSchema<infer U> ? U : never;
-      }>
+        MergeShapes<{
+          [K in keyof S]: S[K] extends ObjectSchema<infer U> ? U : never;
+        }>
     >,
     ReturnObject extends ObjectSchema<MergedShape>,
   >(...schemas: S): ReturnObject {
@@ -388,15 +388,13 @@ export class ObjectSchema<
    */
   toLangchainJSON(): JsonSchemaFormat {
     const properties: Record<string, JsonSchemaFormat> = {};
-    const required: string[] = [];
     for (const key in this.shape) {
       properties[key] = this.shape[key].toLangchainJSON();
-      required.push(key);
     }
     return {
       type: "object",
       properties,
-      required,
+      required: Object.keys(this.shape),
       description: this.description,
       additionalProperties: this._isLoose,
     };

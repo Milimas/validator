@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { string, number, object, array, boolean } from "../index.js";
+import { string, number, object, array, boolean, record } from "../index.js";
 
 describe("Schema Modifiers", () => {
   describe("optional()", () => {
@@ -279,6 +279,162 @@ describe("Schema Modifiers", () => {
       // When dependency is not satisfied, field is not applicable and returns undefined
       // (not the default, since it wasn't needed)
       expect(result.data?.value).toBeUndefined();
+    });
+
+    it("should support relative path in arrays", () => {
+      const schema = object({
+        items: array(
+          object({
+            type: boolean(),
+            value: string().dependsOn([
+              { field: "../type", condition: /true/ },
+            ]),
+          }),
+        ),
+      });
+
+      const skipped = schema.safeParse({
+        items: [{ type: false, value: "any value" }],
+      });
+
+      expect(skipped.success).toBe(true);
+      expect(skipped.data?.items[0]?.value).toBeUndefined();
+
+      const required = schema.safeParse({
+        items: [{ type: true }],
+      });
+
+      expect(required.success).toBe(false);
+      expect(required.errors[0]?.path).toEqual(["items", 0, "value"]);
+      expect(required.errors[0]?.code).toBe("required");
+    });
+
+    it("should support relative path in records", () => {
+      const schema = object({
+        rows: record(
+          object({
+            enabled: boolean(),
+            note: string().dependsOn([
+              { field: "../enabled", condition: /true/ },
+            ]),
+          }),
+        ),
+      });
+
+      const skipped = schema.safeParse({
+        rows: {
+          alpha: { enabled: false, note: "text ignored" },
+        },
+      });
+
+      expect(skipped.success).toBe(true);
+      expect(skipped.data?.rows.alpha?.note).toBeUndefined();
+
+      const required = schema.safeParse({
+        rows: {
+          alpha: { enabled: true },
+        },
+      });
+
+      expect(required.success).toBe(false);
+      expect(required.errors[0]?.path).toEqual(["rows", "alpha", "note"]);
+      expect(required.errors[0]?.code).toBe("required");
+    });
+
+    it("should support ./ for same field path", () => {
+      const schema = object({
+        flag: boolean(),
+        value: string().dependsOn([{ field: "./flag", condition: /true/ }]),
+      });
+
+      const skipped = schema.safeParse({ flag: false, value: "ignored" });
+      expect(skipped.success).toBe(true);
+      expect(skipped.data?.value).toBeUndefined();
+
+      const required = schema.safeParse({ flag: true });
+      expect(required.success).toBe(false);
+      expect(required.errors[0]?.path).toEqual(["value"]);
+      expect(required.errors[0]?.code).toBe("required");
+    });
+
+    it("should support ../../ from nested object inside array item", () => {
+      const schema = object({
+        sections: array(
+          object({
+            enabled: boolean(),
+            details: object({
+              comment: string().dependsOn([
+                { field: "../../enabled", condition: /true/ },
+              ]),
+            }),
+          }),
+        ),
+      });
+
+      const skipped = schema.safeParse({
+        sections: [
+          {
+            enabled: false,
+            details: { comment: "ignored" },
+          },
+        ],
+      });
+      expect(skipped.success).toBe(true);
+      expect(skipped.data?.sections[0]?.details.comment).toBeUndefined();
+
+      const required = schema.safeParse({
+        sections: [
+          {
+            enabled: true,
+            details: {},
+          },
+        ],
+      });
+      expect(required.success).toBe(false);
+      expect(required.errors[0]?.path).toEqual([
+        "sections",
+        0,
+        "details",
+        "comment",
+      ]);
+      expect(required.errors[0]?.code).toBe("required");
+    });
+
+    it("should support mixed relative paths in deeper record entries", () => {
+      const schema = object({
+        rows: record(
+          object({
+            gate: boolean(),
+            meta: object({
+              note: string().dependsOn([
+                { field: "../../gate", condition: /true/ },
+              ]),
+            }),
+          }),
+        ),
+      });
+
+      const skipped = schema.safeParse({
+        rows: {
+          alpha: { gate: false, meta: { note: "ignored" } },
+        },
+      });
+      expect(skipped.success).toBe(true);
+      expect(skipped.data?.rows.alpha?.meta.note).toBeUndefined();
+
+      const required = schema.safeParse({
+        rows: {
+          alpha: { gate: true, meta: {} },
+        },
+      });
+      expect(required.success).toBe(false);
+      expect(required.errors[0]?.path).toEqual([
+        "rows",
+        "alpha",
+        "meta",
+        "note",
+      ]);
+      expect(required.errors[0]?.code).toBe("required");
     });
   });
 });

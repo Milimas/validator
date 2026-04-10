@@ -18,7 +18,13 @@ export type FieldPath = (string | number)[];
  * Used to determine if a field should be required based on other field values.
  */
 export interface DependencyCondition {
-  /** The field name that this field depends on */
+  /**
+   * Path to the dependency field.
+   *
+   * Supported syntax:
+   * - Root path (default): `profile.role`, `settings.flags.0`
+   * - Relative path: `../type`, `../../status`, `./flag`
+   */
   field: string;
   /** RegExp pattern that must match the dependency field's value */
   condition: RegExp | string;
@@ -162,21 +168,75 @@ export class ValidationContext<
     return value;
   }
 
+  private toPathSegment(segment: string): string | number {
+    if (/^\d+$/.test(segment)) {
+      return Number(segment);
+    }
+    return segment;
+  }
+
+  private parseRootPath(fieldPath: string): FieldPath {
+    const normalized = fieldPath.replace(/\//g, ".");
+    const rawSegments = normalized.split(".").filter(Boolean);
+    return rawSegments.map((segment) => this.toPathSegment(segment));
+  }
+
   /**
-   * Gets the value of a sibling field at the same nesting level.
+   * Resolves a dependency path to an absolute path from the current context.
    *
-   * Useful for evaluating dependencies on adjacent fields.
-   *
-   * @param fieldName - The name of the sibling field
-   * @returns The value of the sibling field, or undefined
+   * Root path (default): `a.b.c`
+   * Relative path:
+   * - `./x` from current field scope (sibling lookup)
+   * - `../x`, `../../x` for parent traversal
+   */
+  private resolveDependencyPath(fieldPath: string): FieldPath {
+    const isRelative =
+      fieldPath === "." ||
+      fieldPath === ".." ||
+      fieldPath.startsWith("./") ||
+      fieldPath.startsWith("../");
+
+    if (!isRelative) {
+      return this.parseRootPath(fieldPath);
+    }
+
+    // `./` is anchored to sibling scope (parent of current field), while
+    // `../` and deeper traversals start from the current field path.
+    const basePath: FieldPath = fieldPath.startsWith("./")
+      ? [...this.path.slice(0, -1)]
+      : [...this.path];
+    const segments = fieldPath
+      .split("/")
+      .filter((segment) => segment.length > 0);
+
+    for (const segment of segments) {
+      if (segment === ".") {
+        continue;
+      }
+      if (segment === "..") {
+        basePath.pop();
+        continue;
+      }
+      basePath.push(this.toPathSegment(segment));
+    }
+
+    return basePath;
+  }
+
+  /**
+   * Gets a dependency value using either root or relative path syntax.
    *
    * @example
-   * // In context at path ['user', 'phone']
-   * context.getSiblingValue('email'); // Gets value at ['user', 'email']
+   * // Root path
+   * context.getDependencyValue('user.role');
+   *
+   * @example
+   * // Relative from current field path
+   * context.getDependencyValue('../type');
    */
-  getSiblingValue(fieldName: string): unknown {
-    const siblingPath = [...this.path.slice(0, -1), fieldName];
-    return this.getValueAtPath(siblingPath);
+  getDependencyValue(fieldPath: string): unknown {
+    const resolvedPath = this.resolveDependencyPath(fieldPath);
+    return this.getValueAtPath(resolvedPath);
   }
 
   /**
@@ -232,7 +292,7 @@ export class ValidationContext<
   isDependencySatisfied(condition: DependencyCondition): boolean {
     let isSatisfied = false;
 
-    const fieldValue = this.getSiblingValue(condition.field);
+    const fieldValue = this.getDependencyValue(condition.field);
     if (fieldValue === null || fieldValue === undefined) {
       return false;
     }
