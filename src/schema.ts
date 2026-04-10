@@ -5,7 +5,7 @@ import {
 } from "./context.js";
 import { e, ValidationError } from "./error.js";
 import {
-  Condition,
+  DependencyRule,
   AnyDef,
   NeverDef,
   UnknownDef,
@@ -133,8 +133,8 @@ export abstract class SchemaType<Output = any, Input = Output> {
     return new DefaultSchema(this, value);
   }
 
-  dependsOn(conditions: [Condition, ...Condition[]]): DependsOnSchema<this> {
-    return new DependsOnSchema(this, conditions);
+  dependsOn(rule: DependencyRule): DependsOnSchema<this> {
+    return new DependsOnSchema(this, rule);
   }
 
   required(
@@ -429,25 +429,36 @@ export class DefaultSchema<T extends SchemaTypeAny> extends SchemaType<
   }
 }
 
+/** Recursively serializes a DependencyRule, converting RegExp to its source string. */
+function serializeRule(rule: DependencyRule): object {
+  if ("field" in rule) {
+    return {
+      field: rule.field,
+      condition:
+        typeof rule.condition === "string"
+          ? rule.condition
+          : rule.condition.source,
+    };
+  }
+  return {
+    operator: rule.operator,
+    conditions: rule.conditions.map(serializeRule),
+  };
+}
+
 export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<
   T["_output"] | undefined,
   T["_input"] | undefined
 > {
   constructor(
     private inner: T,
-    public _dependsOn: [Condition, ...Condition[]],
+    public _dependsOn: DependencyRule,
   ) {
     super();
     this._def = {
       ...inner._def,
-      "data-depends-on": this._dependsOn.map((cond) => ({
-        field: cond.field,
-        condition:
-          typeof cond.condition === "string"
-            ? cond.condition
-            : cond.condition.source,
-      })),
-    };
+      "data-depends-on": serializeRule(this._dependsOn),
+    } as T["_def"];
     this.inner._def = this._def; // Ensure inner schema's _def is consistent with dependsOn wrapper
     this.description = `Conditionally Required ${
       inner.description || inner.constructor.name

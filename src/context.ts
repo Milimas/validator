@@ -1,5 +1,5 @@
 import { ValidationError } from "./error.js";
-import { SchemaTypeAny } from "./types.js";
+import { SchemaTypeAny, FieldCondition, DependencyRule } from "./types.js";
 
 /**
  * Represents the path to a field in a nested data structure.
@@ -12,33 +12,14 @@ import { SchemaTypeAny } from "./types.js";
 export type FieldPath = (string | number)[];
 
 /**
- * Represents a single dependency condition for conditional field validation.
- *
- * Specifies that a field depends on another field matching a particular pattern.
- * Used to determine if a field should be required based on other field values.
- */
-export interface DependencyCondition {
-  /**
-   * Path to the dependency field.
-   *
-   * Supported syntax:
-   * - Root path (default): `profile.role`, `settings.flags.0`
-   * - Relative path: `@.flag`, `^.type`, `^.^.status`
-   */
-  field: string;
-  /** RegExp pattern that must match the dependency field's value */
-  condition: RegExp | string;
-}
-
-/**
  * Represents a dependency that failed evaluation.
  *
- * Tracks information about a dependency condition that was not satisfied,
+ * Tracks information about a leaf {@link FieldCondition} that was not satisfied,
  * including which condition failed and why.
  */
 export interface FailedDependency {
-  /** The dependency condition that failed */
-  condition: DependencyCondition;
+  /** The leaf condition that failed */
+  condition: FieldCondition;
   /** The actual value of the dependency field */
   actualValue: unknown;
   /** Whether the field is required based on this failed condition */
@@ -176,58 +157,57 @@ export class ValidationContext<
   }
 
   private parseRootPath(fieldPath: string): FieldPath {
-    const normalized = fieldPath.replace(/\//g, ".");
-    const rawSegments = normalized.split(".").filter(Boolean);
-    return rawSegments.map((segment) => this.toPathSegment(segment));
+    return fieldPath
+      .split(".")
+      .filter(Boolean)
+      .map((s) => this.toPathSegment(s));
   }
 
   /**
-   * Resolves a dependency path to an absolute path from the current context.
+   * Resolves a dependency path to an absolute FieldPath.
    *
-   * Root path (default): `a.b.c`
-   * Relative path:
-   * - `@.x` from current field scope (sibling lookup)
-   * - `^.x`, `^.^.x` for parent traversal
+   * - Root path: `a.b.c` — resolved from the data root.
+   * - `@.x` — sibling of the current field (same containing object).
+   * - `^.x` — one level above the containing object.
+   * - `^.^.x` — two levels above, and so on.
+   *
+   * Both `@` and `^` start from the sibling scope (the path with the current
+   * field name stripped). Each `^` token then pops one additional level.
    */
   private resolveDependencyPath(fieldPath: string): FieldPath {
-    const normalizedPath = fieldPath.startsWith("$.")
-      ? fieldPath.slice(2)
-      : fieldPath;
-
-    const isCurrentRelative = normalizedPath.startsWith("@.");
-    const isParentRelative = normalizedPath.startsWith("^.");
+    const isCurrentRelative = fieldPath.startsWith("@.");
+    const isParentRelative = fieldPath.startsWith("^.");
 
     if (!isCurrentRelative && !isParentRelative) {
-      return this.parseRootPath(normalizedPath);
+      return this.parseRootPath(fieldPath);
     }
 
+    // Both @ and ^ start from the sibling scope (current field name stripped)
+    const basePath: FieldPath = [...this.path.slice(0, -1)];
+
     if (isCurrentRelative) {
-      const basePath: FieldPath = [...this.path.slice(0, -1)];
-      const rest = normalizedPath.slice(2);
-      if (rest.length === 0) {
-        return basePath;
-      }
+      const rest = fieldPath.slice(2);
       for (const segment of rest.split(".").filter(Boolean)) {
         basePath.push(this.toPathSegment(segment));
       }
       return basePath;
     }
 
-    const tokens = normalizedPath.split(".").filter(Boolean);
-    const basePath: FieldPath = [...this.path];
-
+    // ^ prefix: each leading ^ pops one level from the sibling scope
+    const tokens = fieldPath.split(".").filter(Boolean);
     let idx = 0;
     while (idx < tokens.length && tokens[idx] === "^") {
       if (basePath.length > 0) {
         basePath.pop();
       }
-      idx += 1;
+      idx++;
     }
 
-    // Invalid mixed-control forms (e.g. ^.a.^.b) are treated as root paths.
     for (let i = idx; i < tokens.length; i++) {
-      if (tokens[i] === "@" || tokens[i] === "^" || tokens[i] === "$") {
-        return this.parseRootPath(normalizedPath);
+      if (tokens[i] === "@" || tokens[i] === "^") {
+        throw new Error(
+          `Invalid dependency path "${fieldPath}": control characters (@, ^) must only appear as a leading prefix.`,
+        );
       }
     }
 
@@ -304,7 +284,7 @@ export class ValidationContext<
    *  condition: /^business$/
    * });
    */
-  isDependencySatisfied(condition: DependencyCondition): boolean {
+  isDependencySatisfied(condition: FieldCondition): boolean {
     let isSatisfied = false;
 
     const fieldValue = this.getDependencyValue(condition.field);
@@ -331,24 +311,29 @@ export class ValidationContext<
   }
 
   /**
-   * Evaluates whether a field should be required based on its dependency conditions.
-   *
-   * A field is required if ANY of its dependency conditions are satisfied
-   * (OR logic for dependencies).
-   *
-   * @param conditions - Array of dependency conditions
-   * @returns true if the field is required, false if all conditions failed
-   *
-   * @example
-   * const conditions = [
-   *  { field: 'userType', condition: /^business$/ }
-   * ];
-   * context.isFieldRequired(conditions); // true or false
+   * Recursively evaluates a {@link DependencyRule}:
+   * - `FieldCondition` — tests the field value directly
+   * - `AndGroup` — every sub-rule must pass
+   * - `OrGroup` — at least one sub-rule must pass
    */
-  isFieldRequired(conditions: DependencyCondition[]): boolean {
-    return conditions.some((condition) =>
-      this.isDependencySatisfied(condition),
-    );
+  private evaluateRule(rule: DependencyRule): boolean {
+    if ("field" in rule) {
+      return this.isDependencySatisfied(rule);
+    }
+    if (rule.operator === "and") {
+      return rule.conditions.every((r) => this.evaluateRule(r));
+    }
+    return rule.conditions.some((r) => this.evaluateRule(r));
+  }
+
+  /**
+   * Returns `true` when the given {@link DependencyRule} is satisfied, meaning
+   * the dependent field should be validated and required.
+   *
+   * @param rule - A {@link FieldCondition}, {@link AndGroup}, or {@link OrGroup}
+   */
+  isFieldRequired(rule: DependencyRule): boolean {
+    return this.evaluateRule(rule);
   }
 
   /**

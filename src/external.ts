@@ -36,6 +36,12 @@ import { AnySchema, NeverSchema, SchemaType, UnknownSchema } from "./schema.js";
 import { JSONSchema } from "./json/index.js";
 
 export { Infer as infer } from "./types";
+export type {
+  FieldCondition,
+  AndGroup,
+  OrGroup,
+  DependencyRule,
+} from "./types.js";
 
 ////////////////////////////
 ////        String      ////

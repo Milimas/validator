@@ -965,12 +965,10 @@ describe("Real-world Complex Schemas", () => {
         status: enumSchema(["active", "inactive"] as const).default("inactive"),
         activationCode: string()
           .optional()
-          .dependsOn([
-            {
-              field: "status",
-              condition: "^active$",
-            },
-          ]),
+          .dependsOn({
+            field: "status",
+            condition: "^active$",
+          }),
       });
 
       const result1 = schema.parse({
@@ -991,12 +989,10 @@ describe("Real-world Complex Schemas", () => {
         level: number().default(1),
         bonusPoints: number()
           .optional()
-          .dependsOn([
-            {
-              field: "level",
-              condition: "^5$",
-            },
-          ]),
+          .dependsOn({
+            field: "level",
+            condition: "^5$",
+          }),
       });
 
       const result1 = schema.parse({
@@ -1018,12 +1014,10 @@ describe("Real-world Complex Schemas", () => {
         role: enumSchema(["user", "admin"] as const).default("user"),
         adminCode: string()
           .default("DEFAULT_CODE")
-          .dependsOn([
-            {
-              field: "role",
-              condition: "^admin$",
-            },
-          ]),
+          .dependsOn({
+            field: "role",
+            condition: "^admin$",
+          }),
       });
 
       const result1 = schema.parse({});
@@ -1039,12 +1033,10 @@ describe("Real-world Complex Schemas", () => {
         role: enumSchema(["user", "admin"] as const).default("admin"),
         adminCode: string()
           .required()
-          .dependsOn([
-            {
-              field: "role",
-              condition: "^admin$",
-            },
-          ])
+          .dependsOn({
+            field: "role",
+            condition: "^admin$",
+          })
           .default("REQUIRED_CODE"),
       });
 

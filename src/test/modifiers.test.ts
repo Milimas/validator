@@ -193,29 +193,31 @@ describe("Schema Modifiers", () => {
 
   describe("dependsOn()", () => {
     it("should set data-dependsOn attribute", () => {
-      const schema = string().dependsOn([
-        { field: "type", condition: /business/ },
-      ]);
+      const schema = string().dependsOn({ field: "type", condition: /business/ });
 
       const json = schema.toJSON() as any;
       expect(json.required).toBe(true);
       expect(json["data-depends-on"]).toBeDefined();
     });
 
-    it("should support multiple conditions", () => {
-      const schema = string().dependsOn([
-        { field: "type", condition: /business/ },
-        { field: "country", condition: /US/ },
-      ]);
+    it("should support AND group of conditions", () => {
+      const schema = string().dependsOn({
+        operator: "and",
+        conditions: [
+          { field: "type", condition: /business/ },
+          { field: "country", condition: /US/ },
+        ],
+      });
 
       const json = schema.toJSON() as any;
-      expect(json["data-depends-on"]).toHaveLength(2);
+      expect(json["data-depends-on"].operator).toBe("and");
+      expect(json["data-depends-on"].conditions).toHaveLength(2);
     });
 
     it("should work with other modifiers", () => {
       const schema = string()
         .minLength(5)
-        .dependsOn([{ field: "required", condition: /true/ }]);
+        .dependsOn({ field: "required", condition: /true/ });
 
       const json = schema.toJSON() as any;
       expect(json.minLength).toBe(5);
@@ -227,7 +229,7 @@ describe("Schema Modifiers", () => {
         flag: boolean().required(),
         value: string()
           .minLength(3)
-          .dependsOn([{ field: "flag", condition: /true/ }]),
+          .dependsOn({ field: "flag", condition: /true/ }),
       });
 
       const result = schema.safeParse({ flag: false, value: "x" });
@@ -239,7 +241,7 @@ describe("Schema Modifiers", () => {
     it("should require the field when dependency is satisfied", () => {
       const schema = object({
         flag: boolean(),
-        value: string().dependsOn([{ field: "flag", condition: /true/ }]),
+        value: string().dependsOn({ field: "flag", condition: /true/ }),
       });
 
       const result = schema.safeParse({ flag: true });
@@ -254,7 +256,7 @@ describe("Schema Modifiers", () => {
         flag: boolean(),
         value: string()
           .minLength(3)
-          .dependsOn([{ field: "flag", condition: /true/ }]),
+          .dependsOn({ field: "flag", condition: /true/ }),
       });
 
       const result = schema.safeParse({ flag: true, value: "hello" });
@@ -269,7 +271,7 @@ describe("Schema Modifiers", () => {
         value: string()
           .minLength(3)
           .default("default")
-          .dependsOn([{ field: "flag", condition: /true/ }]),
+          .dependsOn({ field: "flag", condition: /true/ }),
       });
 
       const result = schema.safeParse({});
@@ -286,7 +288,7 @@ describe("Schema Modifiers", () => {
         items: array(
           object({
             type: boolean(),
-            value: string().dependsOn([{ field: "^.type", condition: /true/ }]),
+            value: string().dependsOn({ field: "@.type", condition: /true/ }),
           }),
         ),
       });
@@ -312,9 +314,7 @@ describe("Schema Modifiers", () => {
         rows: record(
           object({
             enabled: boolean(),
-            note: string().dependsOn([
-              { field: "^.enabled", condition: /true/ },
-            ]),
+            note: string().dependsOn({ field: "@.enabled", condition: /true/ }),
           }),
         ),
       });
@@ -342,7 +342,7 @@ describe("Schema Modifiers", () => {
     it("should support @. for same field path", () => {
       const schema = object({
         flag: boolean(),
-        value: string().dependsOn([{ field: "@.flag", condition: /true/ }]),
+        value: string().dependsOn({ field: "@.flag", condition: /true/ }),
       });
 
       const skipped = schema.safeParse({ flag: false, value: "ignored" });
@@ -355,15 +355,13 @@ describe("Schema Modifiers", () => {
       expect(required.errors[0]?.code).toBe("required");
     });
 
-    it("should support ^.^ from nested object inside array item", () => {
+    it("should support ^ to traverse up from nested object inside array item", () => {
       const schema = object({
         sections: array(
           object({
             enabled: boolean(),
             details: object({
-              comment: string().dependsOn([
-                { field: "^.^.enabled", condition: /true/ },
-              ]),
+              comment: string().dependsOn({ field: "^.enabled", condition: /true/ }),
             }),
           }),
         ),
@@ -396,6 +394,16 @@ describe("Schema Modifiers", () => {
         "comment",
       ]);
       expect(required.errors[0]?.code).toBe("required");
+
+      const provided = schema.safeParse({
+        sections: [
+          { enabled: true, details: { comment: "yes" } },
+          { enabled: false, details: { comment: "ignored" } },
+        ],
+      });
+      expect(provided.success).toBe(true);
+      expect(provided.data?.sections[0]?.details.comment).toBe("yes");
+      expect(provided.data?.sections[1]?.details.comment).toBeUndefined();
     });
 
     it("should support mixed relative paths in deeper record entries", () => {
@@ -404,9 +412,7 @@ describe("Schema Modifiers", () => {
           object({
             gate: boolean(),
             meta: object({
-              note: string().dependsOn([
-                { field: "^.^.gate", condition: /true/ },
-              ]),
+              note: string().dependsOn({ field: "^.gate", condition: /true/ }),
             }),
           }),
         ),

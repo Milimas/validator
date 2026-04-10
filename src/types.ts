@@ -28,10 +28,121 @@ export type Infer<T extends SchemaTypeAny> = Prettify<TypeOf<T>>;
 
 export type ObjectShape = { [key: string]: SchemaTypeAny };
 
-export type Condition = {
+/**
+ * A leaf condition: checks that a single field's value matches a pattern.
+ *
+ * Used as the base building block of a {@link DependencyRule}.
+ *
+ * @example
+ * { field: '@.role', condition: /admin/ }
+ * { field: 'user.status', condition: 'active' }
+ */
+export interface FieldCondition {
+  /**
+   * Path to the field whose value is tested.
+   *
+   * Supported syntaxes:
+   * - **Root path** — absolute from the validated root: `user.role`, `settings.flags.0`
+   * - **`@.x`** — sibling of the current field (same containing object): `@.type`
+   * - **`^.x`** — one level above the containing object: `^.enabled`
+   * - **`^.^.x`** — two levels above: `^.^.status`
+   */
   field: string;
+  /**
+   * Pattern the field's string representation must match.
+   * A `RegExp` is tested directly; a `string` is compiled into a `RegExp` first.
+   *
+   * @example
+   * condition: /^admin$/   // RegExp literal
+   * condition: '^admin$'   // equivalent string pattern
+   */
   condition: RegExp | string;
-};
+}
+
+/**
+ * AND group: **every** sub-rule must be satisfied for this group to pass.
+ *
+ * Sub-rules can be {@link FieldCondition}s or nested {@link OrGroup}s, allowing
+ * arbitrarily complex logic trees.
+ *
+ * @example
+ * {
+ *   operator: 'and',
+ *   conditions: [
+ *     { field: '@.plan',   condition: /business/ },
+ *     { field: '@.region', condition: /EU/ },
+ *   ]
+ * }
+ */
+export interface AndGroup {
+  operator: "and";
+  /**
+   * All of these rules must pass for the group to be satisfied.
+   * At least one rule is required.
+   */
+  conditions: [DependencyRule, ...DependencyRule[]];
+}
+
+/**
+ * OR group: **at least one** sub-rule must be satisfied for this group to pass.
+ *
+ * Sub-rules can be {@link FieldCondition}s or nested {@link AndGroup}s, allowing
+ * arbitrarily complex logic trees.
+ *
+ * @example
+ * {
+ *   operator: 'or',
+ *   conditions: [
+ *     { field: '@.plan',   condition: /premium/ },
+ *     { field: '@.role',   condition: /admin/ },
+ *   ]
+ * }
+ */
+export interface OrGroup {
+  operator: "or";
+  /**
+   * At least one of these rules must pass for the group to be satisfied.
+   * At least one rule is required.
+   */
+  conditions: [DependencyRule, ...DependencyRule[]];
+}
+
+/**
+ * A dependency rule passed to {@link SchemaType.dependsOn}.
+ *
+ * Three forms are supported:
+ *
+ * **1. Leaf condition** — checks a single field:
+ * ```ts
+ * { field: '@.enabled', condition: /true/ }
+ * ```
+ *
+ * **2. AND group** — every condition must match:
+ * ```ts
+ * { operator: 'and', conditions: [condA, condB] }
+ * ```
+ *
+ * **3. OR group** — any condition must match:
+ * ```ts
+ * { operator: 'or', conditions: [condA, condB] }
+ * ```
+ *
+ * Groups nest freely, so you can express any boolean combination:
+ * ```ts
+ * // (plan=business AND region=EU) OR role=admin
+ * {
+ *   operator: 'or',
+ *   conditions: [
+ *     { operator: 'and', conditions: [
+ *       { field: '@.plan',   condition: /business/ },
+ *       { field: '@.region', condition: /EU/ },
+ *     ]},
+ *     { field: '@.role', condition: /admin/ },
+ *   ]
+ * }
+ * ```
+ */
+export type DependencyRule = FieldCondition | AndGroup | OrGroup;
 
 export type RefinementCheck<
   S extends SchemaTypeAny = SchemaTypeAny,
@@ -168,7 +279,7 @@ export interface BaseDef<T> {
   ariaLabel?: string;
   metadata?: Record<string, unknown>;
   description?: string;
-  "data-depends-on"?: Condition[];
+  "data-depends-on"?: DependencyRule;
 }
 
 export type RefineFunction<T> = (data: T) => boolean | Promise<boolean>;

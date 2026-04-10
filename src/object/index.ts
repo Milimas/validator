@@ -176,22 +176,10 @@ export class ObjectSchema<
           result[key as keyof ObjectInfer<Shape>] = (
             data as Record<string, unknown>
           )[key] as never;
-          continue;
         }
-        //     const error = new ValidationError(
-        //       ctx.child(key).getPath(),
-        //       "Unexpected property",
-        //       "unexpected_property",
-        //       undefined,
-        //       key,
-        //       data[key as keyof typeof data],
-        //     );
-        //     ctx.addError(error);
+        // unknown keys on strict objects are silently ignored
       }
     }
-    // if (ctx.hasErrors()) {
-    //   return e.ValidationResult.fail<ObjectInfer<Shape>>(ctx.getErrors());
-    // }
 
     for (const key in this.shape) {
       const schema = this.shape[key];

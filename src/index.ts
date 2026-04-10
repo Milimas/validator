@@ -16,7 +16,6 @@ export {
   ValidationContext,
   createValidationContext,
   type FieldPath,
-  type DependencyCondition,
   type FailedDependency,
   type ValidationContextSnapshot,
   type ValidationContextOptions,
