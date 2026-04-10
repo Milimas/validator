@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { record, string, number, object, boolean } from "../index.js";
+import {
+  record,
+  string,
+  number,
+  object,
+  boolean,
+  enum as enumSchema,
+} from "../index.js";
 
 describe("RecordSchema", () => {
   describe("Basic validation", () => {
@@ -43,7 +50,7 @@ describe("RecordSchema", () => {
         object({
           name: string(),
           age: number(),
-        })
+        }),
       );
       const result = schema.parse({
         user1: { name: "Alice", age: 30 },
@@ -77,6 +84,20 @@ describe("RecordSchema", () => {
       expect(schema.parse({ abc: 1, defs: 2 })).toEqual({ abc: 1, defs: 2 });
       expect(() => schema.parse({ ab: 1 })).toThrow(); // too short
       expect(() => schema.parse({ abcdefghijk: 1 })).toThrow(); // too long
+    });
+
+    it("should accept enum schema for keys", () => {
+      const schema = record(
+        enumSchema(["enabled", "disabled"] as const),
+        number(),
+      );
+
+      expect(schema.parse({ enabled: 1, disabled: 0 })).toEqual({
+        enabled: 1,
+        disabled: 0,
+      });
+
+      expect(() => schema.parse({ enabled: 1, unknown: 0 })).toThrow();
     });
   });
 
@@ -118,7 +139,7 @@ describe("RecordSchema", () => {
         string()
           .pattern(/^[a-z_]+$/)
           .minLength(3),
-        string()
+        string(),
       );
       const json = schema.toJSON();
       expect(json.keySchema.type).toBe("text");
@@ -131,7 +152,7 @@ describe("RecordSchema", () => {
         object({
           enabled: boolean(),
           value: string(),
-        })
+        }),
       );
       const json = schema.toJSON();
       expect(json.valueSchema.type).toBe("object");
@@ -174,7 +195,7 @@ describe("RecordSchema", () => {
       const schema = record(
         object({
           age: number().min(0),
-        })
+        }),
       );
       try {
         schema.parse({ user1: { age: -5 } });
@@ -211,7 +232,7 @@ describe("RecordSchema", () => {
         object({
           enabled: boolean(),
           value: string(),
-        })
+        }),
       );
       const config = configSchema.parse({
         notifications: { enabled: true, value: "all" },

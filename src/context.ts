@@ -23,7 +23,7 @@ export interface DependencyCondition {
    *
    * Supported syntax:
    * - Root path (default): `profile.role`, `settings.flags.0`
-   * - Relative path: `../type`, `../../status`, `./flag`
+   * - Relative path: `@.flag`, `^.type`, `^.^.status`
    */
   field: string;
   /** RegExp pattern that must match the dependency field's value */
@@ -186,38 +186,53 @@ export class ValidationContext<
    *
    * Root path (default): `a.b.c`
    * Relative path:
-   * - `./x` from current field scope (sibling lookup)
-   * - `../x`, `../../x` for parent traversal
+   * - `@.x` from current field scope (sibling lookup)
+   * - `^.x`, `^.^.x` for parent traversal
    */
   private resolveDependencyPath(fieldPath: string): FieldPath {
-    const isRelative =
-      fieldPath === "." ||
-      fieldPath === ".." ||
-      fieldPath.startsWith("./") ||
-      fieldPath.startsWith("../");
+    const normalizedPath = fieldPath.startsWith("$.")
+      ? fieldPath.slice(2)
+      : fieldPath;
 
-    if (!isRelative) {
-      return this.parseRootPath(fieldPath);
+    const isCurrentRelative = normalizedPath.startsWith("@.");
+    const isParentRelative = normalizedPath.startsWith("^.");
+
+    if (!isCurrentRelative && !isParentRelative) {
+      return this.parseRootPath(normalizedPath);
     }
 
-    // `./` is anchored to sibling scope (parent of current field), while
-    // `../` and deeper traversals start from the current field path.
-    const basePath: FieldPath = fieldPath.startsWith("./")
-      ? [...this.path.slice(0, -1)]
-      : [...this.path];
-    const segments = fieldPath
-      .split("/")
-      .filter((segment) => segment.length > 0);
+    if (isCurrentRelative) {
+      const basePath: FieldPath = [...this.path.slice(0, -1)];
+      const rest = normalizedPath.slice(2);
+      if (rest.length === 0) {
+        return basePath;
+      }
+      for (const segment of rest.split(".").filter(Boolean)) {
+        basePath.push(this.toPathSegment(segment));
+      }
+      return basePath;
+    }
 
-    for (const segment of segments) {
-      if (segment === ".") {
-        continue;
-      }
-      if (segment === "..") {
+    const tokens = normalizedPath.split(".").filter(Boolean);
+    const basePath: FieldPath = [...this.path];
+
+    let idx = 0;
+    while (idx < tokens.length && tokens[idx] === "^") {
+      if (basePath.length > 0) {
         basePath.pop();
-        continue;
       }
-      basePath.push(this.toPathSegment(segment));
+      idx += 1;
+    }
+
+    // Invalid mixed-control forms (e.g. ^.a.^.b) are treated as root paths.
+    for (let i = idx; i < tokens.length; i++) {
+      if (tokens[i] === "@" || tokens[i] === "^" || tokens[i] === "$") {
+        return this.parseRootPath(normalizedPath);
+      }
+    }
+
+    for (; idx < tokens.length; idx++) {
+      basePath.push(this.toPathSegment(tokens[idx]));
     }
 
     return basePath;
@@ -232,7 +247,7 @@ export class ValidationContext<
    *
    * @example
    * // Relative from current field path
-   * context.getDependencyValue('../type');
+   * context.getDependencyValue('^.type');
    */
   getDependencyValue(fieldPath: string): unknown {
     const resolvedPath = this.resolveDependencyPath(fieldPath);

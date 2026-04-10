@@ -26,7 +26,12 @@ import {
   XMLSchema,
   ZipCodeSchema,
 } from "./string/index.js";
-import { CodeLanguages, ObjectShape, SchemaTypeAny } from "./types.js";
+import {
+  CodeLanguages,
+  ObjectShape,
+  SchemaTypeAny,
+  StringLikeSchema,
+} from "./types.js";
 import { AnySchema, NeverSchema, SchemaType, UnknownSchema } from "./schema.js";
 import { JSONSchema } from "./json/index.js";
 
@@ -624,10 +629,10 @@ export function record<TValue extends SchemaTypeAny>(
  *   '456': false
  * });
  */
-export function record<TKey extends StringSchema, TValue extends SchemaTypeAny>(
-  keySchema: TKey,
-  valueSchema: TValue,
-): RecordSchema<TValue, TKey>;
+export function record<
+  TKey extends StringLikeSchema,
+  TValue extends SchemaTypeAny,
+>(keySchema: TKey, valueSchema: TValue): RecordSchema<TValue, TKey>;
 
 /**
  * Factory function overload implementation for creating RecordSchema instances.
@@ -659,18 +664,21 @@ export function record<TKey extends StringSchema, TValue extends SchemaTypeAny>(
  *   '456': false
  * });
  */
-export function record<TKey extends StringSchema, TValue extends SchemaTypeAny>(
-  keySchemaOrValue: TKey | TValue,
-  valueSchemaMaybe?: TValue,
-): RecordSchema<TValue, TKey> {
+export function record(
+  keySchemaOrValue: SchemaTypeAny | StringLikeSchema,
+  valueSchemaMaybe?: SchemaTypeAny,
+): RecordSchema<SchemaTypeAny, StringLikeSchema> {
   if (valueSchemaMaybe === undefined) {
     return new RecordSchema(
-      keySchemaOrValue as TValue,
-      new StringSchema() as TKey,
+      keySchemaOrValue as SchemaTypeAny,
+      new StringSchema(),
     );
   }
 
-  return new RecordSchema(valueSchemaMaybe, keySchemaOrValue as TKey);
+  return new RecordSchema(
+    valueSchemaMaybe,
+    keySchemaOrValue as StringLikeSchema,
+  );
 }
 
 ////////////////////////////

@@ -7,6 +7,23 @@ import { Prettify, TypeOf } from "./util.js";
  */
 export type SchemaTypeAny = SchemaType<any, any>;
 
+/**
+ * Schema defs that can represent object keys.
+ */
+export type StringLikeDef = StringDef | SelectDef<string>;
+
+/**
+ * Schemas that are valid for record keys.
+ *
+ * A record key schema must parse to a string-like key so it can be used
+ * with JavaScript object keys (including enum schemas with string literals).
+ */
+export type StringLikeSchema<
+  Output extends string = string,
+  Input extends string = Output,
+  Def extends StringLikeDef = StringLikeDef,
+> = SchemaType<Output, Input> & { _def: Def };
+
 export type Infer<T extends SchemaTypeAny> = Prettify<TypeOf<T>>;
 
 export type ObjectShape = { [key: string]: SchemaTypeAny };
@@ -99,10 +116,11 @@ export interface UnionDef<
   anyOf?: T;
 }
 
-export interface RecordDef<D extends BaseDef<any>> extends BaseDef<
-  Record<string, D>
-> {
-  keySchema: StringDef;
+export interface RecordDef<
+  K extends StringLikeDef,
+  D extends BaseDef<any>,
+> extends BaseDef<Record<string, D>> {
+  keySchema: K;
   valueSchema: D;
 }
 

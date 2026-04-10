@@ -160,6 +160,17 @@ describe("Infer", () => {
     assertType<Inferred>({});
   });
 
+  it("should infer record schema with enum keys", () => {
+    const schema = v.record(
+      v.enum(["enabled", "disabled"] as const),
+      v.number(),
+    );
+    type Inferred = Infer<typeof schema>;
+
+    expectTypeOf<Inferred>().toEqualTypeOf<Record<string, number>>();
+    assertType<Inferred>({ enabled: 1, disabled: 0 });
+  });
+
   it("should infer simple object", () => {
     const schema = v.object({
       name: v.string(),

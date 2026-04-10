@@ -1,13 +1,13 @@
 import { e, ValidationError } from "../error.js";
 import { ValidationContext } from "../index.js";
-import { SchemaType, UnknownSchema } from "../schema.js";
+import { SchemaType } from "../schema.js";
 import { StringSchema } from "../string/index.js";
 import {
   RecordDef,
   SchemaTypeAny,
   JsonSchemaFormat,
   Infer,
-  StringDef,
+  StringLikeSchema,
 } from "../types.js";
 
 /**
@@ -30,9 +30,9 @@ import {
  */
 export class RecordSchema<
   TValue extends SchemaTypeAny = SchemaTypeAny,
-  TKey extends StringSchema = StringSchema,
+  TKey extends StringLikeSchema = StringSchema,
 > extends SchemaType<Record<string, Infer<TValue>>> {
-  public _def: RecordDef<TValue["_def"]> = {
+  public _def: RecordDef<TKey["_def"], TValue["_def"]> = {
     type: "record" as const,
     keySchema: {} as TKey["_def"],
     valueSchema: {} as TValue["_def"],
@@ -125,7 +125,8 @@ export class RecordSchema<
     return {
       type: "object",
       additionalProperties: this.valueSchema.toLangchainJSON(),
-      description: `(object with dynamic string keys) ${this.description ?? ""}`.trim(),
+      description:
+        `(object with dynamic string keys) ${this.description ?? ""}`.trim(),
     };
   }
 }
