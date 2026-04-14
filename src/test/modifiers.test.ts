@@ -288,7 +288,7 @@ describe("Schema Modifiers", () => {
         items: array(
           object({
             type: boolean(),
-            value: string().dependsOn({ field: "@.type", condition: /true/ }),
+            value: string().dependsOn({ field: "^.type", condition: /true/ }),
           }),
         ),
       });
@@ -314,7 +314,7 @@ describe("Schema Modifiers", () => {
         rows: record(
           object({
             enabled: boolean(),
-            note: string().dependsOn({ field: "@.enabled", condition: /true/ }),
+            note: string().dependsOn({ field: "^.enabled", condition: /true/ }),
           }),
         ),
       });
@@ -339,10 +339,10 @@ describe("Schema Modifiers", () => {
       expect(required.errors[0]?.code).toBe("required");
     });
 
-    it("should support @. for same field path", () => {
+    it("should support ^. for same field path (sibling)", () => {
       const schema = object({
         flag: boolean(),
-        value: string().dependsOn({ field: "@.flag", condition: /true/ }),
+        value: string().dependsOn({ field: "^.flag", condition: /true/ }),
       });
 
       const skipped = schema.safeParse({ flag: false, value: "ignored" });
@@ -355,13 +355,13 @@ describe("Schema Modifiers", () => {
       expect(required.errors[0]?.code).toBe("required");
     });
 
-    it("should support ^ to traverse up from nested object inside array item", () => {
+    it("should support ^.^. to traverse up from nested object inside array item", () => {
       const schema = object({
         sections: array(
           object({
             enabled: boolean(),
             details: object({
-              comment: string().dependsOn({ field: "^.enabled", condition: /true/ }),
+              comment: string().dependsOn({ field: "^.^.enabled", condition: /true/ }),
             }),
           }),
         ),
@@ -412,7 +412,7 @@ describe("Schema Modifiers", () => {
           object({
             gate: boolean(),
             meta: object({
-              note: string().dependsOn({ field: "^.gate", condition: /true/ }),
+              note: string().dependsOn({ field: "^.^.gate", condition: /true/ }),
             }),
           }),
         ),

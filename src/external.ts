@@ -35,14 +35,6 @@ import {
 import { AnySchema, NeverSchema, SchemaType, UnknownSchema } from "./schema.js";
 import { JSONSchema } from "./json/index.js";
 
-export { Infer as infer } from "./types";
-export type {
-  FieldCondition,
-  AndGroup,
-  OrGroup,
-  DependencyRule,
-} from "./types.js";
-
 ////////////////////////////
 ////        String      ////
 ////////////////////////////
@@ -744,7 +736,58 @@ function toJSONSchema<R extends ReturnType<SchemaTypeAny["toJSON"]>>(
 //   throw new Error("Not implemented");
 // }
 
-export type { SchemaTypeAny };
-export { SchemaType };
+export type { ArraySchema } from "./array/index.js";
+export type { BooleanSchema } from "./boolean/index.js";
+export type { NumberSchema } from "./number/index.js";
+export type { ObjectSchema } from "./object/index.js";
+export type { EnumSchema } from "./enum/index.js";
+export type { UnionSchema } from "./union/index.js";
+export type { RecordSchema } from "./record/index.js";
+export type {
+  CodeSchema,
+  DateSchema,
+  DatetimeLocalSchema,
+  EmailSchema,
+  GUIDSchema,
+  HexColorSchema,
+  HTMLSchema,
+  IPAddressSchema,
+  ISODateSchema,
+  MacAddressSchema,
+  PasswordSchema,
+  PhoneNumberSchema,
+  StreetAddressSchema,
+  StringNumberSchema,
+  StringSchema,
+  UrlSchema,
+  UUIDSchema,
+  XMLSchema,
+  ZipCodeSchema,
+} from "./string/index.js";
+export type {
+  CodeLanguages,
+  ObjectShape,
+  SchemaTypeAny,
+  RefineAsyncFunction,
+  RefineFunction,
+  JsonSchemaFormat,
+  RefinementCheck,
+  Infer as infer,
+  DependencyRule,
+  AndGroup,
+  OrGroup,
+  FieldCondition,
+} from "./types.js";
+export type {
+  AnySchema,
+  NeverSchema,
+  SchemaType,
+  UnknownSchema,
+  DefaultSchema,
+  DependsOnSchema,
+  NullableSchema,
+  OptionalSchema,
+} from "./schema.js";
+export type { JSONSchema } from "./json/index.js";
 export { toJSONSchema };
 export { _enum as enum };

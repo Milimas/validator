@@ -149,8 +149,10 @@ export class ValidationContext<
     return value;
   }
 
+  private static readonly NUMERIC_SEGMENT = /^\d+$/;
+
   private toPathSegment(segment: string): string | number {
-    if (/^\d+$/.test(segment)) {
+    if (ValidationContext.NUMERIC_SEGMENT.test(segment)) {
       return Number(segment);
     }
     return segment;
@@ -167,46 +169,32 @@ export class ValidationContext<
    * Resolves a dependency path to an absolute FieldPath.
    *
    * - Root path: `a.b.c` — resolved from the data root.
-   * - `@.x` — sibling of the current field (same containing object).
-   * - `^.x` — one level above the containing object.
-   * - `^.^.x` — two levels above, and so on.
+   * - `^.x` — sibling of the current field (same containing object).
+   * - `^.^.x` — one level above the containing object.
+   * - `^.^.^.x` — two levels above, and so on.
    *
-   * Both `@` and `^` start from the sibling scope (the path with the current
-   * field name stripped). Each `^` token then pops one additional level.
+   * Each `^` token pops one level from the current field path, so the first
+   * `^` strips the field name itself (reaching sibling scope) and each
+   * subsequent `^` moves one level further up.
    */
   private resolveDependencyPath(fieldPath: string): FieldPath {
-    const isCurrentRelative = fieldPath.startsWith("@.");
-    const isParentRelative = fieldPath.startsWith("^.");
-
-    if (!isCurrentRelative && !isParentRelative) {
+    if (!fieldPath.startsWith("^.")) {
       return this.parseRootPath(fieldPath);
     }
 
-    // Both @ and ^ start from the sibling scope (current field name stripped)
-    const basePath: FieldPath = [...this.path.slice(0, -1)];
+    const basePath: FieldPath = [...this.path];
 
-    if (isCurrentRelative) {
-      const rest = fieldPath.slice(2);
-      for (const segment of rest.split(".").filter(Boolean)) {
-        basePath.push(this.toPathSegment(segment));
-      }
-      return basePath;
-    }
-
-    // ^ prefix: each leading ^ pops one level from the sibling scope
     const tokens = fieldPath.split(".").filter(Boolean);
     let idx = 0;
     while (idx < tokens.length && tokens[idx] === "^") {
-      if (basePath.length > 0) {
-        basePath.pop();
-      }
+      basePath.pop();
       idx++;
     }
 
     for (let i = idx; i < tokens.length; i++) {
-      if (tokens[i] === "@" || tokens[i] === "^") {
+      if (tokens[i] === "^") {
         throw new Error(
-          `Invalid dependency path "${fieldPath}": control characters (@, ^) must only appear as a leading prefix.`,
+          `Invalid dependency path "${fieldPath}": control characters (^) must only appear as a leading prefix.`,
         );
       }
     }

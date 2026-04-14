@@ -13,9 +13,8 @@ Conditional field requirement driven by a typed, composable rule tree.
   - [Nesting Rules](#nesting-rules)
 - [Path Syntax](#path-syntax)
   - [Root Path](#root-path)
-  - [Sibling Path (`@.`)](#sibling-path-)
-  - [Parent Path (`^.`)](#parent-path-)
-  - [Multi-level Parent (`^.^.`)](#multi-level-parent-)
+  - [Sibling Path (`^.`)](#sibling-path-)
+  - [Multi-level (`^.^.`, `^.^.^.`, …)](#multi-level-)
 - [Condition Matching](#condition-matching)
 - [Nested Structures](#nested-structures)
   - [Arrays](#arrays)
@@ -53,7 +52,7 @@ import { object, string, boolean } from 'validator';
 const schema = object({
   isEmployee: boolean(),
   employeeId: string().dependsOn(
-    { field: '@.isEmployee', condition: /true/ }
+    { field: '^.isEmployee', condition: /true/ }
   ),
 });
 
@@ -86,7 +85,7 @@ interface FieldCondition {
 
 ```ts
 // Required when the sibling field `role` equals "admin"
-string().dependsOn({ field: '@.role', condition: /^admin$/ })
+string().dependsOn({ field: '^.role', condition: /^admin$/ })
 
 // Required when the root-level `plan` contains "business"
 string().dependsOn({ field: 'plan', condition: /business/ })
@@ -110,8 +109,8 @@ interface AndGroup {
 string().dependsOn({
   operator: 'and',
   conditions: [
-    { field: '@.plan',   condition: /business/ },
-    { field: '@.region', condition: /EU/ },
+    { field: '^.plan',   condition: /business/ },
+    { field: '^.region', condition: /EU/ },
   ],
 })
 ```
@@ -134,8 +133,8 @@ interface OrGroup {
 string().dependsOn({
   operator: 'or',
   conditions: [
-    { field: '@.role',          condition: /admin/ },
-    { field: '@.notifications', condition: /true/ },
+    { field: '^.role',          condition: /admin/ },
+    { field: '^.notifications', condition: /true/ },
   ],
 })
 ```
@@ -154,11 +153,11 @@ string().dependsOn({
     {
       operator: 'and',
       conditions: [
-        { field: '@.plan',   condition: /business/ },
-        { field: '@.region', condition: /EU/ },
+        { field: '^.plan',   condition: /business/ },
+        { field: '^.region', condition: /EU/ },
       ],
     },
-    { field: '@.role', condition: /admin/ },
+    { field: '^.role', condition: /admin/ },
   ],
 })
 ```
@@ -171,11 +170,11 @@ string().dependsOn({
     {
       operator: 'or',
       conditions: [
-        { field: '@.tier', condition: /premium/ },
-        { field: '@.role', condition: /admin/ },
+        { field: '^.tier', condition: /premium/ },
+        { field: '^.role', condition: /admin/ },
       ],
     },
-    { field: '@.notifications', condition: /true/ },
+    { field: '^.notifications', condition: /true/ },
   ],
 })
 ```
@@ -184,7 +183,7 @@ string().dependsOn({
 
 ## Path Syntax
 
-The `field` property in a `FieldCondition` accepts three path styles.
+The `field` property in a `FieldCondition` accepts two path styles.
 
 ### Root Path
 
@@ -210,50 +209,41 @@ const schema = object({
 
 ---
 
-### Sibling Path (`@.`)
+### Sibling Path (`^.`)
 
-Resolves relative to the same containing object as the current field — a sibling lookup.
+A single `^.` prefix resolves relative to the same containing object as the current field — a sibling lookup.
 
 ```
-'@.flag'       →  field "flag" in the same object
-'@.meta.type'  →  nested "meta.type" in the same object
+'^.flag'       →  field "flag" in the same object
+'^.meta.type'  →  nested "meta.type" in the same object
 ```
 
 ```ts
 const schema = object({
   notify: boolean(),
-  email: string().dependsOn({ field: '@.notify', condition: /true/ }),
+  email: string().dependsOn({ field: '^.notify', condition: /true/ }),
 });
 ```
 
 ---
 
-### Parent Path (`^.`)
+### Multi-level (`^.^.`, `^.^.^.`, …)
 
-Each `^` segment moves one level up from the containing object.
+Each additional `^` segment moves one more level up from the sibling scope.
 
 ```
-'^.role'     →  field "role" in the parent object
+'^.^.role'       →  field "role" in the parent object
+'^.^.^.plan'     →  field "plan" two levels up
 ```
 
 ```ts
 const schema = object({
   role: string(),
   settings: object({
-    // `name` is inside `settings`; `^.role` goes up to the root object
-    name: string().dependsOn({ field: '^.role', condition: /admin/ }),
+    // `name` is inside `settings`; ^.^.role goes up to the root object
+    name: string().dependsOn({ field: '^.^.role', condition: /admin/ }),
   }),
 });
-```
-
----
-
-### Multi-level Parent (`^.^.`)
-
-Chain `^` segments to traverse multiple levels.
-
-```
-'^.^.plan'   →  field "plan" two levels above the containing object
 ```
 
 ```ts
@@ -262,7 +252,7 @@ const schema = object({
   billing: object({
     address: object({
       // two levels below `plan`: inside billing → address
-      taxId: string().dependsOn({ field: '^.^.plan', condition: /business/ }),
+      taxId: string().dependsOn({ field: '^.^.^.plan', condition: /business/ }),
     }),
   }),
 });
@@ -281,13 +271,13 @@ testing.
 
 ```ts
 // RegExp literal
-{ field: '@.role', condition: /^admin$/ }
+{ field: '^.role', condition: /^admin$/ }
 
 // String compiled to RegExp — equivalent to the above
-{ field: '@.role', condition: '^admin$' }
+{ field: '^.role', condition: '^admin$' }
 
 // Partial match
-{ field: '@.plan', condition: /business/ }  // matches "business-monthly", etc.
+{ field: '^.plan', condition: /business/ }  // matches "business-monthly", etc.
 ```
 
 If the dependency field is `null` or `undefined`, the condition is treated as **not satisfied** and the dependent field is skipped.
@@ -298,7 +288,7 @@ If the dependency field is `null` or `undefined`, the condition is treated as **
 
 ### Arrays
 
-`@.` matches siblings within the same array item; `^.` reaches the parent object.
+`^.` matches siblings within the same array item; `^.^.` reaches the parent object.
 
 ```ts
 // Sibling within each array item
@@ -306,32 +296,87 @@ const schema = object({
   items: array(
     object({
       type: string(),
-      value: string().dependsOn({ field: '@.type', condition: /special/ }),
+      value: string().dependsOn({ field: '^.type', condition: /special/ }),
     }),
   ),
 });
 
 schema.parse({
   items: [
-    { type: 'normal' },             // value not required
+    { type: 'normal' },              // value not required
     { type: 'special', value: 'x' }, // value required
   ],
 });
 ```
 
 ```ts
-// Field in the parent object of the array item
+// Field in the object that contains the array — requires an extra ^.
 const schema = object({
   sections: array(
     object({
       enabled: boolean(),
       details: object({
-        note: string().dependsOn({ field: '^.enabled', condition: /true/ }),
+        note: string().dependsOn({ field: '^.^.enabled', condition: /true/ }),
       }),
     }),
   ),
 });
 ```
+
+> **Array level — easy to forget**
+>
+> An array is itself a level in the path hierarchy. When a field sits directly
+> inside an array item, `^.` resolves siblings within the same item object.
+> You need one extra `^.` to reach the array itself, and another to reach the
+> object that holds the array.
+>
+> ```
+> root object
+>   └── items  ← the array          (level 1)
+>         └── item[i]               (level 2 — "containing object" for item fields)
+>               └── myField         (your field)
+> ```
+>
+> | From `myField` | Lands on | Accessed by |
+> |---|---|---|
+> | `^.sibling` | `item[i]` — same item object | named key |
+> | `^.^.0`, `^.^.1` | `items` — the array | numeric index |
+> | `^.^.^.field` | root object | named key ✓ |
+>
+> ```ts
+> // ^.^. lands on the array — navigate with a numeric index
+> value.dependsOn({ field: '^.^.0.type', condition: /special/ })
+> // reads items[0].type
+>
+> // ^.^.^. clears the array and the item object, reaching the parent object
+> value.dependsOn({ field: '^.^.^.mode', condition: /special/ })
+> // reads root.mode ✓
+> ```
+>
+> ```ts
+> // WRONG — ^.^. stops at the array; there is no named field "mode" there
+> const schema = object({
+>   mode: string(),
+>   items: array(
+>     object({
+>       value: string().dependsOn({ field: '^.^.mode', condition: /special/ }),
+>     }),
+>   ),
+> });
+>
+> // CORRECT — ^.^.^. exits both the item object and the array
+> const schema = object({
+>   mode: string(),
+>   items: array(
+>     object({
+>       value: string().dependsOn({ field: '^.^.^.mode', condition: /special/ }),
+>     }),
+>   ),
+> });
+> ```
+>
+> The same applies to any nested object inside an array item: count every level
+> — including the array — when deciding how many `^.` segments you need.
 
 ### Records
 
@@ -342,7 +387,7 @@ const schema = object({
   rows: record(
     object({
       active: boolean(),
-      label: string().dependsOn({ field: '@.active', condition: /true/ }),
+      label: string().dependsOn({ field: '^.active', condition: /true/ }),
     }),
   ),
 });
