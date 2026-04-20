@@ -116,15 +116,13 @@ export class RecordSchema<
   /**
    * Serializes the Record schema to JSON for langchain integration.
    *
-   * NOTE: `propertyNames` is omitted — it is not supported by OpenAI, Anthropic, or Mistral.
-   * `additionalProperties` carries the value schema for Gemini compatibility.
-   * OpenAI and Anthropic strict mode do not support dynamic-key objects; treat this field
-   * as opaque `object` in those contexts.
+   * NOTE: `additionalProperties` is intentionally omitted — it is rejected by OpenAI,
+   * Anthropic strict mode, and Google Gemini. All providers treat dynamic-key objects
+   * as opaque `object` in tool schemas.
    */
   toLangchainJSON(): JsonSchemaFormat {
     return {
       type: "object",
-      additionalProperties: this.valueSchema.toLangchainJSON(),
       description:
         `(object with dynamic string keys) ${this.description ?? ""}`.trim(),
     };

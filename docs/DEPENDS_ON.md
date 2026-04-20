@@ -21,6 +21,7 @@ Conditional field requirement driven by a typed, composable rule tree.
   - [Records](#records)
 - [Error Behaviour](#error-behaviour)
 - [Type Reference](#type-reference)
+- [Migrating from the Old Array Syntax](#migrating-from-the-old-array-syntax)
 
 ---
 
@@ -447,3 +448,33 @@ All four types are exported from the package and fully typed, so VSCode will off
 ```ts
 import type { DependencyRule, FieldCondition, AndGroup, OrGroup } from 'validator';
 ```
+
+---
+
+## Migrating from the Old Array Syntax
+
+The original API accepted an **array** of conditions (implicitly AND-ed together). This was replaced by the explicit rule-tree API above. If you have existing code using the old syntax, the following one-time `perl` commands will migrate it in-place across all `.ts` files.
+
+### Step 1 — Single-item arrays → bare object
+
+Converts `.dependsOn([{ ... }])` (array with one condition) to `.dependsOn({ ... })`.
+
+```bash
+find . -name "*.ts" -exec perl -0777 -pi -e '
+  s/\.dependsOn\(\[\s*\n(\s*\{[^}]*?\})\s*,?\s*\n\s*\]\)/.dependsOn($1)/gs;
+  s/\.dependsOn\(\[(\{[^}]*?\})\]\)/.dependsOn($1)/g;
+' {} +
+```
+
+### Step 2 — Multi-item arrays → `AndGroup`
+
+Converts `.dependsOn([{ ... }, { ... }])` (array with multiple conditions) to an explicit `AndGroup`.
+
+```bash
+find . -name "*.ts" -exec perl -0777 -pi -e '
+  s/\.dependsOn\(\[(\s*\{[^}]*\}\s*,\s*\{)/.dependsOn({\n      operator: "and",\n      conditions: [$1/gs;
+  s/(conditions:\s*\[.*?\}\s*,?\s*)\]\)/$1],\n    })/gs;
+' {} +
+```
+
+Run Step 1 first, then Step 2. After both passes, review the diff and fix any edge cases the regex couldn't handle (deeply multiline condition objects, comments inside the array, etc.).
