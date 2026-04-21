@@ -34,8 +34,7 @@ describe("UnknownSchema", () => {
         dependsOnOptions: unknown()
           .optional()
           .dependsOn({
-            field: "options",
-            condition: "^option b$",
+            eq: { field: "options", value: "option b" },
           }),
       });
       const result1 = schema.parse({

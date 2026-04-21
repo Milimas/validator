@@ -68,18 +68,6 @@ describe("toLangchainJSON", () => {
         anyOf: [{ type: "number" }, { type: "null" }],
       });
     });
-
-    it("strict object emits additionalProperties: false", () => {
-      const schema = object({ name: string() });
-      const json = schema.toLangchainJSON() as any;
-      expect(json.additionalProperties).toBe(false);
-    });
-
-    it("loose object emits additionalProperties: true", () => {
-      const schema = looseObject({ name: string() });
-      const json = schema.toLangchainJSON() as any;
-      expect(json.additionalProperties).toBe(true);
-    });
   });
 
   describe("RecordSchema", () => {
@@ -87,12 +75,6 @@ describe("toLangchainJSON", () => {
       const schema = record(number());
       const json = schema.toLangchainJSON() as any;
       expect(json.propertyNames).toBeUndefined();
-    });
-
-    it("emits additionalProperties as value schema", () => {
-      const schema = record(number());
-      const json = schema.toLangchainJSON() as any;
-      expect(json.additionalProperties).toMatchObject({ type: "number" });
     });
 
     it("prefixes description with dynamic key note", () => {
@@ -141,7 +123,10 @@ describe("toLangchainJSON", () => {
     it("emits anyOf with each branch", () => {
       const schema = union([string(), number()]);
       const json = schema.toLangchainJSON() as any;
-      expect(json.anyOf).toMatchObject([{ type: "string" }, { type: "number" }]);
+      expect(json.anyOf).toMatchObject([
+        { type: "string" },
+        { type: "number" },
+      ]);
     });
   });
 

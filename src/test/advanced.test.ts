@@ -966,8 +966,7 @@ describe("Real-world Complex Schemas", () => {
         activationCode: string()
           .optional()
           .dependsOn({
-            field: "status",
-            condition: "^active$",
+            eq: { field: "status", value: "active" },
           }),
       });
 
@@ -990,8 +989,7 @@ describe("Real-world Complex Schemas", () => {
         bonusPoints: number()
           .optional()
           .dependsOn({
-            field: "level",
-            condition: "^5$",
+            eq: { field: "level", value: 5 },
           }),
       });
 
@@ -1015,8 +1013,7 @@ describe("Real-world Complex Schemas", () => {
         adminCode: string()
           .default("DEFAULT_CODE")
           .dependsOn({
-            field: "role",
-            condition: "^admin$",
+            eq: { field: "role", value: "admin" },
           }),
       });
 
@@ -1034,8 +1031,7 @@ describe("Real-world Complex Schemas", () => {
         adminCode: string()
           .required()
           .dependsOn({
-            field: "role",
-            condition: "^admin$",
+            eq: { field: "role", value: "admin" },
           })
           .default("REQUIRED_CODE"),
       });

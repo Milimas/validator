@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { string, number, object, array, boolean, record } from "../index.js";
+import type { DependencyRule } from "../index.js";
 
 describe("Schema Modifiers", () => {
   describe("optional()", () => {
@@ -191,254 +192,738 @@ describe("Schema Modifiers", () => {
     });
   });
 
-  describe("dependsOn()", () => {
-    it("should set data-dependsOn attribute", () => {
-      const schema = string().dependsOn({ field: "type", condition: /business/ });
-
-      const json = schema.toJSON() as any;
-      expect(json.required).toBe(true);
-      expect(json["data-depends-on"]).toBeDefined();
-    });
-
-    it("should support AND group of conditions", () => {
-      const schema = string().dependsOn({
-        operator: "and",
-        conditions: [
-          { field: "type", condition: /business/ },
-          { field: "country", condition: /US/ },
-        ],
-      });
-
-      const json = schema.toJSON() as any;
-      expect(json["data-depends-on"].operator).toBe("and");
-      expect(json["data-depends-on"].conditions).toHaveLength(2);
-    });
-
-    it("should work with other modifiers", () => {
-      const schema = string()
-        .minLength(5)
-        .dependsOn({ field: "required", condition: /true/ });
-
-      const json = schema.toJSON() as any;
-      expect(json.minLength).toBe(5);
-      expect(json["data-depends-on"]).toBeDefined();
-    });
-
-    it("should skip validation when dependency is not satisfied", () => {
-      const schema = object({
-        flag: boolean().required(),
-        value: string()
-          .minLength(3)
-          .dependsOn({ field: "flag", condition: /true/ }),
-      });
-
-      const result = schema.safeParse({ flag: false, value: "x" });
-
-      expect(result.success).toBe(true);
-      expect(result.data?.value).toBeUndefined();
-    });
-
-    it("should require the field when dependency is satisfied", () => {
-      const schema = object({
-        flag: boolean(),
-        value: string().dependsOn({ field: "flag", condition: /true/ }),
-      });
-
-      const result = schema.safeParse({ flag: true });
-
-      expect(result.success).toBe(false);
-      expect(result.errors[0]?.path).toEqual(["value"]);
-      expect(result.errors[0]?.code).toBe("required");
-    });
-
-    it("should validate when dependency is satisfied and value is present", () => {
-      const schema = object({
-        flag: boolean(),
-        value: string()
-          .minLength(3)
-          .dependsOn({ field: "flag", condition: /true/ }),
-      });
-
-      const result = schema.safeParse({ flag: true, value: "hello" });
-
-      expect(result.success).toBe(true);
-      expect(result.data?.value).toBe("hello");
-    });
-
-    it("should work with default values", () => {
-      const schema = object({
-        flag: boolean().default(false),
-        value: string()
-          .minLength(3)
-          .default("default")
-          .dependsOn({ field: "flag", condition: /true/ }),
-      });
-
-      const result = schema.safeParse({});
-
-      expect(result.success).toBe(true);
-      expect(result.data?.flag).toBe(false);
-      // When dependency is not satisfied, field is not applicable and returns undefined
-      // (not the default, since it wasn't needed)
-      expect(result.data?.value).toBeUndefined();
-    });
-
-    it("should support relative path in arrays", () => {
-      const schema = object({
-        items: array(
-          object({
-            type: boolean(),
-            value: string().dependsOn({ field: "^.type", condition: /true/ }),
+  describe("dependsOn() — operator leaves", () => {
+    describe("eq / ne", () => {
+      it("matches and mismatches strings with eq", () => {
+        const schema = object({
+          role: string(),
+          value: string().dependsOn({
+            eq: { field: "role", value: "admin" },
           }),
-        ),
+        });
+        expect(schema.safeParse({ role: "admin" }).success).toBe(false);
+        expect(schema.safeParse({ role: "user" }).success).toBe(true);
       });
 
-      const skipped = schema.safeParse({
-        items: [{ type: false, value: "any value" }],
+      it("matches numbers, booleans with eq", () => {
+        const nSchema = object({
+          n: number(),
+          value: string().dependsOn({ eq: { field: "n", value: 7 } }),
+        });
+        expect(nSchema.safeParse({ n: 7 }).success).toBe(false);
+        expect(nSchema.safeParse({ n: 8 }).success).toBe(true);
+
+        const bSchema = object({
+          b: boolean(),
+          value: string().dependsOn({ eq: { field: "b", value: true } }),
+        });
+        expect(bSchema.safeParse({ b: true }).success).toBe(false);
+        expect(bSchema.safeParse({ b: false }).success).toBe(true);
       });
 
-      expect(skipped.success).toBe(true);
-      expect(skipped.data?.items[0]?.value).toBeUndefined();
-
-      const required = schema.safeParse({
-        items: [{ type: true }],
+      it("uses reference equality for objects", () => {
+        const obj = { a: 1 };
+        const schema = object({
+          o: string().dependsOn({ eq: { field: "o", value: obj } }),
+          value: string(),
+        });
+        expect(schema.safeParse({ o: "x", value: "y" }).success).toBe(true);
       });
 
-      expect(required.success).toBe(false);
-      expect(required.errors[0]?.path).toEqual(["items", 0, "value"]);
-      expect(required.errors[0]?.code).toBe("required");
-    });
-
-    it("should support relative path in records", () => {
-      const schema = object({
-        rows: record(
-          object({
-            enabled: boolean(),
-            note: string().dependsOn({ field: "^.enabled", condition: /true/ }),
+      it("ne flips eq semantics", () => {
+        const schema = object({
+          role: string(),
+          value: string().dependsOn({
+            ne: { field: "role", value: "admin" },
           }),
-        ),
+        });
+        expect(schema.safeParse({ role: "admin" }).success).toBe(true);
+        expect(schema.safeParse({ role: "user" }).success).toBe(false);
       });
-
-      const skipped = schema.safeParse({
-        rows: {
-          alpha: { enabled: false, note: "text ignored" },
-        },
-      });
-
-      expect(skipped.success).toBe(true);
-      expect(skipped.data?.rows.alpha?.note).toBeUndefined();
-
-      const required = schema.safeParse({
-        rows: {
-          alpha: { enabled: true },
-        },
-      });
-
-      expect(required.success).toBe(false);
-      expect(required.errors[0]?.path).toEqual(["rows", "alpha", "note"]);
-      expect(required.errors[0]?.code).toBe("required");
     });
 
-    it("should support ^. for same field path (sibling)", () => {
-      const schema = object({
-        flag: boolean(),
-        value: string().dependsOn({ field: "^.flag", condition: /true/ }),
+    describe("lt / gt / lte / gte", () => {
+      const build = (rule: DependencyRule) =>
+        object({
+          n: number(),
+          value: string().dependsOn(rule),
+        });
+
+      it("lt: boundary cases", () => {
+        const s = build({ lt: { field: "n", value: 10 } });
+        expect(s.safeParse({ n: 9 }).success).toBe(false);
+        expect(s.safeParse({ n: 10 }).success).toBe(true);
+        expect(s.safeParse({ n: 11 }).success).toBe(true);
       });
 
-      const skipped = schema.safeParse({ flag: false, value: "ignored" });
-      expect(skipped.success).toBe(true);
-      expect(skipped.data?.value).toBeUndefined();
+      it("gt: boundary cases", () => {
+        const s = build({ gt: { field: "n", value: 10 } });
+        expect(s.safeParse({ n: 11 }).success).toBe(false);
+        expect(s.safeParse({ n: 10 }).success).toBe(true);
+        expect(s.safeParse({ n: 9 }).success).toBe(true);
+      });
 
-      const required = schema.safeParse({ flag: true });
-      expect(required.success).toBe(false);
-      expect(required.errors[0]?.path).toEqual(["value"]);
-      expect(required.errors[0]?.code).toBe("required");
+      it("lte: boundary cases", () => {
+        const s = build({ lte: { field: "n", value: 10 } });
+        expect(s.safeParse({ n: 10 }).success).toBe(false);
+        expect(s.safeParse({ n: 11 }).success).toBe(true);
+      });
+
+      it("gte: boundary cases", () => {
+        const s = build({ gte: { field: "n", value: 10 } });
+        expect(s.safeParse({ n: 10 }).success).toBe(false);
+        expect(s.safeParse({ n: 9 }).success).toBe(true);
+      });
+
+      it("non-number field returns false for numeric ops", () => {
+        const s = object({
+          n: string(),
+          value: string().dependsOn({ gt: { field: "n", value: 0 } }),
+        });
+        expect(s.safeParse({ n: "abc" }).success).toBe(true);
+      });
     });
 
-    it("should support ^.^. to traverse up from nested object inside array item", () => {
-      const schema = object({
-        sections: array(
-          object({
-            enabled: boolean(),
-            details: object({
-              comment: string().dependsOn({ field: "^.^.enabled", condition: /true/ }),
+    describe("in / notIn", () => {
+      it("in: element present, absent, empty array", () => {
+        const s = object({
+          role: string(),
+          value: string().dependsOn({
+            in: { field: "role", value: ["admin", "mod"] },
+          }),
+        });
+        expect(s.safeParse({ role: "admin" }).success).toBe(false);
+        expect(s.safeParse({ role: "user" }).success).toBe(true);
+
+        const empty = object({
+          role: string(),
+          value: string().dependsOn({
+            in: { field: "role", value: [] },
+          }),
+        });
+        expect(empty.safeParse({ role: "admin" }).success).toBe(true);
+      });
+
+      it("in: field absent returns false", () => {
+        const s = object({
+          role: string().optional(),
+          value: string().dependsOn({
+            in: { field: "role", value: ["admin"] },
+          }),
+        });
+        expect(s.safeParse({}).success).toBe(true);
+      });
+
+      it("notIn: flips in", () => {
+        const s = object({
+          role: string(),
+          value: string().dependsOn({
+            notIn: { field: "role", value: ["admin", "mod"] },
+          }),
+        });
+        expect(s.safeParse({ role: "admin" }).success).toBe(true);
+        expect(s.safeParse({ role: "user" }).success).toBe(false);
+      });
+
+      it("notIn: field absent returns false", () => {
+        const s = object({
+          role: string().optional(),
+          value: string().dependsOn({
+            notIn: { field: "role", value: ["admin"] },
+          }),
+        });
+        expect(s.safeParse({}).success).toBe(true);
+      });
+    });
+
+    describe("contains / startsWith / endsWith", () => {
+      it("contains: match, non-match, empty string value", () => {
+        const s = object({
+          text: string(),
+          value: string().dependsOn({
+            contains: { field: "text", value: "oo" },
+          }),
+        });
+        expect(s.safeParse({ text: "foobar" }).success).toBe(false);
+        expect(s.safeParse({ text: "bar" }).success).toBe(true);
+
+        const empty = object({
+          text: string(),
+          value: string().dependsOn({
+            contains: { field: "text", value: "" },
+          }),
+        });
+        expect(empty.safeParse({ text: "anything" }).success).toBe(false);
+      });
+
+      it("startsWith", () => {
+        const s = object({
+          text: string(),
+          value: string().dependsOn({
+            startsWith: { field: "text", value: "foo" },
+          }),
+        });
+        expect(s.safeParse({ text: "foobar" }).success).toBe(false);
+        expect(s.safeParse({ text: "barfoo" }).success).toBe(true);
+      });
+
+      it("endsWith", () => {
+        const s = object({
+          text: string(),
+          value: string().dependsOn({
+            endsWith: { field: "text", value: "bar" },
+          }),
+        });
+        expect(s.safeParse({ text: "foobar" }).success).toBe(false);
+        expect(s.safeParse({ text: "barfoo" }).success).toBe(true);
+      });
+
+      it("non-string field returns false", () => {
+        const s = object({
+          n: number(),
+          value: string().dependsOn({
+            contains: { field: "n", value: "1" },
+          }),
+        });
+        expect(s.safeParse({ n: 123 }).success).toBe(true);
+      });
+    });
+
+    describe("exists", () => {
+      it("true for empty string, zero, false", () => {
+        const s = object({
+          x: string().optional(),
+          value: string().dependsOn({ exists: { field: "x" } }),
+        });
+        expect(s.safeParse({ x: "" }).success).toBe(false);
+
+        const sZero = object({
+          x: number().optional(),
+          value: string().dependsOn({ exists: { field: "x" } }),
+        });
+        expect(sZero.safeParse({ x: 0 }).success).toBe(false);
+
+        const sFalse = object({
+          x: boolean().optional(),
+          value: string().dependsOn({ exists: { field: "x" } }),
+        });
+        expect(sFalse.safeParse({ x: false }).success).toBe(false);
+      });
+
+      it("false for absent or null fields", () => {
+        const s = object({
+          x: string().optional(),
+          value: string().dependsOn({ exists: { field: "x" } }),
+        });
+        expect(s.safeParse({}).success).toBe(true);
+
+        const nullable = object({
+          x: string().nullable(),
+          value: string().dependsOn({ exists: { field: "x" } }),
+        });
+        expect(nullable.safeParse({ x: null }).success).toBe(true);
+      });
+    });
+
+    describe("notEmpty", () => {
+      it("empty string is empty", () => {
+        const s = object({
+          x: string().optional(),
+          value: string().dependsOn({ notEmpty: { field: "x" } }),
+        });
+        expect(s.safeParse({ x: "" }).success).toBe(true);
+        expect(s.safeParse({ x: "a" }).success).toBe(false);
+      });
+
+      it("empty array is empty", () => {
+        const s = object({
+          xs: array(string()),
+          value: string().dependsOn({ notEmpty: { field: "xs" } }),
+        });
+        expect(s.safeParse({ xs: [] }).success).toBe(true);
+        expect(s.safeParse({ xs: ["a"] }).success).toBe(false);
+      });
+
+      it("empty object is empty", () => {
+        const s = object({
+          o: record(string()),
+          value: string().dependsOn({ notEmpty: { field: "o" } }),
+        });
+        expect(s.safeParse({ o: {} }).success).toBe(true);
+        expect(s.safeParse({ o: { a: "b" } }).success).toBe(false);
+      });
+
+      it("null / undefined are empty; numbers and booleans are not", () => {
+        const s = object({
+          x: string().optional(),
+          value: string().dependsOn({ notEmpty: { field: "x" } }),
+        });
+        expect(s.safeParse({}).success).toBe(true);
+
+        const sN = object({
+          x: number(),
+          value: string().dependsOn({ notEmpty: { field: "x" } }),
+        });
+        expect(sN.safeParse({ x: 0 }).success).toBe(false);
+
+        const sB = object({
+          x: boolean(),
+          value: string().dependsOn({ notEmpty: { field: "x" } }),
+        });
+        expect(sB.safeParse({ x: false }).success).toBe(false);
+      });
+    });
+
+    describe("truthy / falsy", () => {
+      const build = (rule: DependencyRule) =>
+        object({
+          x: boolean().optional(),
+          y: number().optional(),
+          z: string().optional(),
+          value: string().dependsOn(rule),
+        });
+
+      it("truthy: passes for truthy values", () => {
+        const s = build({ truthy: { field: "x" } });
+        expect(s.safeParse({ x: true }).success).toBe(false);
+        expect(s.safeParse({ x: false }).success).toBe(true);
+
+        const sN = build({ truthy: { field: "y" } });
+        expect(sN.safeParse({ y: 0 }).success).toBe(true);
+        expect(sN.safeParse({ y: 1 }).success).toBe(false);
+
+        const sS = build({ truthy: { field: "z" } });
+        expect(sS.safeParse({ z: "" }).success).toBe(true);
+        expect(sS.safeParse({ z: "ok" }).success).toBe(false);
+      });
+
+      it("falsy: inverts truthy", () => {
+        const s = build({ falsy: { field: "x" } });
+        expect(s.safeParse({ x: true }).success).toBe(true);
+        expect(s.safeParse({ x: false }).success).toBe(false);
+        expect(s.safeParse({}).success).toBe(false);
+      });
+    });
+
+    describe("pattern", () => {
+      it("RegExp literal and string pattern", () => {
+        const sRe = object({
+          email: string(),
+          value: string().dependsOn({
+            pattern: { field: "email", value: /@co\.com$/ },
+          }),
+        });
+        expect(sRe.safeParse({ email: "a@co.com" }).success).toBe(false);
+        expect(sRe.safeParse({ email: "a@foo.com" }).success).toBe(true);
+
+        const sStr = object({
+          email: string(),
+          value: string().dependsOn({
+            pattern: { field: "email", value: "@co\\.com$" },
+          }),
+        });
+        expect(sStr.safeParse({ email: "a@co.com" }).success).toBe(false);
+        expect(sStr.safeParse({ email: "a@foo.com" }).success).toBe(true);
+      });
+
+      it("non-string field is coerced via String()", () => {
+        const s = object({
+          n: number(),
+          value: string().dependsOn({
+            pattern: { field: "n", value: /^42$/ },
+          }),
+        });
+        expect(s.safeParse({ n: 42 }).success).toBe(false);
+        expect(s.safeParse({ n: 41 }).success).toBe(true);
+      });
+
+      it("null / undefined field returns false", () => {
+        const s = object({
+          x: string().nullable(),
+          value: string().dependsOn({
+            pattern: { field: "x", value: /.+/ },
+          }),
+        });
+        expect(s.safeParse({ x: null }).success).toBe(true);
+      });
+    });
+
+    describe("and / or / not", () => {
+      it("and: all pass vs one fails", () => {
+        const s = object({
+          role: string(),
+          country: string(),
+          value: string().dependsOn({
+            and: [
+              { eq: { field: "role", value: "admin" } },
+              { eq: { field: "country", value: "US" } },
+            ],
+          }),
+        });
+        expect(
+          s.safeParse({ role: "admin", country: "US" }).success,
+        ).toBe(false);
+        expect(
+          s.safeParse({ role: "admin", country: "CA" }).success,
+        ).toBe(true);
+      });
+
+      it("or: any pass", () => {
+        const s = object({
+          role: string(),
+          plan: string(),
+          value: string().dependsOn({
+            or: [
+              { eq: { field: "role", value: "admin" } },
+              { eq: { field: "plan", value: "pro" } },
+            ],
+          }),
+        });
+        expect(s.safeParse({ role: "admin", plan: "free" }).success).toBe(
+          false,
+        );
+        expect(s.safeParse({ role: "user", plan: "pro" }).success).toBe(
+          false,
+        );
+        expect(s.safeParse({ role: "user", plan: "free" }).success).toBe(
+          true,
+        );
+      });
+
+      it("not: wrapping a leaf", () => {
+        const s = object({
+          role: string(),
+          value: string().dependsOn({
+            not: { eq: { field: "role", value: "admin" } },
+          }),
+        });
+        expect(s.safeParse({ role: "admin" }).success).toBe(true);
+        expect(s.safeParse({ role: "user" }).success).toBe(false);
+      });
+
+      it("not: wrapping an and-group", () => {
+        const s = object({
+          role: string(),
+          country: string(),
+          value: string().dependsOn({
+            not: {
+              and: [
+                { eq: { field: "role", value: "admin" } },
+                { eq: { field: "country", value: "US" } },
+              ],
+            },
+          }),
+        });
+        expect(
+          s.safeParse({ role: "admin", country: "US" }).success,
+        ).toBe(true);
+        expect(
+          s.safeParse({ role: "admin", country: "CA" }).success,
+        ).toBe(false);
+      });
+
+      it("not: wrapping an or-group", () => {
+        const s = object({
+          role: string(),
+          value: string().dependsOn({
+            not: {
+              or: [
+                { eq: { field: "role", value: "admin" } },
+                { eq: { field: "role", value: "mod" } },
+              ],
+            },
+          }),
+        });
+        expect(s.safeParse({ role: "admin" }).success).toBe(true);
+        expect(s.safeParse({ role: "user" }).success).toBe(false);
+      });
+
+      it("nested not-not cancels out", () => {
+        const s = object({
+          role: string(),
+          value: string().dependsOn({
+            not: { not: { eq: { field: "role", value: "admin" } } },
+          }),
+        });
+        expect(s.safeParse({ role: "admin" }).success).toBe(false);
+        expect(s.safeParse({ role: "user" }).success).toBe(true);
+      });
+    });
+
+    describe("mixed groups", () => {
+      it("and containing pattern + eq + gte leaves", () => {
+        const s = object({
+          email: string(),
+          role: string(),
+          age: number(),
+          value: string().dependsOn({
+            and: [
+              { pattern: { field: "email", value: /@co\.com$/ } },
+              { eq: { field: "role", value: "admin" } },
+              { gte: { field: "age", value: 18 } },
+            ],
+          }),
+        });
+        expect(
+          s.safeParse({ email: "a@co.com", role: "admin", age: 19 }).success,
+        ).toBe(false);
+        expect(
+          s.safeParse({ email: "a@co.com", role: "admin", age: 17 }).success,
+        ).toBe(true);
+      });
+
+      it("or containing not + and", () => {
+        const s = object({
+          role: string(),
+          age: number(),
+          value: string().dependsOn({
+            or: [
+              { not: { eq: { field: "role", value: "admin" } } },
+              {
+                and: [
+                  { eq: { field: "role", value: "admin" } },
+                  { gte: { field: "age", value: 21 } },
+                ],
+              },
+            ],
+          }),
+        });
+        expect(s.safeParse({ role: "admin", age: 21 }).success).toBe(false);
+        expect(s.safeParse({ role: "admin", age: 19 }).success).toBe(true);
+        expect(s.safeParse({ role: "user", age: 5 }).success).toBe(false);
+      });
+    });
+
+    describe("relative paths", () => {
+      it("^.x resolves for a leaf inside nested object", () => {
+        const schema = object({
+          items: array(
+            object({
+              type: boolean(),
+              value: string().dependsOn({
+                eq: { field: "^.type", value: true },
+              }),
             }),
-          }),
-        ),
+          ),
+        });
+
+        const skipped = schema.safeParse({
+          items: [{ type: false, value: "ignored" }],
+        });
+        expect(skipped.success).toBe(true);
+        expect(skipped.data?.items[0]?.value).toBeUndefined();
+
+        const required = schema.safeParse({
+          items: [{ type: true }],
+        });
+        expect(required.success).toBe(false);
+        expect(required.errors[0]?.path).toEqual(["items", 0, "value"]);
       });
 
-      const skipped = schema.safeParse({
-        sections: [
-          {
-            enabled: false,
-            details: { comment: "ignored" },
-          },
-        ],
-      });
-      expect(skipped.success).toBe(true);
-      expect(skipped.data?.sections[0]?.details.comment).toBeUndefined();
+      it("^.x resolves inside an and-group", () => {
+        const schema = object({
+          items: array(
+            object({
+              type: boolean(),
+              country: string(),
+              value: string().dependsOn({
+                and: [
+                  { eq: { field: "^.type", value: true } },
+                  { eq: { field: "^.country", value: "US" } },
+                ],
+              }),
+            }),
+          ),
+        });
 
-      const required = schema.safeParse({
-        sections: [
-          {
-            enabled: true,
-            details: {},
-          },
-        ],
-      });
-      expect(required.success).toBe(false);
-      expect(required.errors[0]?.path).toEqual([
-        "sections",
-        0,
-        "details",
-        "comment",
-      ]);
-      expect(required.errors[0]?.code).toBe("required");
+        const skipped = schema.safeParse({
+          items: [{ type: false, country: "US", value: "x" }],
+        });
+        expect(skipped.success).toBe(true);
 
-      const provided = schema.safeParse({
-        sections: [
-          { enabled: true, details: { comment: "yes" } },
-          { enabled: false, details: { comment: "ignored" } },
-        ],
+        const required = schema.safeParse({
+          items: [{ type: true, country: "US" }],
+        });
+        expect(required.success).toBe(false);
       });
-      expect(provided.success).toBe(true);
-      expect(provided.data?.sections[0]?.details.comment).toBe("yes");
-      expect(provided.data?.sections[1]?.details.comment).toBeUndefined();
+
+      it("^.^. traverses up from nested object inside array item", () => {
+        const schema = object({
+          sections: array(
+            object({
+              enabled: boolean(),
+              details: object({
+                comment: string().dependsOn({
+                  eq: { field: "^.^.enabled", value: true },
+                }),
+              }),
+            }),
+          ),
+        });
+
+        const required = schema.safeParse({
+          sections: [{ enabled: true, details: {} }],
+        });
+        expect(required.success).toBe(false);
+        expect(required.errors[0]?.path).toEqual([
+          "sections",
+          0,
+          "details",
+          "comment",
+        ]);
+      });
     });
 
-    it("should support mixed relative paths in deeper record entries", () => {
-      const schema = object({
-        rows: record(
-          object({
-            gate: boolean(),
-            meta: object({
-              note: string().dependsOn({ field: "^.^.gate", condition: /true/ }),
-            }),
-          }),
-        ),
+    describe("serialization — toJSON round-trip", () => {
+      const check = (rule: DependencyRule, expected: unknown) => {
+        const schema = string().dependsOn(rule);
+        const json = schema.toJSON() as { "data-depends-on": unknown };
+        expect(json["data-depends-on"]).toEqual(expected);
+      };
+
+      it("eq / ne", () => {
+        check(
+          { eq: { field: "a", value: 1 } },
+          { eq: { field: "a", value: 1 } },
+        );
+        check(
+          { ne: { field: "a", value: "x" } },
+          { ne: { field: "a", value: "x" } },
+        );
       });
 
-      const skipped = schema.safeParse({
-        rows: {
-          alpha: { gate: false, meta: { note: "ignored" } },
-        },
+      it("numeric comparisons", () => {
+        check(
+          { lt: { field: "a", value: 1 } },
+          { lt: { field: "a", value: 1 } },
+        );
+        check(
+          { gt: { field: "a", value: 1 } },
+          { gt: { field: "a", value: 1 } },
+        );
+        check(
+          { lte: { field: "a", value: 1 } },
+          { lte: { field: "a", value: 1 } },
+        );
+        check(
+          { gte: { field: "a", value: 1 } },
+          { gte: { field: "a", value: 1 } },
+        );
       });
-      expect(skipped.success).toBe(true);
-      expect(skipped.data?.rows.alpha?.meta.note).toBeUndefined();
 
-      const required = schema.safeParse({
-        rows: {
-          alpha: { gate: true, meta: {} },
-        },
+      it("in / notIn preserve arrays", () => {
+        check(
+          { in: { field: "a", value: [1, 2] } },
+          { in: { field: "a", value: [1, 2] } },
+        );
+        check(
+          { notIn: { field: "a", value: ["x"] } },
+          { notIn: { field: "a", value: ["x"] } },
+        );
       });
-      expect(required.success).toBe(false);
-      expect(required.errors[0]?.path).toEqual([
-        "rows",
-        "alpha",
-        "meta",
-        "note",
-      ]);
-      expect(required.errors[0]?.code).toBe("required");
+
+      it("string predicates", () => {
+        check(
+          { contains: { field: "a", value: "x" } },
+          { contains: { field: "a", value: "x" } },
+        );
+        check(
+          { startsWith: { field: "a", value: "x" } },
+          { startsWith: { field: "a", value: "x" } },
+        );
+        check(
+          { endsWith: { field: "a", value: "x" } },
+          { endsWith: { field: "a", value: "x" } },
+        );
+      });
+
+      it("field-only operators", () => {
+        check({ exists: { field: "a" } }, { exists: { field: "a" } });
+        check({ notEmpty: { field: "a" } }, { notEmpty: { field: "a" } });
+        check({ truthy: { field: "a" } }, { truthy: { field: "a" } });
+        check({ falsy: { field: "a" } }, { falsy: { field: "a" } });
+      });
+
+      it("pattern — RegExp is lowered to source string", () => {
+        check(
+          { pattern: { field: "a", value: /@co\.com$/ } },
+          { pattern: { field: "a", value: "@co\\.com$" } },
+        );
+        check(
+          { pattern: { field: "a", value: "foo" } },
+          { pattern: { field: "a", value: "foo" } },
+        );
+      });
+
+      it("and / or / not groups recurse", () => {
+        check(
+          {
+            and: [
+              { eq: { field: "a", value: 1 } },
+              { gte: { field: "b", value: 2 } },
+            ],
+          },
+          {
+            and: [
+              { eq: { field: "a", value: 1 } },
+              { gte: { field: "b", value: 2 } },
+            ],
+          },
+        );
+        check(
+          {
+            or: [
+              { eq: { field: "a", value: 1 } },
+              { not: { pattern: { field: "b", value: /^x$/ } } },
+            ],
+          },
+          {
+            or: [
+              { eq: { field: "a", value: 1 } },
+              { not: { pattern: { field: "b", value: "^x$" } } },
+            ],
+          },
+        );
+      });
+    });
+
+    describe("type-level constraints", () => {
+      it("accepts valid rules", () => {
+        const _ok1: DependencyRule = { eq: { field: "a", value: 1 } };
+        const _ok2: DependencyRule = {
+          and: [{ gte: { field: "a", value: 1 } }],
+        };
+        void _ok1;
+        void _ok2;
+      });
+
+      it("rejects ill-formed rules", () => {
+        // @ts-expect-error — two top-level operator keys
+        const _bad1: DependencyRule = { eq: { field: "a", value: 1 }, gte: { field: "a", value: 1 } };
+        // @ts-expect-error — lt expects a number value
+        const _bad2: DependencyRule = { lt: { field: "a", value: "not a number" } };
+        // @ts-expect-error — startsWith expects string value
+        const _bad3: DependencyRule = { startsWith: { field: "a", value: 42 } };
+        // @ts-expect-error — in expects a readonly array
+        const _bad4: DependencyRule = { in: { field: "a", value: "not an array" } };
+        // @ts-expect-error — exists has no value field
+        const _bad5: DependencyRule = { exists: { field: "a", value: true } };
+        // @ts-expect-error — empty rule
+        const _bad6: DependencyRule = {};
+        // @ts-expect-error — unknown operator key
+        const _bad7: DependencyRule = { unknownOp: { field: "a" } };
+        // @ts-expect-error — old { field, condition } shape no longer compiles
+        const _bad8: DependencyRule = { field: "a", condition: /x/ };
+
+        void _bad1;
+        void _bad2;
+        void _bad3;
+        void _bad4;
+        void _bad5;
+        void _bad6;
+        void _bad7;
+        void _bad8;
+      });
     });
   });
 });

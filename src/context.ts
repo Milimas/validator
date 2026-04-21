@@ -1,5 +1,6 @@
 import { ValidationError } from "./error.js";
 import { SchemaTypeAny, FieldCondition, DependencyRule } from "./types.js";
+import { getRuleKey, LeafKey } from "./dependency-util.js";
 
 /**
  * Represents the path to a field in a nested data structure.
@@ -257,68 +258,155 @@ export class ValidationContext<
   }
 
   /**
-   * Evaluates whether a dependency condition is satisfied.
+   * Evaluates whether a single leaf operator rule is satisfied.
    *
-   * Checks if the field referenced by the condition matches the condition's pattern.
-   * Used to determine if a field is conditionally required.
+   * Kept as a public API for consumers that want to check a leaf directly.
    *
-   * @param condition - The dependency condition to check
-   * @returns true if the condition is satisfied, false otherwise
-   *
-   * @example
-   * // Checking if taxId is required based on accountType
-   * const isSatisfied = context.isDependencySatisfied({
-   *  field: 'accountType',
-   *  condition: /^business$/
-   * });
+   * @param rule - A leaf {@link FieldCondition} (rule with a single operator key)
+   * @returns true if the leaf rule is satisfied
    */
-  isDependencySatisfied(condition: FieldCondition): boolean {
-    let isSatisfied = false;
-
-    const fieldValue = this.getDependencyValue(condition.field);
-    if (fieldValue === null || fieldValue === undefined) {
-      return false;
-    }
-
-    const stringValue = String(fieldValue);
-
-    if (typeof condition.condition === "string")
-      isSatisfied = RegExp(condition.condition).test(stringValue);
-    else isSatisfied = condition.condition.test(stringValue);
-
-    // Track failed dependencies for error reporting
-    if (!isSatisfied) {
-      this.failedDependencies.push({
-        condition,
-        actualValue: fieldValue,
-        isRequired: true,
-      });
-    }
-
-    return isSatisfied;
+  isDependencySatisfied(rule: FieldCondition): boolean {
+    const key = getRuleKey(rule as DependencyRule) as LeafKey;
+    return this.evaluateLeaf(rule as DependencyRule, key);
   }
 
   /**
    * Recursively evaluates a {@link DependencyRule}:
-   * - `FieldCondition` — tests the field value directly
-   * - `AndGroup` — every sub-rule must pass
-   * - `OrGroup` — at least one sub-rule must pass
+   * - Leaf operator — tests the field value via {@link evaluateLeaf}
+   * - `and` — every sub-rule must pass
+   * - `or` — at least one sub-rule must pass
+   * - `not` — sub-rule must NOT pass
    */
   private evaluateRule(rule: DependencyRule): boolean {
-    if ("field" in rule) {
-      return this.isDependencySatisfied(rule);
+    const key = getRuleKey(rule);
+
+    if (key === "and") {
+      return (rule as { and: DependencyRule[] }).and.every((r) =>
+        this.evaluateRule(r),
+      );
     }
-    if (rule.operator === "and") {
-      return rule.conditions.every((r) => this.evaluateRule(r));
+    if (key === "or") {
+      return (rule as { or: DependencyRule[] }).or.some((r) =>
+        this.evaluateRule(r),
+      );
     }
-    return rule.conditions.some((r) => this.evaluateRule(r));
+    if (key === "not") {
+      const snapshot = [...this.failedDependencies];
+      const inner = this.evaluateRule(
+        (rule as { not: DependencyRule }).not,
+      );
+      this.failedDependencies = snapshot;
+      return !inner;
+    }
+
+    return this.evaluateLeaf(rule, key);
+  }
+
+  private evaluateLeaf(rule: DependencyRule, key: LeafKey): boolean {
+    const payload = (rule as unknown as Record<LeafKey, { field: string; value?: unknown }>)[key];
+    const v = this.getDependencyValue(payload.field);
+    const value = payload.value;
+
+    let ok: boolean;
+    switch (key) {
+      case "eq":
+        ok = v === value;
+        break;
+      case "ne":
+        ok = v !== value;
+        break;
+      case "lt":
+        ok = typeof v === "number" && v < (value as number);
+        break;
+      case "gt":
+        ok = typeof v === "number" && v > (value as number);
+        break;
+      case "lte":
+        ok = typeof v === "number" && v <= (value as number);
+        break;
+      case "gte":
+        ok = typeof v === "number" && v >= (value as number);
+        break;
+      case "in":
+        ok =
+          v !== null &&
+          v !== undefined &&
+          (value as readonly unknown[]).includes(v);
+        break;
+      case "notIn":
+        ok =
+          v !== null &&
+          v !== undefined &&
+          !(value as readonly unknown[]).includes(v);
+        break;
+      case "contains":
+        ok = typeof v === "string" && v.includes(value as string);
+        break;
+      case "startsWith":
+        ok = typeof v === "string" && v.startsWith(value as string);
+        break;
+      case "endsWith":
+        ok = typeof v === "string" && v.endsWith(value as string);
+        break;
+      case "exists":
+        ok = v !== null && v !== undefined;
+        break;
+      case "notEmpty": {
+        if (v === null || v === undefined) {
+          ok = false;
+          break;
+        }
+        if (typeof v === "string") {
+          ok = v.length > 0;
+          break;
+        }
+        if (Array.isArray(v)) {
+          ok = v.length > 0;
+          break;
+        }
+        if (typeof v === "object") {
+          ok = Object.keys(v as object).length > 0;
+          break;
+        }
+        ok = true;
+        break;
+      }
+      case "truthy":
+        ok = Boolean(v);
+        break;
+      case "falsy":
+        ok = !v;
+        break;
+      case "pattern": {
+        if (v === null || v === undefined) {
+          ok = false;
+          break;
+        }
+        const re =
+          typeof value === "string" ? new RegExp(value) : (value as RegExp);
+        ok = re.test(String(v));
+        break;
+      }
+      default: {
+        const _exhaustive: never = key;
+        void _exhaustive;
+        ok = false;
+      }
+    }
+
+    if (!ok) {
+      this.failedDependencies.push({
+        condition: rule as FieldCondition,
+        actualValue: v,
+        isRequired: true,
+      });
+    }
+    return ok;
   }
 
   /**
    * Returns `true` when the given {@link DependencyRule} is satisfied, meaning
    * the dependent field should be validated and required.
-   *
-   * @param rule - A {@link FieldCondition}, {@link AndGroup}, or {@link OrGroup}
    */
   isFieldRequired(rule: DependencyRule): boolean {
     return this.evaluateRule(rule);

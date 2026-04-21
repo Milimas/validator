@@ -28,121 +28,126 @@ export type Infer<T extends SchemaTypeAny> = Prettify<TypeOf<T>>;
 
 export type ObjectShape = { [key: string]: SchemaTypeAny };
 
-/**
- * A leaf condition: checks that a single field's value matches a pattern.
- *
- * Used as the base building block of a {@link DependencyRule}.
- *
- * @example
- * { field: '@.role', condition: /admin/ }
- * { field: 'user.status', condition: 'active' }
- */
-export interface FieldCondition {
-  /**
-   * Path to the field whose value is tested.
-   *
-   * Supported syntaxes:
-   * - **Root path** — absolute from the validated root: `user.role`, `settings.flags.0`
-   * - **`@.x`** — sibling of the current field (same containing object): `@.type`
-   * - **`^.x`** — one level above the containing object: `^.enabled`
-   * - **`^.^.x`** — two levels above: `^.^.status`
-   */
+export interface EqPayload {
   field: string;
-  /**
-   * Pattern the field's string representation must match.
-   * A `RegExp` is tested directly; a `string` is compiled into a `RegExp` first.
-   *
-   * @example
-   * condition: /^admin$/   // RegExp literal
-   * condition: '^admin$'   // equivalent string pattern
-   */
-  condition: RegExp | string;
+  value: unknown;
+}
+export interface NumericPayload {
+  field: string;
+  value: number;
+}
+export interface InPayload {
+  field: string;
+  value: readonly unknown[];
+}
+export interface StringPayload {
+  field: string;
+  value: string;
+}
+export interface PatternPayload {
+  field: string;
+  value: RegExp | string;
+}
+export interface FieldOnlyPayload {
+  field: string;
 }
 
-/**
- * AND group: **every** sub-rule must be satisfied for this group to pass.
- *
- * Sub-rules can be {@link FieldCondition}s or nested {@link OrGroup}s, allowing
- * arbitrarily complex logic trees.
- *
- * @example
- * {
- *   operator: 'and',
- *   conditions: [
- *     { field: '@.plan',   condition: /business/ },
- *     { field: '@.region', condition: /EU/ },
- *   ]
- * }
- */
-export interface AndGroup {
-  operator: "and";
-  /**
-   * All of these rules must pass for the group to be satisfied.
-   * At least one rule is required.
-   */
-  conditions: [DependencyRule, ...DependencyRule[]];
+type OneKey<T, K extends keyof T = keyof T> = {
+  [P in K]: { [Q in P]: T[P] } & Partial<Record<Exclude<K, P>, never>>;
+}[K];
+
+interface RuleMap {
+  eq: EqPayload;
+  ne: EqPayload;
+
+  lt: NumericPayload;
+  gt: NumericPayload;
+  lte: NumericPayload;
+  gte: NumericPayload;
+
+  in: InPayload;
+  notIn: InPayload;
+
+  contains: StringPayload;
+  startsWith: StringPayload;
+  endsWith: StringPayload;
+
+  exists: FieldOnlyPayload;
+  notEmpty: FieldOnlyPayload;
+  truthy: FieldOnlyPayload;
+  falsy: FieldOnlyPayload;
+
+  pattern: PatternPayload;
+
+  and: [DependencyRule, ...DependencyRule[]];
+  or: [DependencyRule, ...DependencyRule[]];
+  not: DependencyRule;
 }
 
-/**
- * OR group: **at least one** sub-rule must be satisfied for this group to pass.
- *
- * Sub-rules can be {@link FieldCondition}s or nested {@link AndGroup}s, allowing
- * arbitrarily complex logic trees.
- *
- * @example
- * {
- *   operator: 'or',
- *   conditions: [
- *     { field: '@.plan',   condition: /premium/ },
- *     { field: '@.role',   condition: /admin/ },
- *   ]
- * }
- */
-export interface OrGroup {
-  operator: "or";
-  /**
-   * At least one of these rules must pass for the group to be satisfied.
-   * At least one rule is required.
-   */
-  conditions: [DependencyRule, ...DependencyRule[]];
-}
+export type ComparisonOperator =
+  | "eq"
+  | "ne"
+  | "lt"
+  | "gt"
+  | "lte"
+  | "gte"
+  | "in"
+  | "notIn"
+  | "contains"
+  | "startsWith"
+  | "endsWith"
+  | "exists"
+  | "notEmpty"
+  | "truthy"
+  | "falsy"
+  | "pattern";
+
+export type GroupOperator = "and" | "or" | "not";
 
 /**
  * A dependency rule passed to {@link SchemaType.dependsOn}.
  *
- * Three forms are supported:
+ * Every rule is an object with **exactly one** top-level operator key.
  *
- * **1. Leaf condition** — checks a single field:
- * ```ts
- * { field: '@.enabled', condition: /true/ }
- * ```
+ * Leaf operators include equality (`eq`, `ne`), numeric comparison
+ * (`lt`, `gt`, `lte`, `gte`), membership (`in`, `notIn`), string predicates
+ * (`contains`, `startsWith`, `endsWith`), existence/truthiness checks
+ * (`exists`, `notEmpty`, `truthy`, `falsy`), and regex (`pattern`).
  *
- * **2. AND group** — every condition must match:
- * ```ts
- * { operator: 'and', conditions: [condA, condB] }
- * ```
+ * Group operators combine rules: `and`, `or`, and `not`.
  *
- * **3. OR group** — any condition must match:
- * ```ts
- * { operator: 'or', conditions: [condA, condB] }
- * ```
+ * The `Root` generic is reserved for future root-based type inference; it is
+ * currently unused for narrowing but kept on the signature for forward compat.
  *
- * Groups nest freely, so you can express any boolean combination:
- * ```ts
- * // (plan=business AND region=EU) OR role=admin
- * {
- *   operator: 'or',
- *   conditions: [
- *     { operator: 'and', conditions: [
- *       { field: '@.plan',   condition: /business/ },
- *       { field: '@.region', condition: /EU/ },
- *     ]},
- *     { field: '@.role', condition: /admin/ },
+ * @example
+ * { eq: { field: 'role', value: 'admin' } }
+ * { gte: { field: 'age', value: 18 } }
+ * { and: [
+ *     { eq: { field: 'role', value: 'admin' } },
+ *     { not: { falsy: { field: 'verified' } } },
  *   ]
  * }
- * ```
  */
-export type DependencyRule = FieldCondition | AndGroup | OrGroup;
+export type DependencyRule<Root = unknown> = [Root] extends [unknown]
+  ? OneKey<RuleMap>
+  : OneKey<RuleMap>;
+
+export type LeafPayload =
+  | EqPayload
+  | NumericPayload
+  | InPayload
+  | StringPayload
+  | PatternPayload
+  | FieldOnlyPayload;
+
+/**
+ * The union of all leaf variants of {@link DependencyRule} — any rule whose
+ * top-level key is a {@link ComparisonOperator}.
+ */
+export type FieldCondition<Root = unknown> = Extract<
+  DependencyRule<Root>,
+  { [K in ComparisonOperator]?: unknown }
+>;
 
 export type RefinementCheck<
   S extends SchemaTypeAny = SchemaTypeAny,

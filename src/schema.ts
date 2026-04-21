@@ -13,6 +13,7 @@ import {
   SchemaTypeAny,
   JsonSchemaFormat,
 } from "./types.js";
+import { getRuleKey } from "./dependency-util.js";
 import { DeepReplace } from "./util.js";
 
 const ANY_OF_ALL_TYPES: JsonSchemaFormat[] = [
@@ -133,8 +134,14 @@ export abstract class SchemaType<Output = any, Input = Output> {
     return new DefaultSchema(this, value);
   }
 
-  dependsOn(rule: DependencyRule): DependsOnSchema<this> {
-    return new DependsOnSchema(this, rule);
+  dependsOn(rule: DependencyRule): DependsOnSchema<this>;
+  dependsOn<Root extends object>(
+    rule: DependencyRule<Root>,
+  ): DependsOnSchema<this>;
+  dependsOn<Root = unknown>(
+    rule: DependencyRule<Root>,
+  ): DependsOnSchema<this> {
+    return new DependsOnSchema(this, rule as DependencyRule);
   }
 
   required(
@@ -429,21 +436,33 @@ export class DefaultSchema<T extends SchemaTypeAny> extends SchemaType<
   }
 }
 
-/** Recursively serializes a DependencyRule, converting RegExp to its source string. */
+/**
+ * Recursively serializes a {@link DependencyRule} into a JSON-safe form.
+ * Only `pattern.value` needs special handling (RegExp → source string);
+ * other operator payloads are already JSON-safe.
+ */
 function serializeRule(rule: DependencyRule): object {
-  if ("field" in rule) {
+  const key = getRuleKey(rule);
+
+  if (key === "and" || key === "or") {
+    const arr = (rule as unknown as Record<"and" | "or", DependencyRule[]>)[key];
+    return { [key]: arr.map(serializeRule) };
+  }
+  if (key === "not") {
+    const inner = (rule as { not: DependencyRule }).not;
+    return { not: serializeRule(inner) };
+  }
+  if (key === "pattern") {
+    const p = (rule as { pattern: { field: string; value: RegExp | string } })
+      .pattern;
     return {
-      field: rule.field,
-      condition:
-        typeof rule.condition === "string"
-          ? rule.condition
-          : rule.condition.source,
+      pattern: {
+        field: p.field,
+        value: typeof p.value === "string" ? p.value : p.value.source,
+      },
     };
   }
-  return {
-    operator: rule.operator,
-    conditions: rule.conditions.map(serializeRule),
-  };
+  return { [key]: (rule as unknown as Record<string, unknown>)[key] };
 }
 
 export class DependsOnSchema<T extends SchemaTypeAny> extends SchemaType<

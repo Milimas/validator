@@ -774,9 +774,10 @@ export type {
   RefinementCheck,
   Infer as infer,
   DependencyRule,
-  AndGroup,
-  OrGroup,
   FieldCondition,
+  ComparisonOperator,
+  GroupOperator,
+  LeafPayload,
 } from "./types.js";
 export type {
   AnySchema,

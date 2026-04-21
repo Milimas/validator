@@ -84,12 +84,16 @@ describe("ObjectSchema", () => {
               "HTML",
             ] as const).optional(),
             text: string().dependsOn({
-              field: "eventAttachmentSchema.event.body.contentType",
-              condition: /Text/,
+              eq: {
+                field: "eventAttachmentSchema.event.body.contentType",
+                value: "Text",
+              },
             }),
             html: html().dependsOn({
-              field: "eventAttachmentSchema.event.body.contentType",
-              condition: /HTML/,
+              eq: {
+                field: "eventAttachmentSchema.event.body.contentType",
+                value: "HTML",
+              },
             }),
           }).optional(),
           start: string().optional(),
